@@ -27,7 +27,6 @@ app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
-//app.MapBlazorHub();
 app.MapHub<StreamHub.Hubs.StreamHub>("/streamhub");
 
 app.Run();

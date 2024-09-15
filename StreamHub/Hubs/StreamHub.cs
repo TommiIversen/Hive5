@@ -10,6 +10,7 @@ public class StreamHub : Hub
 
     public async Task EngineConnected(Guid engineId)
     {
+        Console.WriteLine($"Engine connected: {engineId}");
         var engineInfo = Engines.GetOrAdd(engineId, id => new EngineInfo { EngineId = id });
         engineInfo.ConnectionId = Context.ConnectionId;
         await Clients.Caller.SendAsync("EngineAcknowledged");
@@ -17,6 +18,7 @@ public class StreamHub : Hub
 
     public async Task ReceiveMetric(Metric metric)
     {
+        Console.WriteLine($"Received metric from {metric.EngineId}");
         if (Engines.TryGetValue(metric.EngineId, out var engine))
         {
             engine.LastMetric = metric;
@@ -26,11 +28,13 @@ public class StreamHub : Hub
 
     public async Task ReceiveLog(LogEntry log)
     {
+        Console.WriteLine($"Received log from {log.EngineId}");
         await Clients.All.SendAsync("ReceiveLog", log);
     }
 
     public async Task ReceiveImage(ImageData imageData)
     {
+        Console.WriteLine($"Received image from {imageData.EngineId}");
         await Clients.All.SendAsync("ReceiveImage", imageData);
     }
 

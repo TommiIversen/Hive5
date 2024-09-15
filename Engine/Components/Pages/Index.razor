@@ -1,0 +1,37 @@
+﻿@page "/"
+@using Engine.Models
+@using Engine.Services
+@inject NavigationManager NavigationManager
+
+<h3>Engine Dashboard</h3>
+<p>Engine ID: @_streamHubService.EngineId</p>
+
+@foreach (var worker in _workers)
+{
+    <p>Worker ID: @worker.WorkerId</p>
+}
+
+@code {
+    private StreamHubService _streamHubService;
+    private List<Worker> _workers = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _streamHubService = new StreamHubService();
+        await _streamHubService.StartAsync();
+
+        // Opret på forhånd 2 workers
+        for (int i = 0; i < 2; i++)
+        {
+            StartWorker();
+        }
+    }
+
+    private void StartWorker()
+    {
+        var worker = new Worker(_streamHubService);
+        _streamHubService.AddWorker(worker);
+        _workers.Add(worker);
+        worker.Start();
+    }
+}
