@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("StreamHub")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+c955383f7dfff416709dd3d6476feccb525630ab")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a770726e242b22be1d3c44feb45d652a4583b81f")]
 [assembly: System.Reflection.AssemblyProductAttribute("StreamHub")]
 [assembly: System.Reflection.AssemblyTitleAttribute("StreamHub")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

@@ -42,7 +42,7 @@ public class StreamHub : Hub
         }
     }
 
-    public override Task OnDisconnectedAsync(Exception exception)
+    public override Task OnDisconnectedAsync(Exception? exception)
     {
         var engine = Engines.Values.FirstOrDefault(e => e.ConnectionId == Context.ConnectionId);
         if (engine != null)
