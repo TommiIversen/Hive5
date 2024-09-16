@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Engine.Utils;
 using StreamHub.Models;
 
 namespace Engine.Services
@@ -10,7 +11,10 @@ namespace Engine.Services
         private readonly MessageQueue _messageQueue;
         private readonly CancellationTokenSource _cancellationTokenSource = new();
         private readonly TimeSpan _interval = TimeSpan.FromSeconds(2);  // Metrics every 10 seconds
+        private readonly CpuUsageMonitor _cpuUsageMonitor = new(); // Tilføjet CpuUsageMonitor til at måle CPU-forbrug
+        private readonly MemoryUsageMonitor _memoryUsageMonitor = new(); // Tilføjet MemoryUsageMonitor til at måle RAM-forbrug
 
+        
         public MetricsService(MessageQueue messageQueue)
         {
             _messageQueue = messageQueue;
@@ -27,12 +31,26 @@ namespace Engine.Services
         {
             while (!cancellationToken.IsCancellationRequested)
             {
+                // Hent CPU- og RAM-målinger
+                var totalCpuUsage = await GetCpuUsageAsync(cancellationToken);
+                var perCoreCpuUsage = await GetPerCoreCpuUsageAsync(cancellationToken);
+                var currentProcessCpuUsage = _cpuUsageMonitor.GetCurrentProcessCpuUsage();
+
+                var totalMemory = await _memoryUsageMonitor.GetTotalMemoryAsync(cancellationToken);
+                var availableMemory = await _memoryUsageMonitor.GetAvailableMemoryAsync(cancellationToken);
+                var currentProcessMemoryUsage = _memoryUsageMonitor.GetCurrentProcessMemoryUsage();
+
                 // Generate and enqueue a new metric
                 var metric = new Metric
                 {
                     Timestamp = DateTime.UtcNow,
-                    CPUUsage = GetFakeCPUUsage(),
-                    MemoryUsage = GetFakeMemoryUsage()
+                    CPUUsage = totalCpuUsage, // Samlet CPU-brug
+                    PerCoreCpuUsage = perCoreCpuUsage, // CPU-brug per kerne
+                    CurrentProcessCpuUsage = currentProcessCpuUsage, // Nuværende proces CPU-brug
+                    MemoryUsage = totalMemory - availableMemory, // Brug fiktiv hukommelsesmåling for nu
+                    TotalMemory = totalMemory, // Samlet RAM i systemet
+                    AvailableMemory = availableMemory, // Tilgængelig RAM i systemet
+                    CurrentProcessMemoryUsage = currentProcessMemoryUsage // RAM-brug for den aktuelle proces
                 };
 
                 Console.WriteLine($"Generated metric: {metric.CPUUsage}% CPU, {metric.MemoryUsage} MB memory");
@@ -57,9 +75,32 @@ namespace Engine.Services
             _cancellationTokenSource.Cancel();
         }
 
-        private double GetFakeCPUUsage()
+        private async Task<double> GetCpuUsageAsync(CancellationToken cancellationToken)
         {
-            return Random.Shared.NextDouble() * 100;
+            try
+            {
+                // Brug CpuUsageMonitor til at hente samlet CPU-forbrug
+                return await _cpuUsageMonitor.GetTotalCpuUsageAsync(cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error measuring CPU usage: {ex.Message}");
+                return 0.0; // Returner 0 i tilfælde af fejl
+            }
+        }
+        
+        private async Task<List<double>> GetPerCoreCpuUsageAsync(CancellationToken cancellationToken)
+        {
+            try
+            {
+                var perCoreUsage = await _cpuUsageMonitor.GetPerCoreCpuUsageAsync(cancellationToken);
+                return perCoreUsage.ToList();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error measuring per core CPU usage: {ex.Message}");
+                return new List<double>(); // Returner tom liste i tilfælde af fejl
+            }
         }
 
         private double GetFakeMemoryUsage()

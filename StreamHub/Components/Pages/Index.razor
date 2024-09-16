@@ -15,63 +15,93 @@ else
 {
     <table class="table">
         <thead>
-            <tr>
-                <th>Engine ID</th>
-                <th>CPU Usage (%)</th>
-                <th>Memory Usage (MB)</th>
-                <th>Workers</th>
-            </tr>
+        <tr>
+            <th>Engine Info</th>
+            <th>Workers</th>
+        </tr>
         </thead>
         <tbody>
-            @foreach (var engine in engines.Values)
-            {
-                <tr>
-                    <td>@engine.EngineId</td>
-                    <td>@(engine.LastMetric?.CPUUsage.ToString("F2") ?? "N/A")</td>
-                    <td>@(engine.LastMetric?.MemoryUsage.ToString("F2") ?? "N/A")</td>
-                    <td>
-                        @if (engine.Workers.Any())
+        @foreach (var engine in engines.Values)
+        {
+            <tr>
+                <td>
+                    <div>
+                        <strong>Engine ID:</strong> @engine.EngineId <br/>
+                        <strong>CPU Usage (%):</strong> @(engine.LastMetric?.CPUUsage.ToString("F2") ?? "N/A") <br/>
+                        <strong>Memory Usage (MB):</strong> @(engine.LastMetric?.MemoryUsage.ToString("F2") ?? "N/A") <br/>
+                        <strong>Current Process CPU Usage (%):</strong> @(engine.LastMetric?.CurrentProcessCpuUsage.ToString("F2") ?? "N/A") <br/>
+
+                        <!-- RAM-information -->
+                        <strong>Total Memory (MB):</strong> @(engine.LastMetric?.TotalMemory.ToString("F2") ?? "N/A") <br/>
+                        <strong>Available Memory (MB):</strong> @(engine.LastMetric?.AvailableMemory.ToString("F2") ?? "N/A") <br/>
+                        <strong>Used Memory (MB):</strong> @(engine.LastMetric != null ? (engine.LastMetric.TotalMemory - engine.LastMetric.AvailableMemory).ToString("F2") : "N/A") <br/>
+                        <strong>Used Memory (%):</strong> @(engine.LastMetric != null ? (((engine.LastMetric.TotalMemory - engine.LastMetric.AvailableMemory) / engine.LastMetric.TotalMemory) * 100).ToString("F2") : "N/A") <br/>
+                        <strong>Current Process Memory Usage (MB):</strong> @(engine.LastMetric?.CurrentProcessMemoryUsage.ToString("F2") ?? "N/A") <br/>
+
+                        <!-- Viser CPU-brug for hver kerne, hvis det er tilgængeligt -->
+                        @if (engine.LastMetric?.PerCoreCpuUsage != null && engine.LastMetric.PerCoreCpuUsage.Count > 0)
                         {
-                            <table>
-                                @foreach (var worker in engine.Workers.Values)
-                                {
-                                    <tr>
-                                        <td>@worker.WorkerId</td>
-                                        <td>
-                                            <button @onclick="() => StopWorker(engine.EngineId, worker.WorkerId)">Stop</button>
-                                        </td>
-                                        <td>
-                                            @if (worker.LogMessages.Any())
-                                            {
-                                            <ul>
-                                                @foreach (var logMessage in worker.LogMessages)
-                                                {
-                                                <li>@logMessage</li>
-                                                }
-                                            </ul>
-                                            }
-                                            else
-                                            {
-                                            <p>Ingen logbeskeder.</p>
-                                            }
-                                        </td>
-                                        <td>
-                                            @if (!string.IsNullOrEmpty(worker.LastImage))
-                                            {
-                                                <img src="@worker.LastImage" alt="Worker Image" width="100" />
-                                            }
-                                        </td>
-                                    </tr>
-                                }
-                            </table>
+                        <strong>Per Core CPU Usage (%):</strong> <br/>
+                        <ul>
+                            @foreach (var usage in engine.LastMetric.PerCoreCpuUsage)
+                            {
+                            <li>@usage.ToString("F2")%</li>
+                            }
+                        </ul>
                         }
                         else
                         {
-                            <p>Ingen workers.</p>
+                        <strong>Per Core CPU Usage (%):</strong> 
                         }
-                    </td>
-                </tr>
-            }
+                    </div>
+                </td>
+                <td>
+                    @if (engine.Workers.Any())
+                    {
+                        <table>
+                            @foreach (var worker in engine.Workers.Values)
+                            {
+                                <tr>
+                                    <td>
+                                        <div>@worker.WorkerId</div>
+                                        <div>
+                                            <button @onclick="() => StopWorker(engine.EngineId, worker.WorkerId)">Stop</button>
+                                        </div>
+                                    </td>
+                                    <td>
+                                    </td>
+                                    <td>
+                                        @if (worker.LogMessages.Any())
+                                        {
+                                            <ul>
+                                                @foreach (var logMessage in worker.LogMessages)
+                                                {
+                                                    <li>@logMessage</li>
+                                                }
+                                            </ul>
+                                        }
+                                        else
+                                        {
+                                            <p>Ingen logbeskeder.</p>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(worker.LastImage))
+                                        {
+                                            <img src="@worker.LastImage" alt="Worker Image" width="200"/>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </table>
+                    }
+                    else
+                    {
+                        <p>Ingen workers.</p>
+                    }
+                </td>
+            </tr>
+        }
         </tbody>
     </table>
 }
@@ -101,7 +131,7 @@ else
             InvokeAsync(StateHasChanged);
             return Task.CompletedTask;
         };
-        
+
         _hubConnection.Closed += (error) =>
         {
             _connectionStatus = "Ikke forbundet";
@@ -116,16 +146,18 @@ else
             {
                 engines[metric.EngineId] = new EngineViewModel { EngineId = metric.EngineId };
             }
+
             engines[metric.EngineId].LastMetric = metric;
             await InvokeAsync(StateHasChanged);
         });
-        
+
         _hubConnection.On<LogEntry>("ReceiveLog", async (log) =>
         {
             if (!engines.ContainsKey(log.EngineId))
             {
                 engines[log.EngineId] = new EngineViewModel { EngineId = log.EngineId };
             }
+
             var engine = engines[log.EngineId];
             if (!engine.Workers.ContainsKey(log.WorkerId))
             {
@@ -144,11 +176,13 @@ else
             {
                 engines[imageData.EngineId] = new EngineViewModel { EngineId = imageData.EngineId };
             }
+
             var engine = engines[imageData.EngineId];
             if (!engine.Workers.ContainsKey(imageData.WorkerId))
             {
                 engine.Workers[imageData.WorkerId] = new WorkerViewModel { WorkerId = imageData.WorkerId };
             }
+
             engine.Workers[imageData.WorkerId].LastImage = $"data:image/jpeg;base64,{Convert.ToBase64String(imageData.ImageBytes)}";
             await InvokeAsync(StateHasChanged);
         });
@@ -172,4 +206,5 @@ else
         Console.WriteLine($"INVOKE: Stopping worker {workerId} on engine {engineId}");
         await _hubConnection.InvokeAsync("StopWorker", engineId, workerId);
     }
+
 }

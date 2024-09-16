@@ -8,6 +8,8 @@
 
     <ItemGroup>
       <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="9.0.0-rc.1.24452.1" />
+      <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="9.0.0-rc.1.24431.7" />
+      <PackageReference Include="System.Drawing.Common" Version="9.0.0-rc.1.24451.1" />
     </ItemGroup>
 
     <ItemGroup>

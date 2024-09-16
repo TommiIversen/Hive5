@@ -1,5 +1,6 @@
 ﻿
 using Engine.Services;
+using Engine.Utils;
 using StreamHub.Models;
 
 namespace Engine.Models
@@ -11,6 +12,7 @@ namespace Engine.Models
         private readonly Timer _imageTimer;
         public Guid WorkerId { get; } = Guid.NewGuid();
         public bool IsRunning { get; private set; }
+        private int _logCounter = 0;
 
         public WorkerService(MessageQueue messageQueue)
         {
@@ -64,7 +66,8 @@ namespace Engine.Models
         private byte[] GenerateFakeImage()
         {
             // Simuler en fake image data (placeholder)
-            return new byte[100];
+            var generator = new ImageGenerator();
+            return generator.GenerateImageWithNumber(_logCounter++);
         }
     }
 }
