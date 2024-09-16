@@ -1,6 +1,18 @@
 using Engine.Components;
-using Engine.Models;
 using Engine.Services;
+using Serilog;
+
+
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Debug()
+    .WriteTo.Console() // Logger til konsol
+    .WriteTo.File(
+        path: "logs/log-.txt",
+        rollingInterval: RollingInterval.Day, // En fil per dag
+        retainedFileCountLimit: 30) // Behold kun de sidste 30 dage
+    .CreateLogger();
+
+Log.Information("Blazor server applikation starter op...");
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,18 +36,15 @@ _ = Task.Run(async () => await streamHubService.StartAsync());
 
 
 var metricsService = app.Services.GetRequiredService<MetricsService>();
-metricsService.Start(); 
+metricsService.Start();
 
 var workerManager = app.Services.GetRequiredService<WorkerManager>();
 
-
-// Create two workers and start them
-// Opret og start to workers
+Log.Information("Creating workers...");
 var worker1 = workerManager.AddWorker();
 var worker2 = workerManager.AddWorker();
-worker1.Start();
-worker2.Start();
-
+workerManager.StartWorker(worker1.WorkerId);
+workerManager.StartWorker(worker2.WorkerId);
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
@@ -46,10 +55,7 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
-
 app.UseAntiforgery();
-
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();

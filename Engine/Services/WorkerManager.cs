@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Engine.Models;
+using Serilog;
 
 namespace Engine.Services
 {
@@ -18,6 +19,7 @@ namespace Engine.Services
 
         public WorkerService AddWorker()
         {
+            Log.Information($"Adding worker...");
             var worker = new WorkerService(_messageQueue);
             _workers[worker.WorkerId] = worker;
             return worker;
@@ -25,6 +27,7 @@ namespace Engine.Services
 
         public void StartWorker(Guid workerId)
         {
+            Log.Information($"Starting worker: {workerId}");
             if (_workers.TryGetValue(workerId, out var worker))
             {
                 worker.Start();
