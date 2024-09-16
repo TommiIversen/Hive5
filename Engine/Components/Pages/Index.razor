@@ -1,37 +1,54 @@
 ﻿@page "/"
 @using Engine.Models
 @using Engine.Services
-@inject NavigationManager NavigationManager
+@inject StreamHubService StreamHubService
 
 <h3>Engine Dashboard</h3>
-<p>Engine ID: @_streamHubService.EngineId</p>
 
-@foreach (var worker in _workers)
+<p>Engine ID: @StreamHubService.EngineId</p>
+
+@if (StreamHubService.Workers.Count == 0)
 {
-    <p>Worker ID: @worker.WorkerId</p>
+<p>Ingen workers forbundet.</p>
+}
+else
+{
+<table class="table">
+    <thead>
+    <tr>
+        <th>Worker ID</th>
+        <th>Action</th>
+    </tr>
+    </thead>
+    <tbody>
+    @foreach (var worker in StreamHubService.Workers.Values)
+    {
+    <tr>
+        <td>@worker.WorkerId</td>
+        <td>
+            @if (worker.IsRunning)
+            {
+            <button @onclick="() => StopWorker(worker)">Stop</button>
+            }
+            else
+            {
+            <button @onclick="() => StartWorker(worker)">Start</button>
+            }
+        </td>
+    </tr>
+    }
+    </tbody>
+</table>
 }
 
 @code {
-    private StreamHubService _streamHubService;
-    private List<Worker> _workers = new();
+private void StartWorker(Worker worker)
+{
+worker.Start();
+}
 
-    protected override async Task OnInitializedAsync()
-    {
-        _streamHubService = new StreamHubService();
-        await _streamHubService.StartAsync();
-
-        // Opret på forhånd 2 workers
-        for (int i = 0; i < 2; i++)
-        {
-            StartWorker();
-        }
-    }
-
-    private void StartWorker()
-    {
-        var worker = new Worker(_streamHubService);
-        _streamHubService.AddWorker(worker);
-        _workers.Add(worker);
-        worker.Start();
-    }
+private void StopWorker(Worker worker)
+{
+worker.Stop();
+}
 }

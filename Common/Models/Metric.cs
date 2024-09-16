@@ -4,7 +4,7 @@ namespace StreamHub.Models;
 public class Metric
 {
     public Guid EngineId { get; set; }
-    public DateTime Timestamp { get; set; }
-    public double CPUUsage { get; set; }
-    public double MemoryUsage { get; set; }
+    public required DateTime Timestamp { get; set; }
+    public required double CPUUsage { get; set; }
+    public required double MemoryUsage { get; set; }
 }

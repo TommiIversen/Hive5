@@ -9,11 +9,10 @@ public class Worker
     private readonly Timer _logTimer;
     private readonly Timer _imageTimer;
     public Guid WorkerId { get; } = Guid.NewGuid();
-    private bool _isRunning;
+    public bool IsRunning { get; private set; }
 
     public Worker(StreamHubService streamHubService)
     {
-        Console.WriteLine("Worker created");
         _streamHubService = streamHubService;
         _logTimer = new Timer(SendLog, null, Timeout.Infinite, 1000);
         _imageTimer = new Timer(SendImage, null, Timeout.Infinite, 1000);
@@ -21,25 +20,24 @@ public class Worker
 
     public void Start()
     {
-        _isRunning = true;
+        IsRunning = true;
         _logTimer.Change(0, 1000);
         _imageTimer.Change(0, 1000);
     }
 
     public void Stop()
     {
-        _isRunning = false;
+        IsRunning = false;
         _logTimer.Change(Timeout.Infinite, Timeout.Infinite);
         _imageTimer.Change(Timeout.Infinite, Timeout.Infinite);
     }
 
     private async void SendLog(object state)
     {
-        if (_isRunning)
+        if (IsRunning)
         {
             var log = new LogEntry
             {
-                EngineId = _streamHubService.EngineId,
                 WorkerId = WorkerId,
                 Timestamp = DateTime.UtcNow,
                 Message = $"Log message at {DateTime.UtcNow}"
@@ -50,11 +48,10 @@ public class Worker
 
     private async void SendImage(object state)
     {
-        if (_isRunning)
+        if (IsRunning)
         {
             var imageData = new ImageData
             {
-                EngineId = _streamHubService.EngineId,
                 WorkerId = WorkerId,
                 Timestamp = DateTime.UtcNow,
                 ImageBytes = GenerateFakeImage()

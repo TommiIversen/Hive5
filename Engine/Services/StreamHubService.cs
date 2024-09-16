@@ -13,13 +13,16 @@ public class StreamHubService
     private readonly ConcurrentQueue<object> _messageBuffer = new();
     private const int BufferSize = 200;
     private Timer _metricsTimer;
+    
+    public IReadOnlyDictionary<Guid, Worker> Workers => _workers; // Expose workers for UI
+
 
     public StreamHubService()
     {
-        Console.WriteLine("Connecting to StreamHub...");
+        Console.WriteLine("Setting up connection to StreamHub...");
         _hubConnection = new HubConnectionBuilder()
             .WithUrl("http://127.0.0.1:9000/streamhub")
-            .WithAutomaticReconnect()
+            .WithAutomaticReconnect() // Bruger SignalR's indbyggede auto-genforbindelse
             .Build();
 
         // Håndter indkommende kommandoer
@@ -34,17 +37,43 @@ public class StreamHubService
         // Send bufferede beskeder ved genforbindelse
         _hubConnection.Reconnected += async (connectionId) =>
         {
+            Console.WriteLine("Reconnected. Sending buffered messages.");
             await SendBufferedMessagesAsync();
+        };
+
+        _hubConnection.Closed += async (error) =>
+        {
+            Console.WriteLine($"Connection closed: {error?.Message}. Retrying connection...");
+            await TryReconnect();
         };
     }
 
     public async Task StartAsync()
     {
-        await _hubConnection.StartAsync();
-        await SendEngineConnectedAsync();
-
+        Console.WriteLine("Attempting to connect to StreamHub...");
+        await TryReconnect();
+        
         // Start metrics timer
-        _metricsTimer = new Timer(SendMetrics, null, 100, 1000);
+        _metricsTimer = new Timer(SendMetrics, null, 0, 10000); // 10 sek interval
+    }
+    
+    private async Task TryReconnect()
+    {
+        while (true) // Uendelig loop for genforbindelse
+        {
+            try
+            {
+                await _hubConnection.StartAsync();
+                Console.WriteLine("Connected to StreamHub.");
+                await SendEngineConnectedAsync();
+                break; // Bryder ud af loopet, når forbindelsen lykkes
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to connect to StreamHub: {ex.Message}. Retrying in 5 seconds...");
+                await Task.Delay(5000); // Vent 5 sekunder før nyt forsøg
+            }
+        }
     }
 
     private async void SendMetrics(object state)
@@ -79,16 +108,25 @@ public class StreamHubService
     {
         if (_hubConnection.State == HubConnectionState.Connected)
         {
-            await _hubConnection.InvokeAsync("ReceiveMetric", metric);
+            try
+            {
+                await _hubConnection.InvokeAsync("ReceiveMetric", metric);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error sending metric: {ex.Message}");
+                BufferMessage(metric); // Buffer besked ved fejl
+            }
         }
         else
         {
-            BufferMessage(metric);
+            BufferMessage(metric); // Buffer besked, hvis ikke forbundet
         }
     }
 
     public async Task SendLogAsync(LogEntry log)
     {
+        log.EngineId = EngineId; // Centraliser EngineId-håndteringen
         if (_hubConnection.State == HubConnectionState.Connected)
         {
             await _hubConnection.InvokeAsync("ReceiveLog", log);
@@ -101,6 +139,7 @@ public class StreamHubService
 
     public async Task SendImageAsync(ImageData imageData)
     {
+        imageData.EngineId = EngineId; // Centraliser EngineId-håndteringen
         if (_hubConnection.State == HubConnectionState.Connected)
         {
             await _hubConnection.InvokeAsync("ReceiveImage", imageData);
