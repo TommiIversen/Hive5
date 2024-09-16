@@ -1,5 +1,5 @@
 ﻿// Models/Metric.cs
-namespace StreamHub.Models;
+namespace Common.Models;
 
 public class Metric
 {

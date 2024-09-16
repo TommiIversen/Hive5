@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.SignalR;
 using System.Collections.Concurrent;
+using Common.Models;
 using StreamHub.Models;
 
 namespace StreamHub.Hubs;

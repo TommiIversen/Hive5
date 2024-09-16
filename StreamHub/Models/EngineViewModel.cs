@@ -1,4 +1,7 @@
 ﻿// Models/EngineViewModel.cs
+
+using Common.Models;
+
 namespace StreamHub.Models;
 
 public class EngineViewModel
