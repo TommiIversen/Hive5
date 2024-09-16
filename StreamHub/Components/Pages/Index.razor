@@ -5,7 +5,7 @@
 
 <h3>StreamHub Dashboard</h3>
 
-<p>Forbindelsesstatus: @connectionStatus</p>
+<p>Forbindelsesstatus: @_connectionStatus</p>
 
 @if (engines.Count == 0)
 {
@@ -40,7 +40,21 @@ else
                                         <td>
                                             <button @onclick="() => StopWorker(engine.EngineId, worker.WorkerId)">Stop</button>
                                         </td>
-                                        <td>@worker.LastLogMessage</td>
+                                        <td>
+                                            @if (worker.LogMessages.Any())
+                                            {
+                                            <ul>
+                                                @foreach (var logMessage in worker.LogMessages)
+                                                {
+                                                <li>@logMessage</li>
+                                                }
+                                            </ul>
+                                            }
+                                            else
+                                            {
+                                            <p>Ingen logbeskeder.</p>
+                                            }
+                                        </td>
                                         <td>
                                             @if (!string.IsNullOrEmpty(worker.LastImage))
                                             {
@@ -65,7 +79,7 @@ else
 @code {
     private HubConnection _hubConnection;
     private Dictionary<Guid, EngineViewModel> engines = new();
-    private string connectionStatus = "Ikke forbundet";
+    private string _connectionStatus = "Ikke forbundet2";
 
     protected override async Task OnInitializedAsync()
     {
@@ -74,25 +88,23 @@ else
             .WithAutomaticReconnect()
             .Build();
 
-
-
         _hubConnection.Reconnecting += (error) =>
         {
-            connectionStatus = "Genopretter forbindelse...";
+            _connectionStatus = "Genopretter forbindelse...";
             InvokeAsync(StateHasChanged);
             return Task.CompletedTask;
         };
 
         _hubConnection.Reconnected += (connectionId) =>
         {
-            connectionStatus = "Forbundet";
+            _connectionStatus = "Forbundet";
             InvokeAsync(StateHasChanged);
             return Task.CompletedTask;
         };
-
+        
         _hubConnection.Closed += (error) =>
         {
-            connectionStatus = "Ikke forbundet";
+            _connectionStatus = "Ikke forbundet";
             InvokeAsync(StateHasChanged);
             return Task.CompletedTask;
         };
@@ -107,7 +119,7 @@ else
             engines[metric.EngineId].LastMetric = metric;
             await InvokeAsync(StateHasChanged);
         });
-
+        
         _hubConnection.On<LogEntry>("ReceiveLog", async (log) =>
         {
             if (!engines.ContainsKey(log.EngineId))
@@ -119,9 +131,12 @@ else
             {
                 engine.Workers[log.WorkerId] = new WorkerViewModel { WorkerId = log.WorkerId };
             }
-            engine.Workers[log.WorkerId].LastLogMessage = log.Message;
+
+            // Add the new log message
+            engine.Workers[log.WorkerId].AddLogMessage(log.Message);
             await InvokeAsync(StateHasChanged);
         });
+
 
         _hubConnection.On<ImageData>("ReceiveImage", async (imageData) =>
         {
@@ -142,17 +157,19 @@ else
         try
         {
             await _hubConnection.StartAsync();
+            _connectionStatus = "Forbundet";
             Console.WriteLine("SignalR connected.");
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error starting SignalR connection: {ex.Message}");
-            connectionStatus = "Fejl ved oprettelse af forbindelse";
+            _connectionStatus = "Fejl ved oprettelse af forbindelse";
         }
     }
 
     private async Task StopWorker(Guid engineId, Guid workerId)
     {
+        Console.WriteLine($"INVOKE: Stopping worker {workerId} on engine {engineId}");
         await _hubConnection.InvokeAsync("StopWorker", engineId, workerId);
     }
 }

@@ -18,11 +18,16 @@ public class StreamHub : Hub
 
     public async Task ReceiveMetric(Metric metric)
     {
-        Console.WriteLine($"Received metric from {metric.EngineId}");
+        Console.WriteLine($"Received metric {metric.CPUUsage} {metric.MemoryUsage} from {metric.EngineId}");
         if (Engines.TryGetValue(metric.EngineId, out var engine))
         {
+            Console.WriteLine($"Updating metric for engine {engine.EngineId}");
             engine.LastMetric = metric;
             await Clients.All.SendAsync("UpdateMetric", metric);
+        }
+        else
+        {
+            Console.WriteLine($"Engine {metric.EngineId} not found");
         }
     }
 

@@ -9,7 +9,7 @@ namespace Engine.Services
     {
         private readonly MessageQueue _messageQueue;
         private readonly CancellationTokenSource _cancellationTokenSource = new();
-        private readonly TimeSpan _interval = TimeSpan.FromSeconds(10);  // Metrics every 10 seconds
+        private readonly TimeSpan _interval = TimeSpan.FromSeconds(2);  // Metrics every 10 seconds
 
         public MetricsService(MessageQueue messageQueue)
         {
@@ -45,7 +45,7 @@ namespace Engine.Services
                 }
                 catch (TaskCanceledException)
                 {
-                    // Task was cancelled, exit the loop
+                    Console.WriteLine("Metrics generation task was cancelled.");
                     break;
                 }
             }

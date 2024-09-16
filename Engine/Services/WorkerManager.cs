@@ -7,18 +7,18 @@ namespace Engine.Services
     public class WorkerManager
     {
         private readonly MessageQueue _messageQueue;
-        private readonly Dictionary<Guid, Worker> _workers = new();
+        private readonly Dictionary<Guid, WorkerService> _workers = new();
 
         public WorkerManager(MessageQueue messageQueue)
         {
             _messageQueue = messageQueue;
         }
 
-        public IReadOnlyDictionary<Guid, Worker> Workers => _workers;
+        public IReadOnlyDictionary<Guid, WorkerService> Workers => _workers;
 
-        public Worker AddWorker()
+        public WorkerService AddWorker()
         {
-            var worker = new Worker(_messageQueue);
+            var worker = new WorkerService(_messageQueue);
             _workers[worker.WorkerId] = worker;
             return worker;
         }

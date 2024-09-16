@@ -1,11 +1,10 @@
-﻿using System;
-using System.Threading;
+﻿
 using Engine.Services;
 using StreamHub.Models;
 
 namespace Engine.Models
 {
-    public class Worker
+    public class WorkerService
     {
         private readonly MessageQueue _messageQueue;
         private readonly Timer _logTimer;
@@ -13,7 +12,7 @@ namespace Engine.Models
         public Guid WorkerId { get; } = Guid.NewGuid();
         public bool IsRunning { get; private set; }
 
-        public Worker(MessageQueue messageQueue)
+        public WorkerService(MessageQueue messageQueue)
         {
             _messageQueue = messageQueue;
             _logTimer = new Timer(SendLog, null, Timeout.Infinite, 1000);
