@@ -8,22 +8,31 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
-builder.Services.AddSingleton<StreamHubService>();
+builder.Services.AddSingleton<MessageQueue>();
+builder.Services.AddSingleton<WorkerManager>();
 
+builder.Services.AddSingleton<StreamHubService>();
+builder.Services.AddSingleton<MetricsService>();
 
 var app = builder.Build();
 
+var messageQueue = app.Services.GetRequiredService<MessageQueue>();
+
 // Retrieve the StreamHubService instance and initialize it
 var streamHubService = app.Services.GetRequiredService<StreamHubService>();
-
-// Start background task to connect to StreamHub without blocking
 _ = Task.Run(async () => await streamHubService.StartAsync());
 
+
+var metricsService = app.Services.GetRequiredService<MetricsService>();
+metricsService.Start(); 
+
+var workerManager = app.Services.GetRequiredService<WorkerManager>();
+
+
 // Create two workers and start them
-var worker1 = new Worker(streamHubService);
-var worker2 = new Worker(streamHubService);
-streamHubService.AddWorker(worker1);
-streamHubService.AddWorker(worker2);
+// Opret og start to workers
+var worker1 = workerManager.AddWorker();
+var worker2 = workerManager.AddWorker();
 worker1.Start();
 worker2.Start();
 

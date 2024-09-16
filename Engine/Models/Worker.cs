@@ -1,68 +1,71 @@
-﻿using Engine.Services;
+﻿using System;
+using System.Threading;
+using Engine.Services;
 using StreamHub.Models;
 
-namespace Engine.Models;
-
-public class Worker
+namespace Engine.Models
 {
-    private readonly StreamHubService _streamHubService;
-    private readonly Timer _logTimer;
-    private readonly Timer _imageTimer;
-    public Guid WorkerId { get; } = Guid.NewGuid();
-    public bool IsRunning { get; private set; }
-
-    public Worker(StreamHubService streamHubService)
+    public class Worker
     {
-        _streamHubService = streamHubService;
-        _logTimer = new Timer(SendLog, null, Timeout.Infinite, 1000);
-        _imageTimer = new Timer(SendImage, null, Timeout.Infinite, 1000);
-    }
+        private readonly MessageQueue _messageQueue;
+        private readonly Timer _logTimer;
+        private readonly Timer _imageTimer;
+        public Guid WorkerId { get; } = Guid.NewGuid();
+        public bool IsRunning { get; private set; }
 
-    public void Start()
-    {
-        IsRunning = true;
-        _logTimer.Change(0, 1000);
-        _imageTimer.Change(0, 1000);
-    }
-
-    public void Stop()
-    {
-        IsRunning = false;
-        _logTimer.Change(Timeout.Infinite, Timeout.Infinite);
-        _imageTimer.Change(Timeout.Infinite, Timeout.Infinite);
-    }
-
-    private async void SendLog(object state)
-    {
-        if (IsRunning)
+        public Worker(MessageQueue messageQueue)
         {
-            var log = new LogEntry
-            {
-                WorkerId = WorkerId,
-                Timestamp = DateTime.UtcNow,
-                Message = $"Log message at {DateTime.UtcNow}"
-            };
-            await _streamHubService.SendLogAsync(log);
+            _messageQueue = messageQueue;
+            _logTimer = new Timer(SendLog, null, Timeout.Infinite, 1000);
+            _imageTimer = new Timer(SendImage, null, Timeout.Infinite, 1000);
         }
-    }
 
-    private async void SendImage(object state)
-    {
-        if (IsRunning)
+        public void Start()
         {
-            var imageData = new ImageData
-            {
-                WorkerId = WorkerId,
-                Timestamp = DateTime.UtcNow,
-                ImageBytes = GenerateFakeImage()
-            };
-            await _streamHubService.SendImageAsync(imageData);
+            IsRunning = true;
+            _logTimer.Change(0, 1000);  // Start log timer
+            _imageTimer.Change(0, 1000);  // Start image timer
         }
-    }
 
-    private byte[] GenerateFakeImage()
-    {
-        // Generer en lille fake billede som byte array
-        return new byte[100]; // Placeholder for billeddata
+        public void Stop()
+        {
+            IsRunning = false;
+            _logTimer.Change(Timeout.Infinite, Timeout.Infinite);  // Stop log timer
+            _imageTimer.Change(Timeout.Infinite, Timeout.Infinite);  // Stop image timer
+        }
+
+        private void SendLog(object state)
+        {
+            if (IsRunning)
+            {
+                var log = new LogEntry
+                {
+                    WorkerId = WorkerId,
+                    Timestamp = DateTime.UtcNow,
+                    Message = $"Log message at {DateTime.UtcNow}"
+                };
+                _messageQueue.EnqueueMessage(log);
+            }
+        }
+
+        private void SendImage(object state)
+        {
+            if (IsRunning)
+            {
+                var imageData = new ImageData
+                {
+                    WorkerId = WorkerId,
+                    Timestamp = DateTime.UtcNow,
+                    ImageBytes = GenerateFakeImage()
+                };
+                _messageQueue.EnqueueMessage(imageData);
+            }
+        }
+
+        private byte[] GenerateFakeImage()
+        {
+            // Simuler en fake image data (placeholder)
+            return new byte[100];
+        }
     }
 }

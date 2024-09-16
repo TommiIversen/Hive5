@@ -1,54 +1,54 @@
 ﻿@page "/"
 @using Engine.Models
 @using Engine.Services
-@inject StreamHubService StreamHubService
+@inject WorkerManager WorkerManager
 
 <h3>Engine Dashboard</h3>
 
-<p>Engine ID: @StreamHubService.EngineId</p>
+<p>Engine ID: @WorkerManager</p>
 
-@if (StreamHubService.Workers.Count == 0)
+@if (WorkerManager.Workers.Count == 0)
 {
-<p>Ingen workers forbundet.</p>
+    <p>Ingen workers forbundet.</p>
 }
 else
 {
-<table class="table">
-    <thead>
-    <tr>
-        <th>Worker ID</th>
-        <th>Action</th>
-    </tr>
-    </thead>
-    <tbody>
-    @foreach (var worker in StreamHubService.Workers.Values)
-    {
-    <tr>
-        <td>@worker.WorkerId</td>
-        <td>
-            @if (worker.IsRunning)
-            {
-            <button @onclick="() => StopWorker(worker)">Stop</button>
-            }
-            else
-            {
-            <button @onclick="() => StartWorker(worker)">Start</button>
-            }
-        </td>
-    </tr>
-    }
-    </tbody>
-</table>
+    <table class="table">
+        <thead>
+        <tr>
+            <th>Worker ID</th>
+            <th>Action</th>
+        </tr>
+        </thead>
+        <tbody>
+        @foreach (var worker in WorkerManager.Workers.Values)
+        {
+            <tr>
+                <td>@worker.WorkerId</td>
+                <td>
+                    @if (worker.IsRunning)
+                    {
+                        <button @onclick="() => StopWorker(worker.WorkerId)">Stop</button>
+                    }
+                    else
+                    {
+                        <button @onclick="() => StartWorker(worker.WorkerId)">Start</button>
+                    }
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
 }
 
 @code {
-private void StartWorker(Worker worker)
-{
-worker.Start();
-}
+    private void StartWorker(Guid workerId)
+    {
+        WorkerManager.StartWorker(workerId);
+    }
 
-private void StopWorker(Worker worker)
-{
-worker.Stop();
-}
+    private void StopWorker(Guid workerId)
+    {
+        WorkerManager.StopWorker(workerId);
+    }
 }

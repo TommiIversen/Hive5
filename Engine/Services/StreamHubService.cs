@@ -1,190 +1,136 @@
 ﻿using Microsoft.AspNetCore.SignalR.Client;
-using System.Collections.Concurrent;
-using Engine.Models;
 using StreamHub.Models;
+using System.Threading;
+using System.Threading.Tasks;
 
-namespace Engine.Services;
-
-public class StreamHubService
+namespace Engine.Services
 {
-    private readonly HubConnection _hubConnection;
-    public Guid EngineId { get; } = Guid.NewGuid();
-    private readonly Dictionary<Guid, Worker> _workers = new();
-    private readonly ConcurrentQueue<object> _messageBuffer = new();
-    private const int BufferSize = 200;
-    private Timer _metricsTimer;
-    
-    public IReadOnlyDictionary<Guid, Worker> Workers => _workers; // Expose workers for UI
-
-
-    public StreamHubService()
+    public class StreamHubService
     {
-        Console.WriteLine("Setting up connection to StreamHub...");
-        _hubConnection = new HubConnectionBuilder()
-            .WithUrl("http://127.0.0.1:9000/streamhub")
-            .WithAutomaticReconnect() // Bruger SignalR's indbyggede auto-genforbindelse
-            .Build();
+        private readonly HubConnection _hubConnection;
+        private readonly MessageQueue _messageQueue;
+        private readonly CancellationTokenSource _cancellationTokenSource = new();
+        public Guid EngineId { get; } = Guid.NewGuid();
 
-        // Håndter indkommende kommandoer
-        _hubConnection.On<Guid>("StopWorker", workerId =>
+        // Inject MessageQueue in the constructor
+        public StreamHubService(MessageQueue messageQueue)
         {
-            if (_workers.TryGetValue(workerId, out var worker))
+            _messageQueue = messageQueue;
+            _hubConnection = new HubConnectionBuilder()
+                .WithUrl("http://127.0.0.1:9000/streamhub")
+                .WithAutomaticReconnect()
+                .Build();
+
+            // Håndter indkommende kommandoer
+            _hubConnection.On<Guid>("StopWorker", workerId =>
             {
-                worker.Stop();
-            }
-        });
+                Console.WriteLine($"Received command to stop worker {workerId}");
+            });
 
-        // Send bufferede beskeder ved genforbindelse
-        _hubConnection.Reconnected += async (connectionId) =>
-        {
-            Console.WriteLine("Reconnected. Sending buffered messages.");
-            await SendBufferedMessagesAsync();
-        };
+            _hubConnection.Reconnected += async (connectionId) =>
+            {
+                await SendBufferedMessagesAsync();
+            };
 
-        _hubConnection.Closed += async (error) =>
+            _hubConnection.Closed += async (error) =>
+            {
+                Console.WriteLine($"Connection closed: {error?.Message}. Retrying...");
+                await TryReconnect();
+            };
+        }
+
+        public async Task StartAsync()
         {
-            Console.WriteLine($"Connection closed: {error?.Message}. Retrying connection...");
+            Console.WriteLine("Attempting to connect to StreamHub...");
             await TryReconnect();
-        };
-    }
 
-    public async Task StartAsync()
-    {
-        Console.WriteLine("Attempting to connect to StreamHub...");
-        await TryReconnect();
-        
-        // Start metrics timer
-        _metricsTimer = new Timer(SendMetrics, null, 0, 10000); // 10 sek interval
-    }
-    
-    private async Task TryReconnect()
-    {
-        while (true) // Uendelig loop for genforbindelse
+            // Start processing messages from the queue
+            _ = Task.Run(async () => await ProcessMessagesAsync(_cancellationTokenSource.Token));
+        }
+
+        private async Task TryReconnect()
         {
-            try
+            while (true)
             {
-                await _hubConnection.StartAsync();
-                Console.WriteLine("Connected to StreamHub.");
-                await SendEngineConnectedAsync();
-                break; // Bryder ud af loopet, når forbindelsen lykkes
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to connect to StreamHub: {ex.Message}. Retrying in 5 seconds...");
-                await Task.Delay(5000); // Vent 5 sekunder før nyt forsøg
+                try
+                {
+                    await _hubConnection.StartAsync();
+                    Console.WriteLine("Connected to StreamHub.");
+                    await SendEngineConnectedAsync();
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Failed to connect: {ex.Message}. Retrying in 5 seconds...");
+                    await Task.Delay(5000);
+                }
             }
         }
-    }
 
-    private async void SendMetrics(object state)
-    {
-        var metric = new Metric
+        private async Task SendEngineConnectedAsync()
         {
-            EngineId = EngineId,
-            Timestamp = DateTime.UtcNow,
-            CPUUsage = GetFakeCPUUsage(),
-            MemoryUsage = GetFakeMemoryUsage()
-        };
-        Console.WriteLine($"Sending metric: {metric.CPUUsage}% CPU, {metric.MemoryUsage} MB memory");
-        await SendMetricAsync(metric);
-    }
+            await _hubConnection.InvokeAsync("EngineConnected", EngineId);
+        }
 
-    private double GetFakeCPUUsage()
-    {
-        return Random.Shared.NextDouble() * 100;
-    }
-
-    private double GetFakeMemoryUsage()
-    {
-        return Random.Shared.NextDouble() * 16000; // MB
-    }
-
-    private async Task SendEngineConnectedAsync()
-    {
-        await _hubConnection.InvokeAsync("EngineConnected", EngineId);
-    }
-
-    public async Task SendMetricAsync(Metric metric)
-    {
-        if (_hubConnection.State == HubConnectionState.Connected)
+        // Process messages from the queue
+        private async Task ProcessMessagesAsync(CancellationToken cancellationToken)
         {
-            try
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                var message = await _messageQueue.DequeueMessageAsync(cancellationToken);
+
+                // Process the message based on its type
+                switch (message)
+                {
+                    case Metric metric:
+                        metric.EngineId = EngineId;
+                        await SendMetricAsync(metric);
+                        break;
+
+                    case LogEntry log:
+                        log.EngineId = EngineId;
+                        await SendLogAsync(log);
+                        break;
+
+                    case ImageData image:
+                        image.EngineId = EngineId;
+                        await SendImageAsync(image);
+                        break;
+                }
+            }
+        }
+
+        // Send metrics via SignalR
+        private async Task SendMetricAsync(Metric metric)
+        {
+            if (_hubConnection.State == HubConnectionState.Connected)
             {
                 await _hubConnection.InvokeAsync("ReceiveMetric", metric);
             }
-            catch (Exception ex)
+        }
+
+        // Send logs via SignalR
+        private async Task SendLogAsync(LogEntry log)
+        {
+            if (_hubConnection.State == HubConnectionState.Connected)
             {
-                Console.WriteLine($"Error sending metric: {ex.Message}");
-                BufferMessage(metric); // Buffer besked ved fejl
+                await _hubConnection.InvokeAsync("ReceiveLog", log);
             }
         }
-        else
-        {
-            BufferMessage(metric); // Buffer besked, hvis ikke forbundet
-        }
-    }
 
-    public async Task SendLogAsync(LogEntry log)
-    {
-        log.EngineId = EngineId; // Centraliser EngineId-håndteringen
-        if (_hubConnection.State == HubConnectionState.Connected)
+        // Send image data via SignalR
+        private async Task SendImageAsync(ImageData image)
         {
-            await _hubConnection.InvokeAsync("ReceiveLog", log);
-        }
-        else
-        {
-            BufferMessage(log);
-        }
-    }
-
-    public async Task SendImageAsync(ImageData imageData)
-    {
-        imageData.EngineId = EngineId; // Centraliser EngineId-håndteringen
-        if (_hubConnection.State == HubConnectionState.Connected)
-        {
-            await _hubConnection.InvokeAsync("ReceiveImage", imageData);
-        }
-        else
-        {
-            BufferMessage(imageData);
-        }
-    }
-
-    private void BufferMessage(object message)
-    {
-        if (_messageBuffer.Count >= BufferSize)
-        {
-            _messageBuffer.TryDequeue(out _);
-        }
-        _messageBuffer.Enqueue(message);
-    }
-
-    private async Task SendBufferedMessagesAsync()
-    {
-        while (_messageBuffer.TryDequeue(out var message))
-        {
-            switch (message)
+            if (_hubConnection.State == HubConnectionState.Connected)
             {
-                case Metric metric:
-                    await SendMetricAsync(metric);
-                    break;
-                case LogEntry log:
-                    await SendLogAsync(log);
-                    break;
-                case ImageData image:
-                    await SendImageAsync(image);
-                    break;
+                await _hubConnection.InvokeAsync("ReceiveImage", image);
             }
         }
-    }
 
-    public void AddWorker(Worker worker)
-    {
-        _workers[worker.WorkerId] = worker;
-    }
-
-    public void RemoveWorker(Guid workerId)
-    {
-        _workers.Remove(workerId);
+        // Buffer beskeder hvis de ikke kan sendes med det samme
+        private async Task SendBufferedMessagesAsync()
+        {
+            // Logic for resending buffered messages after reconnect
+        }
     }
 }
