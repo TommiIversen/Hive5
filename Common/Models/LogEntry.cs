@@ -1,7 +1,7 @@
 ﻿// Models/LogEntry.cs
 namespace Common.Models;
 
-public class LogEntry
+public class LogEntry: IMessage
 {
     public Guid EngineId { get; set; }
     public required Guid WorkerId { get; set; }

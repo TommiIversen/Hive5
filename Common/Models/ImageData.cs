@@ -1,7 +1,7 @@
 ﻿// Models/ImageData.cs
 namespace Common.Models;
 
-public class ImageData
+public class ImageData: IMessage
 {
     public Guid EngineId { get; set; }
     public required Guid WorkerId { get; set; }

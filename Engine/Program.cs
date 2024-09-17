@@ -23,7 +23,14 @@ builder.Services.AddRazorComponents()
 builder.Services.AddSingleton<MessageQueue>();
 builder.Services.AddSingleton<WorkerManager>();
 
-builder.Services.AddSingleton<StreamHubService>();
+// URLs for StreamHub connections
+var streamHubUrls = new List<string>
+{
+    "http://127.0.0.1:9000/streamhub",
+    "http://127.0.0.1:8000/streamhub"
+};
+
+builder.Services.AddSingleton(provider => new StreamHubService(provider.GetRequiredService<MessageQueue>(), streamHubUrls));
 builder.Services.AddSingleton<MetricsService>();
 
 var app = builder.Build();

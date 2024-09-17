@@ -1,7 +1,7 @@
 ﻿// Models/Metric.cs
 namespace Common.Models;
 
-public class Metric
+public class Metric: IMessage
 {
     public Guid EngineId { get; set; }
     public required DateTime Timestamp { get; set; }
