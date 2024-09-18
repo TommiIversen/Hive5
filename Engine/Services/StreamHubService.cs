@@ -23,7 +23,7 @@ public class StreamHubService
         {
             var hubConnection = new HubConnectionBuilder()
                 .WithUrl(url)
-                .WithAutomaticReconnect()
+                .WithAutomaticReconnect(new[] { TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5) })
                 .Build();
 
             hubConnection.On<Guid, Task<CommandResult>>("StopWorker", async workerId =>
@@ -42,6 +42,19 @@ public class StreamHubService
                 var result = await _commandDispatcher.DispatchAsync(command);
                 return result;
             });
+            
+            hubConnection.Reconnected += async (connectionId) =>
+            {
+                Console.WriteLine("Reconnected. Sending SendEngineConnectedAsync messages.");
+                await SendEngineConnectedAsync(hubConnection);
+
+            };
+
+            hubConnection.Closed += async (error) =>
+            {
+                Console.WriteLine($"Connection closed: {error?.Message}. Retrying connection...");
+                await TryReconnect(hubConnection);
+            };
 
             _hubQueues[hubConnection] = new ConcurrentQueue<IMessage>();
             _ = Task.Run(async () => await ProcessHubQueueAsync(hubConnection, _cancellationTokenSource.Token));
