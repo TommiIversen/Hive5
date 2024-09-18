@@ -1,5 +1,6 @@
 ﻿@page "/"
 @using Common.Models
+@using Engine.Commands
 @using StreamHub.Models
 @inject NavigationManager NavigationManager
 @using Microsoft.AspNetCore.SignalR.Client
@@ -42,17 +43,18 @@ else
                         <!-- Viser CPU-brug for hver kerne, hvis det er tilgængeligt -->
                         @if (engine.LastMetric?.PerCoreCpuUsage != null && engine.LastMetric.PerCoreCpuUsage.Count > 0)
                         {
-                        <strong>Per Core CPU Usage (%):</strong> <br/>
-                        <ul>
-                            @foreach (var usage in engine.LastMetric.PerCoreCpuUsage)
-                            {
-                            <li>@usage.ToString("F2")%</li>
-                            }
-                        </ul>
+                            <strong>Per Core CPU Usage (%):</strong>
+                            <br/>
+                            <ul>
+                                @foreach (var usage in engine.LastMetric.PerCoreCpuUsage)
+                                {
+                                    <li>@usage.ToString("F2")%</li>
+                                }
+                            </ul>
                         }
                         else
                         {
-                        <strong>Per Core CPU Usage (%):</strong> 
+                            <strong>Per Core CPU Usage (%):</strong>
                         }
                     </div>
                 </td>
@@ -66,8 +68,16 @@ else
                                     <td>
                                         <div>@worker.WorkerId</div>
                                         <div>
-                                            <button @onclick="() => StopWorker(engine.EngineId, worker.WorkerId)">Stop</button>
+                                            <button @onclick="() => StopWorker(engine.EngineId, worker.WorkerId)"
+                                                    disabled="@worker.IsProcessing">
+                                                Stop
+                                            </button>
                                         </div>
+                                        <!-- Show result of the operation -->
+                                        @if (!string.IsNullOrEmpty(worker.OperationResult))
+                                        {
+                                            <div>@worker.OperationResult</div>
+                                        }
                                     </td>
                                     <td>
                                     </td>
@@ -145,7 +155,7 @@ else
         {
             if (!engines.ContainsKey(metric.EngineId))
             {
-                engines[metric.EngineId] = new EngineViewModel { EngineId = metric.EngineId };
+                engines[metric.EngineId] = new EngineViewModel {EngineId = metric.EngineId};
             }
 
             engines[metric.EngineId].LastMetric = metric;
@@ -156,13 +166,13 @@ else
         {
             if (!engines.ContainsKey(log.EngineId))
             {
-                engines[log.EngineId] = new EngineViewModel { EngineId = log.EngineId };
+                engines[log.EngineId] = new EngineViewModel {EngineId = log.EngineId};
             }
 
             var engine = engines[log.EngineId];
             if (!engine.Workers.ContainsKey(log.WorkerId))
             {
-                engine.Workers[log.WorkerId] = new WorkerViewModel { WorkerId = log.WorkerId };
+                engine.Workers[log.WorkerId] = new WorkerViewModel {WorkerId = log.WorkerId};
             }
 
             // Add the new log message
@@ -175,13 +185,13 @@ else
         {
             if (!engines.ContainsKey(imageData.EngineId))
             {
-                engines[imageData.EngineId] = new EngineViewModel { EngineId = imageData.EngineId };
+                engines[imageData.EngineId] = new EngineViewModel {EngineId = imageData.EngineId};
             }
 
             var engine = engines[imageData.EngineId];
             if (!engine.Workers.ContainsKey(imageData.WorkerId))
             {
-                engine.Workers[imageData.WorkerId] = new WorkerViewModel { WorkerId = imageData.WorkerId };
+                engine.Workers[imageData.WorkerId] = new WorkerViewModel {WorkerId = imageData.WorkerId};
             }
 
             engine.Workers[imageData.WorkerId].LastImage = $"data:image/jpeg;base64,{Convert.ToBase64String(imageData.ImageBytes)}";
@@ -204,8 +214,27 @@ else
 
     private async Task StopWorker(Guid engineId, Guid workerId)
     {
-        Console.WriteLine($"INVOKE: Stopping worker {workerId} on engine {engineId}");
-        await _hubConnection.InvokeAsync("StopWorker", engineId, workerId);
+        var worker = engines[engineId].Workers[workerId];
+        worker.IsProcessing = true; // Lock the button while processing
+
+        try
+        {
+            Console.WriteLine($"INVOKE: Stopping worker {workerId} on engine {engineId}");
+            var result = await _hubConnection.InvokeAsync<CommandResult>("StopWorker", engineId, workerId);
+            Console.WriteLine($"RESULT: {result.Message}");
+            // Show the result after receiving it
+            worker.OperationResult = result.Message;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error stopping worker: {ex.Message}");
+            worker.OperationResult = $"Failed to stop worker: {ex.Message}";
+        }
+        finally
+        {
+            worker.IsProcessing = false; // Unlock the button
+            await InvokeAsync(StateHasChanged);
+        }
     }
 
 }

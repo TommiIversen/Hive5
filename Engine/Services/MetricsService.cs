@@ -53,7 +53,7 @@ namespace Engine.Services
                     CurrentProcessMemoryUsage = currentProcessMemoryUsage // RAM-brug for den aktuelle proces
                 };
 
-                Console.WriteLine($"Generated metric: {metric.CPUUsage}% CPU, {metric.MemoryUsage} MB memory");
+                //Console.WriteLine($"Generated metric: {metric.CPUUsage}% CPU, {metric.MemoryUsage} MB memory");
                 _messageQueue.EnqueueMessage(metric);
 
                 // Wait for the next interval or exit if canceled

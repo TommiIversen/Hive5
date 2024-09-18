@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Common.Models;
 
 namespace Engine.Commands
 {
@@ -17,6 +18,9 @@ namespace Engine.Commands
             // Simulate stop worker logic
             Console.WriteLine($"Stopping worker {_workerId}");
 
+            // task delay
+            await Task.Delay(2000);
+            
             // Simulate success
             bool success = true;
             string message = success ? $"Worker {_workerId} stopped successfully." : $"Failed to stop worker {_workerId}.";

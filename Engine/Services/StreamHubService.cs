@@ -29,7 +29,10 @@ public class StreamHubService
             hubConnection.On<Guid, Task<CommandResult>>("StopWorker", async workerId =>
             {
                 var command = new StopWorkerCommand(workerId);
+                Console.WriteLine($"Worker1111 {workerId} STOPTOPTOTPTO");
                 var result = await _commandDispatcher.DispatchAsync(command);
+                Console.WriteLine($"Worker {workerId} STOPTOPTOTPTO: {result.Success} {result.Message}");
+
                 return result;
             });
 
@@ -95,11 +98,11 @@ public class StreamHubService
         while (!cancellationToken.IsCancellationRequested)
         {
             IMessage message = await _messageQueue.DequeueMessageAsync(cancellationToken);
-            Console.WriteLine($"Processing message: {message.GetType().Name}");
+            //Console.WriteLine($"Processing message: {message.GetType().Name}");
 
             foreach (var hubConnection in _hubQueues.Keys)
             {
-                Console.WriteLine($"Enqueuing message for {hubConnection.ConnectionId}");
+                //Console.WriteLine($"Enqueuing message for {hubConnection.ConnectionId}");
                 _hubQueues[hubConnection].Enqueue(message); // Enqueue the message for each hub
             }
         }
@@ -119,7 +122,7 @@ public class StreamHubService
                     var sendTask = SendMessageAsync(hubConnection, message);
                     if (await Task.WhenAny(sendTask, Task.Delay(MessageSendTimeout)) == sendTask)
                     {
-                        Console.WriteLine($"Message sent to {hubConnection.ConnectionId}");
+                        //Console.WriteLine($"Message sent to {hubConnection.ConnectionId}");
                     }
                     else
                     {
@@ -134,7 +137,7 @@ public class StreamHubService
                 }
             }
 
-            await Task.Delay(100, cancellationToken); // Small delay to prevent tight loop
+            //await Task.Delay(100, cancellationToken); // Small delay to prevent tight loop
         }
     }
 
