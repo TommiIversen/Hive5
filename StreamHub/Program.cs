@@ -1,4 +1,5 @@
 using StreamHub.Components;
+using StreamHub.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -6,6 +7,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 builder.Services.AddSignalR();
+
+builder.Services.AddSingleton<EngineManager>(); // Singleton for shared state
+builder.Services.AddSingleton<CancellationService>(); // Singleton for shared cancellation token
 
 
 var app = builder.Build();
@@ -27,6 +31,6 @@ app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
-app.MapHub<StreamHub.Hubs.StreamHub>("/streamhub");
+app.MapHub<EngineHub>("/streamhub");
 
 app.Run();

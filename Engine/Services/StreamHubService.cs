@@ -21,43 +21,68 @@ public class StreamHubService
 
         foreach (var url in hubUrls)
         {
-            var hubConnection = new HubConnectionBuilder()
-                .WithUrl(url)
-                .WithAutomaticReconnect(new[] { TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5) })
-                .Build();
-
-            hubConnection.On<Guid, Task<CommandResult>>("StopWorker", async workerId =>
+            try
             {
-                var command = new StopWorkerCommand(workerId);
-                Console.WriteLine($"Worker1111 {workerId} STOPTOPTOTPTO");
-                var result = await _commandDispatcher.DispatchAsync(command);
-                Console.WriteLine($"Worker {workerId} STOPTOPTOTPTO: {result.Success} {result.Message}");
+                var hubConnection = new HubConnectionBuilder()
+                    .WithUrl(url)
+                    .WithAutomaticReconnect(new[]
+                    {
+                        TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5),
+                        TimeSpan.FromSeconds(5)
+                    })
+                    .Build();
 
-                return result;
-            });
+                // Handle StopWorker command asynchronously
+                hubConnection.On<Guid, Task<CommandResult>>("StopWorker", async (workerId) =>
+                {
+                    try
+                    {
+                        var command = new StopWorkerCommand(workerId);
+                        Console.WriteLine($"Stopping worker {workerId}");
 
-            hubConnection.On<Guid, Task<CommandResult>>("StartWorker", async workerId =>
+                        // Delay or additional logic
+                        await Task.Delay(1000); // Simulate delay for demonstration
+
+                        var result = await _commandDispatcher.DispatchAsync(command);
+                        Console.WriteLine($"Worker {workerId} stopped: {result.Success} {result.Message}");
+
+                        return result;
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error stopping worker {workerId}: {ex.Message}");
+                        return new CommandResult(false, $"Error: {ex.Message}");
+                    }
+                });
+
+
+                hubConnection.On<Guid, Task<CommandResult>>("StartWorker", async workerId =>
+                {
+                    var command = new StartWorkerCommand(workerId);
+                    var result = await _commandDispatcher.DispatchAsync(command);
+                    return result;
+                });
+
+                hubConnection.Reconnected += async (connectionId) =>
+                {
+                    Console.WriteLine("Reconnected. Sending SendEngineConnectedAsync messages.");
+                    await SendEngineConnectedAsync(hubConnection);
+
+                };
+
+                hubConnection.Closed += async (error) =>
+                {
+                    Console.WriteLine($"Connection closed: {error?.Message}. Retrying connection...");
+                    await TryReconnect(hubConnection, _cancellationTokenSource.Token);
+                };
+
+                _hubQueues[hubConnection] = new ConcurrentQueue<IMessage>();
+                _ = Task.Run(async () => await ProcessHubQueueAsync(hubConnection, _cancellationTokenSource.Token));
+            }
+            catch (Exception ex)
             {
-                var command = new StartWorkerCommand(workerId);
-                var result = await _commandDispatcher.DispatchAsync(command);
-                return result;
-            });
-            
-            hubConnection.Reconnected += async (connectionId) =>
-            {
-                Console.WriteLine("Reconnected. Sending SendEngineConnectedAsync messages.");
-                await SendEngineConnectedAsync(hubConnection);
-
-            };
-
-            hubConnection.Closed += async (error) =>
-            {
-                Console.WriteLine($"Connection closed: {error?.Message}. Retrying connection...");
-                await TryReconnect(hubConnection);
-            };
-
-            _hubQueues[hubConnection] = new ConcurrentQueue<IMessage>();
-            _ = Task.Run(async () => await ProcessHubQueueAsync(hubConnection, _cancellationTokenSource.Token));
+                Console.WriteLine($"StreamHubService Exception: Failed to connect to {url}: {ex.Message}");
+            }
         }
     }
 
@@ -69,7 +94,7 @@ public class StreamHubService
         var reconnectTasks = _hubQueues.Keys.Select(async hubConnection =>
         {
             Console.WriteLine($"Connecting to {hubConnection.ConnectionId}");
-            await TryReconnect(hubConnection);
+            await TryReconnect(hubConnection, _cancellationTokenSource.Token);
         });
 
         // Start processing messages from the global queue
@@ -81,15 +106,19 @@ public class StreamHubService
     }
 
 
-    private async Task TryReconnect(HubConnection hubConnection)
+    private async Task TryReconnect(HubConnection hubConnection, CancellationToken token)
     {
         while (true)
         {
             try
             {
-                await hubConnection.StartAsync();
+                await hubConnection.StartAsync(token);
                 Console.WriteLine($"Connected to {hubConnection.ConnectionId}");
                 await SendEngineConnectedAsync(hubConnection);
+                break;
+            }
+            catch when (token.IsCancellationRequested)
+            {
                 break;
             }
             catch (Exception ex)

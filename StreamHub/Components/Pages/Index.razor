@@ -220,7 +220,7 @@ else
         try
         {
             Console.WriteLine($"INVOKE: Stopping worker {workerId} on engine {engineId}");
-            var result = await _hubConnection.InvokeAsync<CommandResult>("StopWorker", engineId, workerId);
+            var result = await _hubConnection.InvokeAsync<CommandResult>("StopWorker", engineId, workerId).ConfigureAwait(true);
             Console.WriteLine($"RESULT: {result.Message}");
             // Show the result after receiving it
             worker.OperationResult = result.Message;
