@@ -1,4 +1,5 @@
 using StreamHub.Components;
+using StreamHub.Hubs;
 using StreamHub.Services;
 
 var builder = WebApplication.CreateBuilder(args);

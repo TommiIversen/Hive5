@@ -20,8 +20,14 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
-builder.Services.AddSingleton<MessageQueue>();
+
+
+// Registrer MessageQueue som singleton og angiv max størrelse
+int maxQueueSize = 10;
+builder.Services.AddSingleton<MessageQueue>(provider => new MessageQueue(maxQueueSize));
+
 builder.Services.AddSingleton<WorkerManager>();
+
 
 // URLs for StreamHub connections
 var streamHubUrls = new List<string>
@@ -30,7 +36,7 @@ var streamHubUrls = new List<string>
     //"http://127.0.0.1:8000/streamhub"
 };
 
-builder.Services.AddSingleton(provider => new StreamHubService(provider.GetRequiredService<MessageQueue>(), streamHubUrls));
+builder.Services.AddSingleton(provider => new StreamHubService(provider.GetRequiredService<MessageQueue>(), streamHubUrls, 100));
 builder.Services.AddSingleton<MetricsService>();
 
 var app = builder.Build();
