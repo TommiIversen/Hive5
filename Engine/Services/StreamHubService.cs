@@ -31,17 +31,15 @@ public class StreamHubService
                         TimeSpan.FromSeconds(5)
                     })
                     .Build();
-
+                
+               
                 // Handle StopWorker command asynchronously
-                hubConnection.On<Guid, Task<CommandResult>>("StopWorker", async (workerId) =>
+                hubConnection.On("StopWorker", async (Guid workerId) =>
                 {
                     try
                     {
                         var command = new StopWorkerCommand(workerId);
                         Console.WriteLine($"Stopping worker {workerId}");
-
-                        // Delay or additional logic
-                        await Task.Delay(1000); // Simulate delay for demonstration
 
                         var result = await _commandDispatcher.DispatchAsync(command);
                         Console.WriteLine($"Worker {workerId} stopped: {result.Success} {result.Message}");
@@ -56,7 +54,7 @@ public class StreamHubService
                 });
 
 
-                hubConnection.On<Guid, Task<CommandResult>>("StartWorker", async workerId =>
+                hubConnection.On("StartWorker", async (Guid workerId) =>
                 {
                     var command = new StartWorkerCommand(workerId);
                     var result = await _commandDispatcher.DispatchAsync(command);

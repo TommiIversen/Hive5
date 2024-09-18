@@ -8,7 +8,8 @@ public class EngineHub : Hub
     private readonly CancellationService _cancellationService;
     private readonly IHubContext<EngineHub> _hubContext;
 
-    public EngineHub(EngineManager engineManager, CancellationService cancellationService, IHubContext<EngineHub> hubContext)
+    public EngineHub(EngineManager engineManager, CancellationService cancellationService,
+        IHubContext<EngineHub> hubContext)
     {
         _engineManager = engineManager;
         _cancellationService = cancellationService;
@@ -50,33 +51,44 @@ public class EngineHub : Hub
     {
         if (_engineManager.TryGetEngine(engineId, out var engine))
         {
-            try
-            {
-                Console.WriteLine($"Forwarding StopWorker request for worker {workerId} on engine {engineId}");
+            // Definer timeout i millisekunder
+            int timeoutMilliseconds = 5000;
 
-                var result = await _hubContext.Clients.Client(engine.ConnectionId)
-                    .InvokeAsync<CommandResult>("StopWorker", workerId, _cancellationService.Token);
+            // Opret en cancellation token med timeout
+            using (var timeoutCts = new CancellationTokenSource(timeoutMilliseconds))
+            using (var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(_cancellationService.Token, timeoutCts.Token))
+            {
+                try
+                {
+                    Console.WriteLine($"Forwarding StopWorker request for worker {workerId} on engine {engineId}");
 
-                Console.WriteLine($"Received result: {result.Message}");
-                return new CommandResult(true, $"Worker {workerId} stopped: {result.Message}");
-            }
-            catch (OperationCanceledException)
-            {
-                Console.WriteLine($"Operation canceled for worker {workerId}");
-                return new CommandResult(false, $"Operation canceled for worker {workerId}");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error stopping worker {workerId}: {ex.Message}");
-                return new CommandResult(false, $"Failed to stop worker {workerId}: {ex.Message}");
+                    // Kald InvokeAsync med timeout
+                    var result = await _hubContext.Clients.Client(engine.ConnectionId)
+                        .InvokeAsync<CommandResult>("StopWorker", workerId, linkedCts.Token);
+
+                    Console.WriteLine($"Received result: {result.Message}");
+                    return new CommandResult(true, $"Worker {workerId} stopped: {result.Message}");
+                }
+                catch (OperationCanceledException)
+                {
+                    // Generisk timeout/annullering fejlmeddelelse
+                    Console.WriteLine($"Operation canceled for worker {workerId} due to timeout or cancellation.");
+                    return new CommandResult(false, "Operation canceled or timed out.");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error stopping worker {workerId}: {ex.Message}");
+                    return new CommandResult(false, "Failed to stop worker.");
+                }
             }
         }
         else
         {
             Console.WriteLine($"StopWorker: Engine {engineId} not found");
-            return new CommandResult(false, $"Engine {engineId} not found.");
+            return new CommandResult(false, "Engine not found.");
         }
     }
+
 
     public override Task OnDisconnectedAsync(Exception? exception)
     {
