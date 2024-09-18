@@ -7,12 +7,20 @@ namespace Engine.Services;
 
 public class StreamHubService
 {
-    private readonly ConcurrentDictionary<HubConnection, MessageQueue> _hubQueues = new();
+    private readonly ConcurrentDictionary<HubConnection, MultiQueue> _hubQueues = new();
     private readonly MessageQueue _messageQueue;
     private readonly CancellationTokenSource _cancellationTokenSource = new();
     private readonly CommandDispatcher _commandDispatcher = new();
     public Guid EngineId { get; } = Guid.NewGuid();
     private const int MessageSendTimeout = 5000; // 5 seconds timeout
+
+    private Dictionary<Type, int> capacityLimits = new Dictionary<Type, int>
+    {
+        { typeof(ImageData), 1 }, // Max 1 billede pr. worker
+        { typeof(Metric), 20 }, // Max 20 metrics
+        { typeof(LogEntry), 20 } // Max 20 logs pr. worker
+    };
+
 
     // Constructor for injecting MessageQueue and initializing multiple hubs
     public StreamHubService(MessageQueue messageQueue, IEnumerable<string> hubUrls, int maxQueueSize)
@@ -31,8 +39,8 @@ public class StreamHubService
                         TimeSpan.FromSeconds(5)
                     })
                     .Build();
-                
-               
+
+
                 // Handle StopWorker command asynchronously
                 hubConnection.On("StopWorker", async (Guid workerId) =>
                 {
@@ -65,7 +73,6 @@ public class StreamHubService
                 {
                     Console.WriteLine("Reconnected. Sending SendEngineConnectedAsync messages.");
                     await SendEngineConnectedAsync(hubConnection);
-
                 };
 
                 hubConnection.Closed += async (error) =>
@@ -74,7 +81,7 @@ public class StreamHubService
                     await TryReconnect(hubConnection, _cancellationTokenSource.Token);
                 };
 
-                _hubQueues[hubConnection] = new MessageQueue(maxQueueSize);
+                _hubQueues[hubConnection] = new MultiQueue();
                 _ = Task.Run(async () => await ProcessHubQueueAsync(hubConnection, _cancellationTokenSource.Token));
             }
             catch (Exception ex)
@@ -87,7 +94,7 @@ public class StreamHubService
     public async Task StartAsync()
     {
         Console.WriteLine("Attempting to connect to all StreamHubs...");
-    
+
         // Opret en liste af opgaver for at forbinde til alle hubs parallelt
         var reconnectTasks = _hubQueues.Keys.Select(async hubConnection =>
         {
@@ -97,7 +104,7 @@ public class StreamHubService
 
         // Start processing messages from the global queue
         _ = Task.Run(async () => await ProcessMessagesAsync(_cancellationTokenSource.Token));
-        
+
         // Start alle reconnect-opgaver parallelt
         await Task.WhenAll(reconnectTasks);
     }
@@ -119,7 +126,8 @@ public class StreamHubService
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Failed to connect to {hubConnection.ConnectionId}: {ex.Message}. Retrying in 5 seconds...");
+                Console.WriteLine(
+                    $"Failed to connect to {hubConnection.ConnectionId}: {ex.Message}. Retrying in 5 seconds...");
                 await Task.Delay(5000);
             }
         }
@@ -140,7 +148,17 @@ public class StreamHubService
 
             foreach (var hubConnection in _hubQueues.Keys)
             {
-                _hubQueues[hubConnection].EnqueueMessage(message); // Bruger MessageQueue i stedet for ConcurrentQueue
+                if (message is ImageData imageMessage)
+                {
+                    _hubQueues[hubConnection].EnqueueMessage(imageMessage, $"IMEGE-{imageMessage.WorkerId.ToString()}");
+                    continue;
+                }
+                _hubQueues[hubConnection].EnqueueMessage(message);
+                var queueReport = _hubQueues[hubConnection].ReportQueueContents();
+                foreach (var entry in queueReport)
+                {
+                    Console.WriteLine($"{entry.Key}: {entry.Value}");
+                }
             }
         }
     }
@@ -170,11 +188,12 @@ public class StreamHubService
             else
             {
                 Console.WriteLine($"Hub {hubConnection.ConnectionId} is offline, buffering message.");
-                queue.EnqueueMessage(message); // Re-enqueue the message if the hub is still offline
+                //queue.EnqueueMessage(message); // Re-enqueue the message if the hub is still offline
                 await Task.Delay(5000, cancellationToken); // Retry after a delay
             }
         }
     }
+
     private async Task SendMessageAsync(HubConnection hubConnection, IMessage message)
     {
         switch (message)
