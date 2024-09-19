@@ -4,12 +4,14 @@
 @using StreamHub.Models
 @inject NavigationManager NavigationManager
 @using Microsoft.AspNetCore.SignalR.Client
+@using StreamHub.Services
+@inject EngineManager EngineManager
 
 <h3>StreamHub Dashboard</h3>
 
 <p>Forbindelsesstatus: @_connectionStatus</p>
 
-@if (engines.Count == 0)
+@if (!EngineManager.GetAllEngines().Any())
 {
     <p>Ingen engines forbundet.</p>
 }
@@ -23,7 +25,7 @@ else
         </tr>
         </thead>
         <tbody>
-        @foreach (var engine in engines.Values)
+        @foreach (var engine in EngineManager.GetAllEngines())
         {
             <tr>
                 <td>
@@ -119,7 +121,7 @@ else
 
 @code {
     private HubConnection _hubConnection;
-    private Dictionary<Guid, EngineViewModel> engines = new();
+    //private Dictionary<Guid, EngineViewModel> engines = new();
     private string _connectionStatus = "Ikke forbundet2";
 
     protected override async Task OnInitializedAsync()
@@ -150,51 +152,19 @@ else
             return Task.CompletedTask;
         };
 
-        // Registrer handlers
         _hubConnection.On<Metric>("UpdateMetric", async (metric) =>
         {
-            if (!engines.ContainsKey(metric.EngineId))
-            {
-                engines[metric.EngineId] = new EngineViewModel {EngineId = metric.EngineId};
-            }
-
-            engines[metric.EngineId].LastMetric = metric;
             await InvokeAsync(StateHasChanged);
         });
 
         _hubConnection.On<LogEntry>("ReceiveLog", async (log) =>
         {
-            if (!engines.ContainsKey(log.EngineId))
-            {
-                engines[log.EngineId] = new EngineViewModel {EngineId = log.EngineId};
-            }
-
-            var engine = engines[log.EngineId];
-            if (!engine.Workers.ContainsKey(log.WorkerId))
-            {
-                engine.Workers[log.WorkerId] = new WorkerViewModel {WorkerId = log.WorkerId};
-            }
-
-            // Add the new log message
-            engine.Workers[log.WorkerId].AddLogMessage(log.Message);
             await InvokeAsync(StateHasChanged);
         });
 
 
         _hubConnection.On<ImageData>("ReceiveImage", async (imageData) =>
         {
-            if (!engines.ContainsKey(imageData.EngineId))
-            {
-                engines[imageData.EngineId] = new EngineViewModel {EngineId = imageData.EngineId};
-            }
-
-            var engine = engines[imageData.EngineId];
-            if (!engine.Workers.ContainsKey(imageData.WorkerId))
-            {
-                engine.Workers[imageData.WorkerId] = new WorkerViewModel {WorkerId = imageData.WorkerId};
-            }
-
-            engine.Workers[imageData.WorkerId].LastImage = $"data:image/jpeg;base64,{Convert.ToBase64String(imageData.ImageBytes)}";
             await InvokeAsync(StateHasChanged);
         });
 
@@ -214,7 +184,7 @@ else
 
     private async Task StopWorker(Guid engineId, Guid workerId)
     {
-        var worker = engines[engineId].Workers[workerId];
+        var worker = EngineManager.GetWorker(engineId, workerId);
         worker.IsProcessing = true; // Lock the button while processing
 
         try
@@ -222,7 +192,6 @@ else
             Console.WriteLine($"INVOKE: Stopping worker {workerId} on engine {engineId}");
             var result = await _hubConnection.InvokeAsync<CommandResult>("StopWorker", engineId, workerId).ConfigureAwait(true);
             Console.WriteLine($"RESULT: {result.Message}");
-            // Show the result after receiving it
             worker.OperationResult = result.Message;
         }
         catch (Exception ex)

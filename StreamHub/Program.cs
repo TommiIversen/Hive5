@@ -12,7 +12,6 @@ builder.Services.AddSignalR();
 builder.Services.AddSingleton<EngineManager>(); // Singleton for shared state
 builder.Services.AddSingleton<CancellationService>(); // Singleton for shared cancellation token
 
-
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

@@ -1,18 +1,18 @@
 ﻿using System.Collections.Concurrent;
-using Common.Models;
+using StreamHub.Models;
 
 namespace StreamHub.Services;
 
 public class EngineManager
 {
-    private readonly ConcurrentDictionary<Guid, EngineInfo> _engines = new();
+    private readonly ConcurrentDictionary<Guid, EngineViewModel> _engines = new();
 
-    public EngineInfo GetOrAddEngine(Guid engineId)
+    public EngineViewModel GetOrAddEngine(Guid engineId)
     {
-        return _engines.GetOrAdd(engineId, id => new EngineInfo { EngineId = id });
+        return _engines.GetOrAdd(engineId, id => new EngineViewModel { EngineId = id });
     }
 
-    public bool TryGetEngine(Guid engineId, out EngineInfo engineInfo)
+    public bool TryGetEngine(Guid engineId, out EngineViewModel engineInfo)
     {
         return _engines.TryGetValue(engineId, out engineInfo);
     }
@@ -22,19 +22,23 @@ public class EngineManager
         var engine = _engines.Values.FirstOrDefault(e => e.ConnectionId == connectionId);
         if (engine != null)
         {
-            engine.ConnectionId = null; // Clean up connection
+            engine.ConnectionId = null;
         }
     }
+    
+    public WorkerViewModel? GetWorker(Guid engineId, Guid workerId)
+    {
+        if (_engines.TryGetValue(engineId, out var engineInfo))
+        {
+            engineInfo.Workers.TryGetValue(workerId, out var worker);
+            return worker;
+        }
+        return null;
+    }
 
-    public IEnumerable<EngineInfo> GetAllEngines()
+    public IEnumerable<EngineViewModel> GetAllEngines()
     {
         return _engines.Values;
     }
 }
 
-public class EngineInfo
-{
-    public Guid EngineId { get; set; }
-    public string ConnectionId { get; set; }
-    public Metric LastMetric { get; set; }
-}

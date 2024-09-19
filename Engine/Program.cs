@@ -6,6 +6,8 @@ using Serilog;
 
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Debug()
+    .MinimumLevel.Override("Microsoft", Serilog.Events.LogEventLevel.Information) // Microsoft-specifik logning
+    .MinimumLevel.Override("Microsoft.AspNetCore", Serilog.Events.LogEventLevel.Warning) // ASP.NET Core-specifik logning
     .WriteTo.Console() // Logger til konsol
     .WriteTo.File(
         path: "logs/log-.txt",
@@ -17,10 +19,12 @@ Log.Information("Blazor server applikation starter op...");
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Tilføj Serilog som logger til DI
+builder.Host.UseSerilog(Log.Logger);
+
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
-
 
 
 // Registrer MessageQueue som singleton og angiv max størrelse
@@ -37,7 +41,18 @@ var streamHubUrls = new List<string>
     //"http://127.0.0.1:8000/streamhub"
 };
 
-builder.Services.AddSingleton(provider => new StreamHubService(provider.GetRequiredService<MessageQueue>(), streamHubUrls, 100));
+//builder.Services.AddSingleton(provider => new StreamHubService(provider.GetRequiredService<MessageQueue>(), streamHubUrls, 100));
+
+// Registrer StreamHubService med injektion af loggerFactory og MessageQueue
+builder.Services.AddSingleton<StreamHubService>(provider => new StreamHubService(
+    provider.GetRequiredService<MessageQueue>(),
+    provider.GetRequiredService<ILogger<StreamHubService>>(),
+    provider.GetRequiredService<ILoggerFactory>(),
+    streamHubUrls,
+    20
+));
+
+
 builder.Services.AddSingleton<MetricsService>();
 
 var app = builder.Build();

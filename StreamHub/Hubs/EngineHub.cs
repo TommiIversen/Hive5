@@ -33,11 +33,17 @@ public class EngineHub(
 
     public async Task ReceiveLog(LogEntry log)
     {
-        await hubContext.Clients.All.SendAsync("ReceiveLog", log, cancellationService.Token);
+        if (engineManager.TryGetEngine(log.EngineId, out var engine))
+        {
+            engine.AddWorkerLog(log.WorkerId, log.Message);
+            await hubContext.Clients.All.SendAsync("ReceiveLog", log);
+        }
     }
 
     public async Task ReceiveImage(ImageData imageData)
     {
+        var worker = engineManager.GetWorker(imageData.EngineId, imageData.WorkerId);
+        if (worker != null) worker.LastImage = $"data:image/jpeg;base64,{Convert.ToBase64String(imageData.ImageBytes)}";
         await hubContext.Clients.All.SendAsync("ReceiveImage", imageData, cancellationService.Token);
     }
 

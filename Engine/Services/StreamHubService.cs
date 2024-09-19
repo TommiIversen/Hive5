@@ -10,6 +10,8 @@ public class StreamHubService
     private readonly ConcurrentDictionary<HubConnection, MultiQueue> _hubQueues = new();
     private readonly MessageQueue _messageQueue;
     private readonly CancellationTokenSource _cancellationTokenSource = new();
+    private readonly ILoggerFactory _loggerFactory;
+
     private readonly CommandDispatcher _commandDispatcher = new();
     public Guid EngineId { get; } = Guid.NewGuid();
     private const int MessageSendTimeout = 5000; // 5 seconds timeout
@@ -21,10 +23,17 @@ public class StreamHubService
         { typeof(LogEntry), 20 } // Max 20 logs pr. worker
     };
 
+    private readonly ILogger<StreamHubService> _logger;
+
 
     // Constructor for injecting MessageQueue and initializing multiple hubs
-    public StreamHubService(MessageQueue messageQueue, IEnumerable<string> hubUrls, int maxQueueSize)
+    // Constructor for injecting MessageQueue, logger, and loggerFactory
+    public StreamHubService(MessageQueue messageQueue, ILogger<StreamHubService> logger, ILoggerFactory loggerFactory, IEnumerable<string> hubUrls, int maxQueueSize)
     {
+        _messageQueue = messageQueue;
+        _logger = logger;
+        _loggerFactory = loggerFactory; // Save the injected loggerFactory
+
         _messageQueue = messageQueue;
 
         foreach (var url in hubUrls)
@@ -39,7 +48,6 @@ public class StreamHubService
                         TimeSpan.FromSeconds(5)
                     })
                     .Build();
-
 
                 // Handle StopWorker command asynchronously
                 hubConnection.On("StopWorker", async (Guid workerId) =>
@@ -81,7 +89,8 @@ public class StreamHubService
                     await TryReconnect(hubConnection, _cancellationTokenSource.Token);
                 };
 
-                _hubQueues[hubConnection] = new MultiQueue();
+                _hubQueues[hubConnection] = new MultiQueue(loggerFactory.CreateLogger<MultiQueue>(), maxQueueSize);
+
                 _ = Task.Run(async () => await ProcessHubQueueAsync(hubConnection, _cancellationTokenSource.Token));
             }
             catch (Exception ex)
@@ -215,7 +224,6 @@ public class StreamHubService
         }
     }
 
-    // Send metrics via SignalR
     private async Task SendMetricAsync(HubConnection hubConnection, Metric metric)
     {
         if (hubConnection.State == HubConnectionState.Connected)
@@ -224,7 +232,6 @@ public class StreamHubService
         }
     }
 
-    // Send logs via SignalR
     private async Task SendLogAsync(HubConnection hubConnection, LogEntry log)
     {
         if (hubConnection.State == HubConnectionState.Connected)
@@ -233,7 +240,6 @@ public class StreamHubService
         }
     }
 
-    // Send image data via SignalR
     private async Task SendImageAsync(HubConnection hubConnection, ImageData image)
     {
         if (hubConnection.State == HubConnectionState.Connected)
