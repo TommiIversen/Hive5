@@ -16,18 +16,8 @@ public class StreamHubService
     public Guid EngineId { get; } = Guid.NewGuid();
     private const int MessageSendTimeout = 5000; // 5 seconds timeout
 
-    private Dictionary<Type, int> capacityLimits = new Dictionary<Type, int>
-    {
-        { typeof(ImageData), 1 }, // Max 1 billede pr. worker
-        { typeof(Metric), 20 }, // Max 20 metrics
-        { typeof(LogEntry), 20 } // Max 20 logs pr. worker
-    };
-
     private readonly ILogger<StreamHubService> _logger;
 
-
-    // Constructor for injecting MessageQueue and initializing multiple hubs
-    // Constructor for injecting MessageQueue, logger, and loggerFactory
     public StreamHubService(MessageQueue messageQueue, ILogger<StreamHubService> logger, ILoggerFactory loggerFactory, IEnumerable<string> hubUrls, int maxQueueSize)
     {
         _messageQueue = messageQueue;
@@ -49,6 +39,11 @@ public class StreamHubService
                     })
                     .Build();
 
+                hubConnection.On("ReceiveLog", (string data) =>
+                {
+                    Console.WriteLine("JFDGJDKFGJDKFGJKDGKDJGDGJDGLKDJ");
+                });
+                
                 // Handle StopWorker command asynchronously
                 hubConnection.On("StopWorker", async (Guid workerId) =>
                 {
@@ -103,18 +98,13 @@ public class StreamHubService
     public async Task StartAsync()
     {
         Console.WriteLine("Attempting to connect to all StreamHubs...");
-
-        // Opret en liste af opgaver for at forbinde til alle hubs parallelt
         var reconnectTasks = _hubQueues.Keys.Select(async hubConnection =>
         {
             Console.WriteLine($"Connecting to {hubConnection.ConnectionId}");
             await TryReconnect(hubConnection, _cancellationTokenSource.Token);
         });
 
-        // Start processing messages from the global queue
         _ = Task.Run(async () => await ProcessMessagesAsync(_cancellationTokenSource.Token));
-
-        // Start alle reconnect-opgaver parallelt
         await Task.WhenAll(reconnectTasks);
     }
 
@@ -153,8 +143,6 @@ public class StreamHubService
         while (!cancellationToken.IsCancellationRequested)
         {
             IMessage message = await _messageQueue.DequeueMessageAsync(cancellationToken);
-            //Console.WriteLine($"Processing message: {message.GetType().Name}");
-
             foreach (var hubConnection in _hubQueues.Keys)
             {
                 if (message is ImageData imageMessage)
@@ -180,16 +168,10 @@ public class StreamHubService
         while (!cancellationToken.IsCancellationRequested)
         {
             IMessage message = await queue.DequeueMessageAsync(cancellationToken);
-
-            // Try sending the message if the hub is connected
             if (hubConnection.State == HubConnectionState.Connected)
             {
                 var sendTask = SendMessageAsync(hubConnection, message);
-                if (await Task.WhenAny(sendTask, Task.Delay(MessageSendTimeout)) == sendTask)
-                {
-                    // Message sent successfully
-                }
-                else
+                if (await Task.WhenAny(sendTask, Task.Delay(MessageSendTimeout)) != sendTask)
                 {
                     Console.WriteLine($"Sending message to {hubConnection.ConnectionId} timed out.");
                 }
