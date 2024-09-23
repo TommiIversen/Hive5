@@ -24,7 +24,7 @@ public class MessageQueue
         }
 
         _messageQueue.Enqueue(baseMessage);
-        Console.WriteLine($"MessageQueue: Message enqueued. Queue size: {_messageQueue.Count}");
+        //Console.WriteLine($"MessageQueue: Message enqueued. Queue size: {_messageQueue.Count}");
         _messageAvailable.Release();
     }
 

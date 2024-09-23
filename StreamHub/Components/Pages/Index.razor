@@ -149,7 +149,7 @@ else
 
         
         _hubConnection = new HubConnectionBuilder()
-            .WithUrl(NavigationManager.ToAbsoluteUri("/streamhub"))
+            .WithUrl(NavigationManager.ToAbsoluteUri("/streamhub?clientType=frontend"))
             .WithAutomaticReconnect()
             .Build();
 

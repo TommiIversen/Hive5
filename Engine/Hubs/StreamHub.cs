@@ -33,7 +33,7 @@ public class StreamHub
             try
             {
                 var hubConnection = new HubConnectionBuilder()
-                    .WithUrl(url)
+                    .WithUrl($"{url}?clientType=backend")
                     .WithAutomaticReconnect(new[]
                     {
                         TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5),

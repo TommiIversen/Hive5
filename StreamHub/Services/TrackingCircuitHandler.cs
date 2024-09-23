@@ -3,14 +3,9 @@
 using Microsoft.AspNetCore.Components.Server.Circuits;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
-  public class UserCountChangedEventArgs : EventArgs
-    {
-        public int UserCount { get; }
-
-        public UserCountChangedEventArgs(int userCount)
-        {
-            UserCount = userCount;
-        }
+  public class UserCountChangedEventArgs(int userCount) : EventArgs
+  {
+        public int UserCount { get; } = userCount;
     }
 
     public class TrackingCircuitHandler : CircuitHandler

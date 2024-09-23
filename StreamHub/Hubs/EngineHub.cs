@@ -31,12 +31,13 @@ public class EngineHub(
         }
     }
 
-    public async Task ReceiveLog(LogEntry log)
+    public async Task ReceiveLog(LogEntry logMessage)
     {
-        if (engineManager.TryGetEngine(log.EngineId, out var engine))
+        if (engineManager.TryGetEngine(logMessage.EngineId, out var engine))
         {
-            engine.AddWorkerLog(log.WorkerId, log.Message);
-            await hubContext.Clients.All.SendAsync("ReceiveLog");
+            engine.AddWorkerLog(logMessage.WorkerId, logMessage.Message);
+            //await hubContext.Clients.All.SendAsync("ReceiveLog");
+            await hubContext.Clients.Group("frontendClients").SendAsync("ReceiveLog", logMessage);
         }
     }
 
@@ -86,10 +87,26 @@ public class EngineHub(
             return new CommandResult(false, "Engine not found.");
         }
     }
-    
+   
     public override async Task OnConnectedAsync()
     {
-        Console.WriteLine($"Client connected, hallo: {Context.ConnectionId}");
+        var clientType = Context.GetHttpContext()?.Request.Query["clientType"].ToString();
+
+        switch (clientType)
+        {
+            case "backend":
+                await Groups.AddToGroupAsync(Context.ConnectionId, "backendClients");
+                Console.WriteLine($"Backend client connected: {Context.ConnectionId}");
+                break;
+            case "frontend":
+                await Groups.AddToGroupAsync(Context.ConnectionId, "frontendClients");
+                Console.WriteLine($"Frontend client connected: {Context.ConnectionId}");
+                break;
+            default:
+                Console.WriteLine($"Unknown client connected: {Context.ConnectionId}");
+                break;
+        }
+
         await base.OnConnectedAsync();
     }
     
