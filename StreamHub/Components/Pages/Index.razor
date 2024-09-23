@@ -129,9 +129,10 @@ else
     private int _connectedUsers;
 
 
-    private void UpdateConnectedUsers()
+    private void UpdateConnectedUsers(object? sender, UserCountChangedEventArgs e)
     {
-        _connectedUsers = TrackingHandler.GetTotalConnectedUsers();
+        // Brug eventdata til at opdatere brugerantallet
+        _connectedUsers = e.UserCount;
         InvokeAsync(StateHasChanged); // Opdater UI'et
     }
 
@@ -144,9 +145,8 @@ else
     {
         // Subscribe til OnUserCountChanged eventet
         TrackingHandler.OnUserCountChanged += UpdateConnectedUsers;
-        
-        // Hent initialt antal af brugere
-        UpdateConnectedUsers();
+        _connectedUsers = TrackingHandler.GetTotalConnectedUsers();
+
         
         _hubConnection = new HubConnectionBuilder()
             .WithUrl(NavigationManager.ToAbsoluteUri("/streamhub"))
