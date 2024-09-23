@@ -1,5 +1,6 @@
 using Common.Models;
 using Engine.Components;
+using Engine.Hubs;
 using Engine.Services;
 using Serilog;
 
@@ -41,12 +42,12 @@ var streamHubUrls = new List<string>
     //"http://127.0.0.1:8000/streamhub"
 };
 
-//builder.Services.AddSingleton(provider => new StreamHubService(provider.GetRequiredService<MessageQueue>(), streamHubUrls, 100));
+//builder.Services.AddSingleton(provider => new StreamHub(provider.GetRequiredService<MessageQueue>(), streamHubUrls, 100));
 
-// Registrer StreamHubService med injektion af loggerFactory og MessageQueue
-builder.Services.AddSingleton<StreamHubService>(provider => new StreamHubService(
+// Registrer StreamHub med injektion af loggerFactory og MessageQueue
+builder.Services.AddSingleton<StreamHub>(provider => new StreamHub(
     provider.GetRequiredService<MessageQueue>(),
-    provider.GetRequiredService<ILogger<StreamHubService>>(),
+    provider.GetRequiredService<ILogger<StreamHub>>(),
     provider.GetRequiredService<ILoggerFactory>(),
     streamHubUrls,
     20
@@ -59,8 +60,8 @@ var app = builder.Build();
 
 var messageQueue = app.Services.GetRequiredService<MessageQueue>();
 
-// Retrieve the StreamHubService instance and initialize it
-var streamHubService = app.Services.GetRequiredService<StreamHubService>();
+// Retrieve the StreamHub instance and initialize it
+var streamHubService = app.Services.GetRequiredService<StreamHub>();
 _ = Task.Run(async () => await streamHubService.StartAsync());
 
 

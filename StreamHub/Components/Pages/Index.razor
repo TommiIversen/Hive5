@@ -1,11 +1,11 @@
 ﻿@page "/"
 @using Common.Models
-@using Engine.Commands
-@using StreamHub.Models
 @inject NavigationManager NavigationManager
 @using Microsoft.AspNetCore.SignalR.Client
 @using StreamHub.Services
 @inject EngineManager EngineManager
+@inject WorkerService WorkerService
+
 
 <h3>StreamHub Dashboard</h3>
 
@@ -121,7 +121,6 @@ else
 
 @code {
     private HubConnection? _hubConnection;
-    //private Dictionary<Guid, EngineViewModel> engines = new();
     private string _connectionStatus = "Ikke forbundet2";
 
     protected override async Task OnInitializedAsync()
@@ -182,42 +181,11 @@ else
         }
     }
 
-    private async Task StopWorker(Guid engineId, Guid workerId)
+    private async Task<string> StopWorker(Guid engineId, Guid workerId)
     {
-        if (_hubConnection == null)
-        {
-            Console.WriteLine("Hub connection is null");
-            _connectionStatus = "Hub connection is null";
-            return;
-        }
-        
-        var worker = EngineManager.GetWorker(engineId, workerId);
-        
-        if (worker == null)
-        {
-            Console.WriteLine($"Worker {workerId} not found on engine {engineId}");
-            return;
-        }
-        
-        worker.IsProcessing = true; // Lock the button while processing
-
-        try
-        {
-            Console.WriteLine($"INVOKE: Stopping worker {workerId} on engine {engineId}");
-            var result = await _hubConnection.InvokeAsync<CommandResult>("StopWorker", engineId, workerId).ConfigureAwait(true);
-            Console.WriteLine($"RESULT: {result.Message}");
-            worker.OperationResult = result.Message;
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error stopping worker: {ex.Message}");
-            worker.OperationResult = $"Failed to stop worker: {ex.Message}";
-        }
-        finally
-        {
-            worker.IsProcessing = false; // Unlock the button
-            await InvokeAsync(StateHasChanged);
-        }
+        var result = await WorkerService.StopWorkerAsync(engineId, workerId);
+        Console.WriteLine($"RESULT: {result.Message}");
+        await InvokeAsync(StateHasChanged);
+        return result.Message;
     }
-
 }

@@ -36,7 +36,7 @@ public class EngineHub(
         if (engineManager.TryGetEngine(log.EngineId, out var engine))
         {
             engine.AddWorkerLog(log.WorkerId, log.Message);
-            await hubContext.Clients.All.SendAsync("ReceiveLog", log);
+            await hubContext.Clients.All.SendAsync("ReceiveLog");
         }
     }
 
@@ -86,8 +86,13 @@ public class EngineHub(
             return new CommandResult(false, "Engine not found.");
         }
     }
-
-
+    
+    public override async Task OnConnectedAsync()
+    {
+        Console.WriteLine($"Client connected, hallo: {Context.ConnectionId}");
+        await base.OnConnectedAsync();
+    }
+    
     public override Task OnDisconnectedAsync(Exception? exception)
     {
         Console.WriteLine($"Client disconnected: {Context.ConnectionId}");

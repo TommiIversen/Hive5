@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using Common.Models;
 using StreamHub.Models;
 
 namespace StreamHub.Services;
@@ -16,6 +17,7 @@ public class EngineManager
     {
         return _engines.TryGetValue(engineId, out engineInfo);
     }
+    
 
     public void RemoveConnection(string connectionId)
     {
@@ -40,5 +42,7 @@ public class EngineManager
     {
         return _engines.Values;
     }
+    
+
 }
 

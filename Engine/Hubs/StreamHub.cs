@@ -1,11 +1,12 @@
-﻿using Microsoft.AspNetCore.SignalR.Client;
+﻿using System.Collections.Concurrent;
 using Common.Models;
 using Engine.Commands;
-using System.Collections.Concurrent;
+using Engine.Services;
+using Microsoft.AspNetCore.SignalR.Client;
 
-namespace Engine.Services;
+namespace Engine.Hubs;
 
-public class StreamHubService
+public class StreamHub
 {
     private readonly ConcurrentDictionary<HubConnection, MultiQueue> _hubQueues = new();
     private readonly MessageQueue _messageQueue;
@@ -16,9 +17,9 @@ public class StreamHubService
     public Guid EngineId { get; } = Guid.NewGuid();
     private const int MessageSendTimeout = 5000; // 5 seconds timeout
 
-    private readonly ILogger<StreamHubService> _logger;
+    private readonly ILogger<StreamHub> _logger;
 
-    public StreamHubService(MessageQueue messageQueue, ILogger<StreamHubService> logger, ILoggerFactory loggerFactory, IEnumerable<string> hubUrls, int maxQueueSize)
+    public StreamHub(MessageQueue messageQueue, ILogger<StreamHub> logger, ILoggerFactory loggerFactory, IEnumerable<string> hubUrls, int maxQueueSize)
     {
         _messageQueue = messageQueue;
         _logger = logger;
@@ -90,7 +91,7 @@ public class StreamHubService
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"StreamHubService Exception: Failed to connect to {url}: {ex.Message}");
+                Console.WriteLine($"StreamHub Exception: Failed to connect to {url}: {ex.Message}");
             }
         }
     }
