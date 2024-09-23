@@ -1,13 +1,23 @@
 ﻿using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
+using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 
 namespace Engine.Utils;
 
 public class ImageGenerator
 {
+    [SupportedOSPlatform("windows")]
     public byte[] GenerateImageWithNumber(int number)
     {
+        
+        // Hvis vi ikke er på Windows, returner en fake bytearray
+        if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            return GenerateFakeImage();
+        }
+        
         // Definer størrelse på billedet
         const int width = 300;
         const int height = 220;
@@ -58,5 +68,11 @@ public class ImageGenerator
                 return memoryStream.ToArray();
             }
         }
+    }
+    
+    private byte[] GenerateFakeImage()
+    {
+        // Returner en simpel fake bytearray som placeholder på ikke-Windows platforme
+        return new byte[] { 0, 0, 0 }; // Kan tilpasses efter behov
     }
 }

@@ -1,6 +1,4 @@
-﻿using System;
-using System.Threading.Tasks;
-using Common.Models;
+﻿using Common.Models;
 
 namespace Engine.Commands
 {
@@ -19,8 +17,8 @@ namespace Engine.Commands
             Console.WriteLine($"Starting worker {_workerId}");
 
             // Simulate success
-            bool success = true;
-            string message = success ? $"Worker {_workerId} started successfully." : $"Failed to start worker {_workerId}.";
+            var success = true;
+            var message = success ? $"Worker {_workerId} started successfully." : $"Failed to start worker {_workerId}.";
 
             return new CommandResult(success, message);
         }

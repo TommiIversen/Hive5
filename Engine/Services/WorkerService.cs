@@ -1,4 +1,5 @@
 ﻿
+using System.Runtime.InteropServices;
 using Common.Models;
 using Engine.Services;
 using Engine.Utils;
@@ -37,37 +38,37 @@ namespace Engine.Models
 
         private void SendLog(object state)
         {
-            if (IsRunning)
+            if (!IsRunning) return;
+            
+            var log = new LogEntry
             {
-                var log = new LogEntry
-                {
-                    WorkerId = WorkerId,
-                    Timestamp = DateTime.UtcNow,
-                    Message = $"Log message at {DateTime.UtcNow}"
-                };
-                _messageQueue.EnqueueMessage(log);
-            }
+                WorkerId = WorkerId,
+                Timestamp = DateTime.UtcNow,
+                Message = $"Log message at {DateTime.UtcNow}"
+            };
+            _messageQueue.EnqueueMessage(log);
         }
 
-        private void SendImage(object state)
+        private void SendImage(object? state)
         {
-            if (IsRunning)
+            if (!IsRunning) return;
+            
+            var imageData = new ImageData
             {
-                var imageData = new ImageData
-                {
-                    WorkerId = WorkerId,
-                    Timestamp = DateTime.UtcNow,
-                    ImageBytes = GenerateFakeImage()
-                };
-                _messageQueue.EnqueueMessage(imageData);
-            }
+                WorkerId = WorkerId,
+                Timestamp = DateTime.UtcNow,
+                ImageBytes = GenerateFakeImage()
+            };
+            _messageQueue.EnqueueMessage(imageData);
         }
 
         private byte[] GenerateFakeImage()
         {
-            // Simuler en fake image data (placeholder)
+            // fake image data (placeholder)
             var generator = new ImageGenerator();
-            return generator.GenerateImageWithNumber(_logCounter++);
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                return generator.GenerateImageWithNumber(_logCounter++);
+            return [0, 0, 0];
         }
     }
 }

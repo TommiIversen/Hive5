@@ -102,7 +102,10 @@ public class MemoryUsageMonitor
     {
         var memInfo = await File.ReadAllLinesAsync("/proc/meminfo", cancellationToken);
         var availableMemoryLine = Array.Find(memInfo, line => line.StartsWith("MemAvailable"));
-        return ParseMemoryValue(availableMemoryLine) / 1024.0; // Returner MB
+        if (availableMemoryLine != null)
+            return ParseMemoryValue(availableMemoryLine) / 1024.0; // Returner MB
+        else
+            return 0.0;
     }
 
     // Helper method to parse memory values in /proc/meminfo on Linux

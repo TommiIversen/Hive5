@@ -120,7 +120,7 @@ else
 }
 
 @code {
-    private HubConnection _hubConnection;
+    private HubConnection? _hubConnection;
     //private Dictionary<Guid, EngineViewModel> engines = new();
     private string _connectionStatus = "Ikke forbundet2";
 
@@ -131,39 +131,39 @@ else
             .WithAutomaticReconnect()
             .Build();
 
-        _hubConnection.Reconnecting += (error) =>
+        _hubConnection.Reconnecting += (_) =>
         {
             _connectionStatus = "Genopretter forbindelse...";
             InvokeAsync(StateHasChanged);
             return Task.CompletedTask;
         };
 
-        _hubConnection.Reconnected += (connectionId) =>
+        _hubConnection.Reconnected += (_) =>
         {
             _connectionStatus = "Forbundet";
             InvokeAsync(StateHasChanged);
             return Task.CompletedTask;
         };
 
-        _hubConnection.Closed += (error) =>
+        _hubConnection.Closed += (_) =>
         {
             _connectionStatus = "Ikke forbundet";
             InvokeAsync(StateHasChanged);
             return Task.CompletedTask;
         };
 
-        _hubConnection.On<Metric>("UpdateMetric", async (metric) =>
+        _hubConnection.On<Metric>("UpdateMetric", async (_) =>
         {
             await InvokeAsync(StateHasChanged);
         });
 
-        _hubConnection.On<LogEntry>("ReceiveLog", async (log) =>
+        _hubConnection.On<LogEntry>("ReceiveLog", async (_) =>
         {
             await InvokeAsync(StateHasChanged);
         });
 
 
-        _hubConnection.On<ImageData>("ReceiveImage", async (imageData) =>
+        _hubConnection.On<ImageData>("ReceiveImage", async (_) =>
         {
             await InvokeAsync(StateHasChanged);
         });
@@ -184,7 +184,21 @@ else
 
     private async Task StopWorker(Guid engineId, Guid workerId)
     {
+        if (_hubConnection == null)
+        {
+            Console.WriteLine("Hub connection is null");
+            _connectionStatus = "Hub connection is null";
+            return;
+        }
+        
         var worker = EngineManager.GetWorker(engineId, workerId);
+        
+        if (worker == null)
+        {
+            Console.WriteLine($"Worker {workerId} not found on engine {engineId}");
+            return;
+        }
+        
         worker.IsProcessing = true; // Lock the button while processing
 
         try

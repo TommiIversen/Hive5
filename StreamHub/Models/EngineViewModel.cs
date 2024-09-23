@@ -9,7 +9,7 @@ public class EngineViewModel
     public Guid EngineId { get; set; }
     
     public string ConnectionId { get; set; }
-    public Metric LastMetric { get; set; }
+    public Metric? LastMetric { get; set; }
 
     public Dictionary<Guid, WorkerViewModel> Workers { get; set; } = new();
     

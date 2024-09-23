@@ -5,11 +5,11 @@ public class WorkerViewModel
 {
     public Guid WorkerId { get; set; }
     public List<string> LogMessages { get; set; } = new List<string>(); 
-    public string LastImage { get; set; }
+    public string? LastImage { get; set; }
     
     public bool IsProcessing { get; set; }
     
-    public string OperationResult { get; set; }
+    public string? OperationResult { get; set; }
 
     // Adds a new log message and ensures the list has a max of 10 entries
     public void AddLogMessage(string message)

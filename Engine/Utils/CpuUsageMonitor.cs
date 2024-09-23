@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 
 namespace Engine.Utils;
 
@@ -62,7 +63,7 @@ public class CpuUsageMonitor
         return cpuUsage;
     }
 
-    // Windows-specific CPU usage retrieval
+    [SupportedOSPlatform("windows")]
     private Task<double> GetWindowsTotalCpuUsageAsync(CancellationToken cancellationToken)
     {
         return Task.Run(() =>
@@ -73,7 +74,8 @@ public class CpuUsageMonitor
             return (double)cpuCounter.NextValue();
         }, cancellationToken);
     }
-
+    
+    [SupportedOSPlatform("windows")]
     private Task<double[]> GetWindowsPerCoreCpuUsageAsync(CancellationToken cancellationToken)
     {
         return Task.Run(() =>
@@ -122,7 +124,7 @@ public class CpuUsageMonitor
         return usages;
     }
 
-    private async Task<string> ReadProcStatLineAsync(CancellationToken cancellationToken)
+    private async Task<string?> ReadProcStatLineAsync(CancellationToken cancellationToken)
     {
         using var reader = new StreamReader("/proc/stat");
         return await reader.ReadLineAsync(cancellationToken);
