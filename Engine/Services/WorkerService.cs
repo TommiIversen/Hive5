@@ -18,7 +18,7 @@ namespace Engine.Models
         public WorkerService(MessageQueue messageQueue)
         {
             _messageQueue = messageQueue;
-            _logTimer = new Timer(SendLog, null, Timeout.Infinite, 1000);
+            _logTimer = new Timer(SendLog, null, Timeout.Infinite, 500);
             _imageTimer = new Timer(SendImage, null, Timeout.Infinite, 1000);
         }
 
@@ -36,7 +36,7 @@ namespace Engine.Models
             _imageTimer.Change(Timeout.Infinite, Timeout.Infinite);  // Stop image timer
         }
 
-        private void SendLog(object state)
+        private void SendLog(object? state)
         {
             if (!IsRunning) return;
             
