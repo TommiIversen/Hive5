@@ -39,7 +39,7 @@ builder.Services.AddSingleton<WorkerManager>();
 var streamHubUrls = new List<string>
 {
     "http://127.0.0.1:9000/streamhub",
-    //"http://127.0.0.1:8000/streamhub"
+    "http://127.0.0.1:8000/streamhub"
 };
 
 //builder.Services.AddSingleton(provider => new StreamHub(provider.GetRequiredService<MessageQueue>(), streamHubUrls, 100));
@@ -62,7 +62,7 @@ var messageQueue = app.Services.GetRequiredService<MessageQueue>();
 
 // Retrieve the StreamHub instance and initialize it
 var streamHubService = app.Services.GetRequiredService<StreamHub>();
-_ = Task.Run(async () => await streamHubService.StartAsync());
+//_ = Task.Run(async () => await streamHubService.StartAsync());
 
 
 var metricsService = app.Services.GetRequiredService<MetricsService>();

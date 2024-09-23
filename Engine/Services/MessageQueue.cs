@@ -6,7 +6,7 @@ namespace Engine.Services;
 
 public class MessageQueue
 {
-    private readonly ConcurrentQueue<IMessage> _messageQueue = new();
+    private readonly ConcurrentQueue<BaseMessage> _messageQueue = new();
     private readonly SemaphoreSlim _messageAvailable = new(0);
     private readonly int _maxQueueSize;
 
@@ -15,7 +15,7 @@ public class MessageQueue
         _maxQueueSize = maxQueueSize;
     }
 
-    public void EnqueueMessage(IMessage message)
+    public void EnqueueMessage(BaseMessage baseMessage)
     {
         while (_messageQueue.Count >= _maxQueueSize)
         {
@@ -23,12 +23,12 @@ public class MessageQueue
             Console.WriteLine($"MessageQueue: Discarded message due to queue size limit. Queue size: {_messageQueue.Count}");
         }
 
-        _messageQueue.Enqueue(message);
+        _messageQueue.Enqueue(baseMessage);
         Console.WriteLine($"MessageQueue: Message enqueued. Queue size: {_messageQueue.Count}");
         _messageAvailable.Release();
     }
 
-    public async Task<IMessage> DequeueMessageAsync(CancellationToken cancellationToken)
+    public async Task<BaseMessage> DequeueMessageAsync(CancellationToken cancellationToken)
     {
         await _messageAvailable.WaitAsync(cancellationToken);
         _messageQueue.TryDequeue(out var message);
@@ -43,10 +43,11 @@ public class MessageQueue
 public class MultiQueue
 {
     private readonly ILogger<MultiQueue> _logger;
-    private readonly ConcurrentDictionary<Type, Queue<IMessage>> _queues = new();
-    private readonly ConcurrentDictionary<string, Queue<IMessage>> _uniqueQueues = new();
+    private readonly ConcurrentDictionary<Type, Queue<BaseMessage>> _queues = new();
+    private readonly ConcurrentDictionary<string, Queue<BaseMessage>> _uniqueQueues = new();
     private readonly int _defaultQueueLimit;
     private readonly SemaphoreSlim _messageAvailable = new(0);  // Semaphore til at signalere nye beskeder
+    private const bool _debugFlag = false;
 
     public MultiQueue(ILogger<MultiQueue> logger, int defaultQueueLimit = 20)
     {
@@ -58,13 +59,13 @@ public class MultiQueue
     {
     }
 
-    public void EnqueueMessage(IMessage message, string uniqueId = "")
+    public void EnqueueMessage(BaseMessage baseMessage, string uniqueId = "")
     {
         if (!string.IsNullOrEmpty(uniqueId))
         {
             if (!_uniqueQueues.ContainsKey(uniqueId))
             {
-                _uniqueQueues[uniqueId] = new Queue<IMessage>(1);  // Opret en ny kø for uniqueId
+                _uniqueQueues[uniqueId] = new Queue<BaseMessage>(1);  // Opret en ny kø for uniqueId
             }
 
             var uniqueQueue = _uniqueQueues[uniqueId];
@@ -73,30 +74,36 @@ public class MultiQueue
                 uniqueQueue.Dequeue();  // Fjern ældste besked, så vi kun beholder én
             }
 
-            uniqueQueue.Enqueue(message);  // Tilføj den nye besked
-            _logger.LogInformation("Message for UniqueID: {UniqueId} enqueued. Queue size: {QueueSize}", uniqueId, uniqueQueue.Count);
+            uniqueQueue.Enqueue(baseMessage);  // Tilføj den nye besked
+            if (_debugFlag)
+            {
+                _logger.LogInformation("Message for UniqueID: {UniqueId} enqueued. Queue size: {QueueSize}", uniqueId, uniqueQueue.Count);
+            }
         }
         else
         {
-            var messageType = message.GetType();
+            var messageType = baseMessage.GetType();
             if (!_queues.ContainsKey(messageType))
             {
-                _queues[messageType] = new Queue<IMessage>();
+                _queues[messageType] = new Queue<BaseMessage>();
             }
 
             var queue = _queues[messageType];
-            queue.Enqueue(message);
+            queue.Enqueue(baseMessage);
 
             if (queue.Count > _defaultQueueLimit)
             {
                 queue.Dequeue();  // Fjern ældste besked, hvis køen overskrider grænsen
             }
-            _logger.LogInformation("{MessageType} enqueued. Queue size: {QueueSize}", messageType.Name, queue.Count);
+            if (_debugFlag)
+            {
+                _logger.LogInformation("{MessageType} enqueued. Queue size: {QueueSize}", messageType.Name, queue.Count);
+            }
         }
         _messageAvailable.Release();
     }
 
-    public async Task<IMessage> DequeueMessageAsync(CancellationToken cancellationToken)
+    public async Task<BaseMessage> DequeueMessageAsync(CancellationToken cancellationToken)
     {
         await _messageAvailable.WaitAsync(cancellationToken);
         foreach (var uniqueQueue in _uniqueQueues.Values)

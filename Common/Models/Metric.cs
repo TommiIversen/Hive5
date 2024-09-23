@@ -1,14 +1,12 @@
 ﻿// Models/Metric.cs
 namespace Common.Models;
 
-public class Metric: IMessage
+public class Metric: BaseMessage
 {
-    public Guid EngineId { get; set; }
-    public required DateTime Timestamp { get; set; }
     
     // CPU-målinger
     public required double CPUUsage { get; set; }  // Samlet CPU-brug
-    public required List<double> PerCoreCpuUsage { get; set; } = new();
+    public required List<double> PerCoreCpuUsage { get; set; } = [];
     public required double CurrentProcessCpuUsage { get; set; }
 
     // RAM-målinger
