@@ -5,9 +5,12 @@
 @using StreamHub.Services
 @inject EngineManager EngineManager
 @inject WorkerService WorkerService
+@using StreamHub.Services
+@inject TrackingCircuitHandler TrackingHandler
 
 
 <h3>StreamHub Dashboard</h3>
+<h3>Connected Users: @_connectedUsers</h3>
 
 <p>Forbindelsesstatus: @_connectionStatus</p>
 
@@ -123,8 +126,28 @@ else
     private HubConnection? _hubConnection;
     private string _connectionStatus = "Ikke forbundet2";
 
+    private int _connectedUsers;
+
+
+    private void UpdateConnectedUsers()
+    {
+        _connectedUsers = TrackingHandler.GetTotalConnectedUsers();
+        InvokeAsync(StateHasChanged); // Opdater UI'et
+    }
+
+    public void Dispose()
+    {
+        TrackingHandler.OnUserCountChanged -= UpdateConnectedUsers;
+    }
+    
     protected override async Task OnInitializedAsync()
     {
+        // Subscribe til OnUserCountChanged eventet
+        TrackingHandler.OnUserCountChanged += UpdateConnectedUsers;
+        
+        // Hent initialt antal af brugere
+        UpdateConnectedUsers();
+        
         _hubConnection = new HubConnectionBuilder()
             .WithUrl(NavigationManager.ToAbsoluteUri("/streamhub"))
             .WithAutomaticReconnect()

@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Components.Server.Circuits;
 using Microsoft.AspNetCore.ResponseCompression;
 using StreamHub.Components;
 using StreamHub.Hubs;
@@ -5,10 +6,15 @@ using StreamHub.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+
+builder.Services.AddSingleton<TrackingCircuitHandler>(); // For direkte injection
+builder.Services.AddSingleton<CircuitHandler>(sp => sp.GetRequiredService<TrackingCircuitHandler>()); // As CircuitHandler
+
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 builder.Services.AddSignalR();
+
 builder.Services.AddResponseCompression(opts =>
 {
     opts.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(
