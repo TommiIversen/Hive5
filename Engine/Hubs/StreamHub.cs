@@ -17,7 +17,7 @@ public class StreamHub
     public Guid EngineId { get; } = Guid.NewGuid();
     private const int MessageSendTimeout = 5000; // 5 seconds timeout
     private readonly ILogger<StreamHub> _logger;
-    private const bool _debugFlag = false;
+    private const bool DebugFlag = false;
 
 
     public StreamHub(MessageQueue messageQueue, ILogger<StreamHub> logger, ILoggerFactory loggerFactory, IEnumerable<string> hubUrls, int maxQueueSize)
@@ -115,10 +115,9 @@ public class StreamHub
             {
                 break;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogWarning("Failed to connect to... {url}", url);
-                _logger.LogInformation("Retrying in 5 seconds...");
+                _logger.LogWarning("Failed to connect to... {url} Retrying in 5 seconds...", url);
                 await Task.Delay(5000, token);
             }
         }
@@ -134,7 +133,9 @@ public class StreamHub
     {
         while (!cancellationToken.IsCancellationRequested)
         {
-            BaseMessage baseMessage = await _messageQueue.DequeueMessageAsync(cancellationToken);
+            BaseMessage? baseMessage = await _messageQueue.DequeueMessageAsync(cancellationToken);
+            if (baseMessage == null) continue;
+            
             foreach (var hubConnection in _hubQueues.Keys)
             {
                 if (baseMessage is ImageData imageMessage)
@@ -144,7 +145,7 @@ public class StreamHub
                 }
                 _hubQueues[hubConnection].EnqueueMessage(baseMessage);
 
-                if (!_debugFlag) continue;
+                if (!DebugFlag) continue;
                 var queueReport = _hubQueues[hubConnection].ReportQueueContents();
                 foreach (var entry in queueReport)
                 {
@@ -161,7 +162,7 @@ public class StreamHub
 
         while (!cancellationToken.IsCancellationRequested)
         {
-            BaseMessage baseMessage = await queue.DequeueMessageAsync(cancellationToken);
+            BaseMessage? baseMessage = await queue.DequeueMessageAsync(cancellationToken);
             if (hubConnection.State == HubConnectionState.Connected)
             {
                 var sendTask = SendMessageAsync(hubConnection, baseMessage);
@@ -178,7 +179,7 @@ public class StreamHub
         }
     }
 
-    private async Task SendMessageAsync(HubConnection hubConnection, BaseMessage baseMessage)
+    private async Task SendMessageAsync(HubConnection hubConnection, BaseMessage? baseMessage)
     {
         switch (baseMessage)
         {
