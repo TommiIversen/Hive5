@@ -18,14 +18,14 @@ namespace Engine.Models
         public WorkerService(MessageQueue messageQueue)
         {
             _messageQueue = messageQueue;
-            _logTimer = new Timer(SendLog, null, Timeout.Infinite, 500);
+            _logTimer = new Timer(SendLog, null, Timeout.Infinite, 300);
             _imageTimer = new Timer(SendImage, null, Timeout.Infinite, 1000);
         }
 
         public void Start()
         {
             IsRunning = true;
-            _logTimer.Change(0, 1000);  // Start log timer
+            _logTimer.Change(0, 300);  // Start log timer
             _imageTimer.Change(0, 1000);  // Start image timer
         }
 
