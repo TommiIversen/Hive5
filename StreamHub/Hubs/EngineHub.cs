@@ -10,11 +10,11 @@ public class EngineHub(
     IHubContext<EngineHub> hubContext)
     : Hub
 {
-    public async Task EngineConnected(Guid engineId)
+    public async Task EngineConnected(EngineBaseInfo engineInfo)
     {
-        Console.WriteLine($"Engine connected: {engineId}");
-        var engineInfo = engineManager.GetOrAddEngine(engineId);
-        engineInfo.ConnectionId = Context.ConnectionId;
+        Console.WriteLine($"Engine connected: {engineInfo.EngineId}");
+        var engine = engineManager.GetOrAddEngine(engineInfo);
+        engine.ConnectionId = Context.ConnectionId;
         await Clients.Caller.SendAsync("EngineAcknowledged");
     }
 

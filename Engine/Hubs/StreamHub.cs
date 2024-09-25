@@ -25,7 +25,6 @@ public class StreamHub
         _logger = logger;
         _messageQueue = messageQueue;
         _loggerFactory = loggerFactory;
-
         _messageQueue = messageQueue;
 
         foreach (var url in hubUrls)
@@ -125,7 +124,11 @@ public class StreamHub
 
     private async Task SendEngineConnectedAsync(HubConnection hubConnection)
     {
-        await hubConnection.InvokeAsync("EngineConnected", EngineId);
+        var engineModel = new EngineBaseInfo
+        {
+            EngineId = EngineId
+        };
+        await hubConnection.InvokeAsync("EngineConnected", engineModel);
     }
 
     // Global processing of messages

@@ -33,7 +33,13 @@ else
             <tr>
                 <td>
                     <div>
-                        <strong>Engine ID:</strong> @engine.EngineId <br/>
+                        <div>BaseInfo</div>
+                        <strong>Engine Name:</strong> @engine.BaseInfo.EngineName <br/>
+                        <strong>Engine Description</strong> @engine.BaseInfo.EngineDescription <br/>
+                        <strong>Engine ID:</strong> @engine.BaseInfo.EngineId <br/>
+                        <strong>Engine StartDate: </strong> @engine.BaseInfo.EngineStartDate <br/>
+
+                        <div>Metrics</div>
                         <strong>CPU Usage (%):</strong> @(engine.LastMetric?.CPUUsage.ToString("F2") ?? "N/A") <br/>
                         <strong>Memory Usage (MB):</strong> @(engine.LastMetric?.MemoryUsage.ToString("F2") ?? "N/A") <br/>
                         <strong>Current Process CPU Usage (%):</strong> @(engine.LastMetric?.CurrentProcessCpuUsage.ToString("F2") ?? "N/A") <br/>
@@ -73,7 +79,7 @@ else
                                     <td>
                                         <div>@worker.WorkerId</div>
                                         <div>
-                                            <button @onclick="() => StopWorker(engine.EngineId, worker.WorkerId)"
+                                            <button @onclick="() => StopWorker(engine.BaseInfo.EngineId, worker.WorkerId)"
                                                     disabled="@worker.IsProcessing">
                                                 Stop
                                             </button>

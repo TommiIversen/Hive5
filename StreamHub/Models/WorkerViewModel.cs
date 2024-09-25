@@ -4,7 +4,7 @@ namespace StreamHub.Models;
 
 public class WorkerViewModel
 {
-    public Guid WorkerId { get; set; }
+    public required Guid WorkerId { get; set; }
     public ConcurrentQueue<string> LogMessages { get; set; } = new();
     public string? LastImage { get; set; }
     
@@ -22,9 +22,4 @@ public class WorkerViewModel
         }
     }
 
-    // Retrieve all log messages
-    public List<string> GetLogMessages()
-    {
-        return LogMessages.ToList(); // Convert the queue to a list for display
-    }
 }
