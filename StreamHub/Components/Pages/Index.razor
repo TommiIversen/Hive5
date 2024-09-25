@@ -1,5 +1,6 @@
 ﻿@page "/"
 @using Common.Models
+@using Microsoft.AspNetCore.Http.Connections
 @inject NavigationManager NavigationManager
 @using Microsoft.AspNetCore.SignalR.Client
 @using StreamHub.Services
@@ -97,19 +98,7 @@ else
                                     <td>
                                     </td>
                                     <td>
-                                        @if (worker.LogMessages.Any())
-                                        {
-                                            <ul>
-                                                @foreach (var logMessage in worker.LogMessages)
-                                                {
-                                                    <li>@logMessage</li>
-                                                }
-                                            </ul>
-                                        }
-                                        else
-                                        {
-                                            <p>Ingen logbeskeder.</p>
-                                        }
+                                        <WorkerLog LogMessages="worker.LogMessages" />
                                     </td>
                                     <td>
                                         @if (!string.IsNullOrEmpty(worker.LastImage))
@@ -159,7 +148,10 @@ else
 
         
         _hubConnection = new HubConnectionBuilder()
-            .WithUrl(NavigationManager.ToAbsoluteUri("/streamhub?clientType=frontend"))
+            .WithUrl(NavigationManager.ToAbsoluteUri("/streamhub?clientType=frontend"), options =>
+            {
+                options.Transports = HttpTransportType.WebSockets; // Kun WebSockets
+            })
             .WithAutomaticReconnect()
             .Build();
 

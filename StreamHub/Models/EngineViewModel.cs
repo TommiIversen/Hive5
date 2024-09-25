@@ -9,7 +9,7 @@ public class EngineViewModel
     public Metric? LastMetric { get; set; }
     public Dictionary<Guid, WorkerViewModel> Workers { get; set; } = new();
     
-    public void AddWorkerLog(Guid workerId, string message)
+    public void AddWorkerLog(Guid workerId, LogEntry message)
     {
         if (!Workers.ContainsKey(workerId))
         {

@@ -42,7 +42,7 @@ public class WorkerService
         {
             WorkerId = WorkerId,
             Timestamp = DateTime.UtcNow,
-            Message = $"Log message at {DateTime.UtcNow}"
+            Message = $"Log message at {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff}"
         };
         _messageQueue.EnqueueMessage(log);
     }

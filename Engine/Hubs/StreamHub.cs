@@ -2,6 +2,7 @@
 using Common.Models;
 using Engine.Commands;
 using Engine.Services;
+using Microsoft.AspNetCore.Http.Connections;
 using Microsoft.AspNetCore.SignalR.Client;
 
 namespace Engine.Hubs;
@@ -35,7 +36,10 @@ public class StreamHub
             try
             {
                 var hubConnection = new HubConnectionBuilder()
-                    .WithUrl($"{url}?clientType=backend")
+                    .WithUrl($"{url}?clientType=backend", options =>
+                    {
+                        options.Transports = HttpTransportType.WebSockets; // Kun WebSockets
+                    })
                     .WithAutomaticReconnect(new[]
                     {
                         TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5),
@@ -131,10 +135,7 @@ public class StreamHub
             EngineId = EngineId
         };
         await hubConnection.InvokeAsync("EngineConnected", engineModel);
-        Console.WriteLine($"------###################");
         var workers = _workerManager.GetAllWorkers(EngineId);
-        Console.WriteLine("kkkkk");
-        Console.WriteLine($"-------List workers count: {workers.Count}");
         await hubConnection.InvokeAsync("ReportWorkers", workers);
     }
 

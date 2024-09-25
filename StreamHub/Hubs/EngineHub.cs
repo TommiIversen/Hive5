@@ -45,7 +45,10 @@ public class EngineHub(
     {
         if (engineManager.TryGetEngine(logMessage.EngineId, out var engine))
         {
-            engine.AddWorkerLog(logMessage.WorkerId, logMessage.Message);
+            engine.AddWorkerLog(logMessage.WorkerId, logMessage);
+            // calculate the delay in signalR from logMessage.timestamp and now
+            Console.WriteLine($"Time delay: {DateTime.UtcNow - logMessage.Timestamp} - {logMessage.Timestamp} - {DateTime.UtcNow}");
+            
             //await hubContext.Clients.All.SendAsync("ReceiveLog");
             await hubContext.Clients.Group("frontendClients").SendAsync("ReceiveLog", logMessage);
         }

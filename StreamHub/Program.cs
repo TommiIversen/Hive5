@@ -13,7 +13,7 @@ builder.Services.AddSingleton<CircuitHandler>(sp => sp.GetRequiredService<Tracki
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
-builder.Services.AddSignalR();
+builder.Services.AddSignalR().AddMessagePackProtocol(); 
 
 builder.Services.AddResponseCompression(opts =>
 {

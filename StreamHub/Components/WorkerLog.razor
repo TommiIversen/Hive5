@@ -1,0 +1,20 @@
+﻿@using System.Collections.Concurrent
+@using Common.Models
+@if (LogMessages.Any())
+{
+    <ul>
+        @foreach (var logMessage in LogMessages)
+        {
+            <li>@logMessage.Message</li> 
+        }
+    </ul>
+}
+else
+{
+    <p>Ingen logbeskeder.</p>
+}
+
+@code {
+    [Parameter]
+    public ConcurrentQueue<LogEntry> LogMessages { get; set; } = new();
+}
