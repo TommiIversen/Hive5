@@ -18,6 +18,13 @@ public class EngineHub(
         await Clients.Caller.SendAsync("EngineAcknowledged");
     }
 
+    public async Task ReportWorkers(List<WorkerOut> workers)
+    {
+        Console.WriteLine($"-----------Reporting workers: {workers.Count}");
+        foreach (var worker in workers)
+            Console.WriteLine($"Worker: {worker.Name}");
+    }
+
     public async Task ReceiveMetric(Metric metric)
     {
         if (engineManager.TryGetEngine(metric.EngineId, out var engine))

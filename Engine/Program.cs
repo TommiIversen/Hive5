@@ -50,7 +50,8 @@ builder.Services.AddSingleton<StreamHub>(provider => new StreamHub(
     provider.GetRequiredService<ILogger<StreamHub>>(),
     provider.GetRequiredService<ILoggerFactory>(),
     streamHubUrls,
-    20
+    20,
+    provider.GetRequiredService<WorkerManager>() // Injicér WorkerManager via provider
 ));
 
 
@@ -71,8 +72,12 @@ metricsService.Start();
 var workerManager = app.Services.GetRequiredService<WorkerManager>();
 
 Log.Information("Creating workers...");
-var worker1 = workerManager.AddWorker();
-var worker2 = workerManager.AddWorker();
+
+var workerCreate1 = new WorkerCreate(name: "Worker1", description: "Desc", command: "gstreamer");
+var workerCreate2 = new WorkerCreate(name: "Worker2", description: "Desc2", command: "gstreamer2");
+
+var worker1 = workerManager.AddWorker(workerCreate1);
+var worker2 = workerManager.AddWorker(workerCreate2);
 workerManager.StartWorker(worker1.WorkerId);
 workerManager.StartWorker(worker2.WorkerId);
 

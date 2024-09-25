@@ -18,15 +18,18 @@ public class StreamHub
     private const int MessageSendTimeout = 5000; // 5 seconds timeout
     private readonly ILogger<StreamHub> _logger;
     private const bool DebugFlag = false;
+    private readonly WorkerManager _workerManager;
 
 
-    public StreamHub(MessageQueue messageQueue, ILogger<StreamHub> logger, ILoggerFactory loggerFactory, IEnumerable<string> hubUrls, int maxQueueSize)
+    public StreamHub(MessageQueue messageQueue, ILogger<StreamHub> logger, ILoggerFactory loggerFactory,
+        IEnumerable<string> hubUrls, int maxQueueSize, WorkerManager workerManager)
     {
         _logger = logger;
         _messageQueue = messageQueue;
         _loggerFactory = loggerFactory;
         _messageQueue = messageQueue;
-
+        _workerManager = workerManager;
+        
         foreach (var url in hubUrls)
         {
             try
@@ -40,11 +43,8 @@ public class StreamHub
                     })
                     .Build();
 
-                hubConnection.On("ReceiveLog", () =>
-                {
-                    logger.LogInformation("TODO:::: Received log message");
-                });
-                
+                hubConnection.On("ReceiveLog", () => { logger.LogInformation("TODO:::: Received log message"); });
+
                 // Handle StopWorker command asynchronously
                 hubConnection.On("StopWorker", async (Guid workerId) =>
                 {
@@ -53,7 +53,8 @@ public class StreamHub
                         var command = new StopWorkerCommand(workerId);
                         logger.LogInformation("Stopping worker {WorkerId}", workerId);
                         var result = await _commandDispatcher.DispatchAsync(command);
-                        logger.LogInformation("Worker {WorkerId} stopped: {Success} {Message}", workerId, result.Success, result.Message);
+                        logger.LogInformation("Worker {WorkerId} stopped: {Success} {Message}", workerId,
+                            result.Success, result.Message);
                         return result;
                     }
                     catch (Exception ex)
@@ -84,13 +85,13 @@ public class StreamHub
                 };
 
                 _hubQueues[hubConnection] = new MultiQueue(loggerFactory.CreateLogger<MultiQueue>(), maxQueueSize);
-                
+
                 _ = Task.Run(async () => await TryReconnect(hubConnection, url, _cancellationTokenSource.Token));
 
-                _ = Task.Run(async () => await ProcessHubQueueAsync(hubConnection, url, _cancellationTokenSource.Token));
-                
-                _ = Task.Run(async () => await ProcessMessagesAsync(_cancellationTokenSource.Token));
+                _ = Task.Run(async () =>
+                    await ProcessHubQueueAsync(hubConnection, url, _cancellationTokenSource.Token));
 
+                _ = Task.Run(async () => await ProcessMessagesAsync(_cancellationTokenSource.Token));
             }
             catch (Exception ex)
             {
@@ -124,11 +125,17 @@ public class StreamHub
 
     private async Task SendEngineConnectedAsync(HubConnection hubConnection)
     {
+        Console.WriteLine($"------Sending engine connected to {EngineId}");
         var engineModel = new EngineBaseInfo
         {
             EngineId = EngineId
         };
         await hubConnection.InvokeAsync("EngineConnected", engineModel);
+        Console.WriteLine($"------###################");
+        var workers = _workerManager.GetAllWorkers();
+        Console.WriteLine("kkkkk");
+        Console.WriteLine($"-------List workers count: {workers.Count}");
+        await hubConnection.InvokeAsync("ReportWorkers", workers);
     }
 
     // Global processing of messages
@@ -138,7 +145,7 @@ public class StreamHub
         {
             BaseMessage? baseMessage = await _messageQueue.DequeueMessageAsync(cancellationToken);
             if (baseMessage == null) continue;
-            
+
             foreach (var hubConnection in _hubQueues.Keys)
             {
                 if (baseMessage is ImageData imageMessage)
@@ -146,6 +153,7 @@ public class StreamHub
                     _hubQueues[hubConnection].EnqueueMessage(imageMessage, $"IMAGE-{imageMessage.WorkerId.ToString()}");
                     continue;
                 }
+
                 _hubQueues[hubConnection].EnqueueMessage(baseMessage);
 
                 if (!DebugFlag) continue;
@@ -159,7 +167,8 @@ public class StreamHub
     }
 
     // Process the queue for each hub independently
-    private async Task ProcessHubQueueAsync(HubConnection hubConnection, string url, CancellationToken cancellationToken)
+    private async Task ProcessHubQueueAsync(HubConnection hubConnection, string url,
+        CancellationToken cancellationToken)
     {
         var queue = _hubQueues[hubConnection];
 

@@ -1,5 +1,4 @@
-﻿using System.Threading.Tasks;
-using Common.Models;
+﻿using Common.Models;
 
 namespace Engine.Commands
 {
