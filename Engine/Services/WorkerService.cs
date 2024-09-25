@@ -1,74 +1,71 @@
-﻿
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 using Common.Models;
-using Engine.Services;
 using Engine.Utils;
 
-namespace Engine.Models
+namespace Engine.Services;
+
+public class WorkerService
 {
-    public class WorkerService
+    private readonly MessageQueue _messageQueue;
+    private readonly Timer _logTimer;
+    private readonly Timer _imageTimer;
+    public Guid WorkerId { get; } = Guid.NewGuid();
+    public bool IsRunning { get; private set; }
+    private int _logCounter = 0;
+
+    public WorkerService(MessageQueue messageQueue)
     {
-        private readonly MessageQueue _messageQueue;
-        private readonly Timer _logTimer;
-        private readonly Timer _imageTimer;
-        public Guid WorkerId { get; } = Guid.NewGuid();
-        public bool IsRunning { get; private set; }
-        private int _logCounter = 0;
+        _messageQueue = messageQueue;
+        _logTimer = new Timer(SendLog, null, Timeout.Infinite, 300);
+        _imageTimer = new Timer(SendImage, null, Timeout.Infinite, 1000);
+    }
 
-        public WorkerService(MessageQueue messageQueue)
-        {
-            _messageQueue = messageQueue;
-            _logTimer = new Timer(SendLog, null, Timeout.Infinite, 300);
-            _imageTimer = new Timer(SendImage, null, Timeout.Infinite, 1000);
-        }
+    public void Start()
+    {
+        IsRunning = true;
+        _logTimer.Change(0, 300);  // Start log timer
+        _imageTimer.Change(0, 1000);  // Start image timer
+    }
 
-        public void Start()
-        {
-            IsRunning = true;
-            _logTimer.Change(0, 300);  // Start log timer
-            _imageTimer.Change(0, 1000);  // Start image timer
-        }
+    public void Stop()
+    {
+        IsRunning = false;
+        _logTimer.Change(Timeout.Infinite, Timeout.Infinite);  // Stop log timer
+        _imageTimer.Change(Timeout.Infinite, Timeout.Infinite);  // Stop image timer
+    }
 
-        public void Stop()
-        {
-            IsRunning = false;
-            _logTimer.Change(Timeout.Infinite, Timeout.Infinite);  // Stop log timer
-            _imageTimer.Change(Timeout.Infinite, Timeout.Infinite);  // Stop image timer
-        }
-
-        private void SendLog(object? state)
-        {
-            if (!IsRunning) return;
+    private void SendLog(object? state)
+    {
+        if (!IsRunning) return;
             
-            var log = new LogEntry
-            {
-                WorkerId = WorkerId,
-                Timestamp = DateTime.UtcNow,
-                Message = $"Log message at {DateTime.UtcNow}"
-            };
-            _messageQueue.EnqueueMessage(log);
-        }
-
-        private void SendImage(object? state)
+        var log = new LogEntry
         {
-            if (!IsRunning) return;
+            WorkerId = WorkerId,
+            Timestamp = DateTime.UtcNow,
+            Message = $"Log message at {DateTime.UtcNow}"
+        };
+        _messageQueue.EnqueueMessage(log);
+    }
+
+    private void SendImage(object? state)
+    {
+        if (!IsRunning) return;
             
-            var imageData = new ImageData
-            {
-                WorkerId = WorkerId,
-                Timestamp = DateTime.UtcNow,
-                ImageBytes = GenerateFakeImage()
-            };
-            _messageQueue.EnqueueMessage(imageData);
-        }
-
-        private byte[] GenerateFakeImage()
+        var imageData = new ImageData
         {
-            // fake image data (placeholder)
-            var generator = new ImageGenerator();
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                return generator.GenerateImageWithNumber(_logCounter++);
-            return [0, 0, 0];
-        }
+            WorkerId = WorkerId,
+            Timestamp = DateTime.UtcNow,
+            ImageBytes = GenerateFakeImage()
+        };
+        _messageQueue.EnqueueMessage(imageData);
+    }
+
+    private byte[] GenerateFakeImage()
+    {
+        // fake image data (placeholder)
+        var generator = new ImageGenerator();
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            return generator.GenerateImageWithNumber(_logCounter++);
+        return [0, 0, 0];
     }
 }

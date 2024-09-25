@@ -3,6 +3,5 @@
 public class BaseMessage
 {
     public Guid EngineId { get; set; }
-    public required DateTime Timestamp { get; set; }
-    
+    public DateTime Timestamp { get; set; } = DateTime.Now;
 }
