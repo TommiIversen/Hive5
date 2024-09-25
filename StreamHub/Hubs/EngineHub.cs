@@ -46,11 +46,7 @@ public class EngineHub(
         if (engineManager.TryGetEngine(logMessage.EngineId, out var engine))
         {
             engine.AddWorkerLog(logMessage.WorkerId, logMessage);
-            // calculate the delay in signalR from logMessage.timestamp and now
             Console.WriteLine($"Time delay: {DateTime.UtcNow - logMessage.Timestamp} - {logMessage.Timestamp} - {DateTime.UtcNow} - {logMessage.Message}");
-            
-            //await hubContext.Clients.All.SendAsync("ReceiveLog");
-            //await hubContext.Clients.Group("frontendClients").SendAsync("ReceiveLog", logMessage);
             await hubContext.Clients.Group($"worker-{logMessage.WorkerId}").SendAsync("ReceiveLog", logMessage);
         }
         else
@@ -75,7 +71,9 @@ public class EngineHub(
     {
         var worker = engineManager.GetWorker(imageData.EngineId, imageData.WorkerId);
         if (worker != null) worker.LastImage = $"data:image/jpeg;base64,{Convert.ToBase64String(imageData.ImageBytes)}";
-        await hubContext.Clients.All.SendAsync("ReceiveImage", imageData, cancellationService.Token);
+        //await hubContext.Clients.All.SendAsync("ReceiveImage", imageData, cancellationService.Token);
+        await hubContext.Clients.Group("frontendClients").SendAsync("ReceiveImage", imageData, cancellationService.Token);
+
     }
 
     public async Task<CommandResult> StopWorker(Guid engineId, Guid workerId)
