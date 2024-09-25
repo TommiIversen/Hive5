@@ -12,6 +12,8 @@ public class WorkerService
     public Guid WorkerId { get; } = Guid.NewGuid();
     public bool IsRunning { get; private set; }
     private int _logCounter = 0;
+    private int _logImgCounter = 0;
+
 
     public WorkerService(MessageQueue messageQueue)
     {
@@ -38,11 +40,12 @@ public class WorkerService
     {
         if (!IsRunning) return;
             
+        var counter = _logCounter++;
         var log = new LogEntry
         {
             WorkerId = WorkerId,
             Timestamp = DateTime.UtcNow,
-            Message = $"Log message at {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff}"
+            Message = $"{counter} Log message at {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff}"
         };
         _messageQueue.EnqueueMessage(log);
     }
@@ -65,7 +68,7 @@ public class WorkerService
         // fake image data (placeholder)
         var generator = new ImageGenerator();
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            return generator.GenerateImageWithNumber(_logCounter++);
+            return generator.GenerateImageWithNumber(_logImgCounter++);
         return [0, 0, 0];
     }
 }

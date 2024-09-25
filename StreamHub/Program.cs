@@ -9,6 +9,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddSingleton<TrackingCircuitHandler>(); // For direkte injection
 builder.Services.AddSingleton<CircuitHandler>(sp => sp.GetRequiredService<TrackingCircuitHandler>()); // As CircuitHandler
+builder.Services.AddScoped<BlazorSignalRService>();
+
 
 // Add services to the container.
 builder.Services.AddRazorComponents()

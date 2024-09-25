@@ -47,11 +47,28 @@ public class EngineHub(
         {
             engine.AddWorkerLog(logMessage.WorkerId, logMessage);
             // calculate the delay in signalR from logMessage.timestamp and now
-            Console.WriteLine($"Time delay: {DateTime.UtcNow - logMessage.Timestamp} - {logMessage.Timestamp} - {DateTime.UtcNow}");
+            Console.WriteLine($"Time delay: {DateTime.UtcNow - logMessage.Timestamp} - {logMessage.Timestamp} - {DateTime.UtcNow} - {logMessage.Message}");
             
             //await hubContext.Clients.All.SendAsync("ReceiveLog");
-            await hubContext.Clients.Group("frontendClients").SendAsync("ReceiveLog", logMessage);
+            //await hubContext.Clients.Group("frontendClients").SendAsync("ReceiveLog", logMessage);
+            await hubContext.Clients.Group($"worker-{logMessage.WorkerId}").SendAsync("ReceiveLog", logMessage);
         }
+        else
+        {
+            Console.WriteLine($"ReceiveLog: Engine {logMessage.EngineId} not found");
+        }
+    }
+    
+    public async Task SubscribeToLogs(string workerId)
+    {
+        Console.WriteLine($"Subscribing to logs for worker {workerId}");
+        await Groups.AddToGroupAsync(Context.ConnectionId, $"worker-{workerId}");
+    }
+
+    public async Task UnsubscribeFromLogs(string workerId)
+    {
+        Console.WriteLine($"Unsubscribing from logs for worker {workerId}");
+        await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"worker-{workerId}");
     }
 
     public async Task ReceiveImage(ImageData imageData)

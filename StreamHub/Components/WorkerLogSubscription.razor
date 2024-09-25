@@ -1,6 +1,4 @@
-﻿@using System.Collections.Concurrent
-@using Common.Models
-@using Microsoft.AspNetCore.SignalR.Client
+﻿@using Microsoft.AspNetCore.SignalR.Client
 @using StreamHub.Services
 @inject BlazorSignalRService SignalRService
 
@@ -9,26 +7,9 @@
     @(IsSubscribed ? "Unsubscribe" : "Subscribe")
 </button>
 
-@if (LogMessages.Any())
-{
-    <ul>
-        @foreach (var logMessage in LogMessages)
-        {
-            <li>@logMessage.Message</li>
-        }
-    </ul>
-}
-else
-{
-    <p>Ingen logbeskeder.</p>
-}
-
 @code {
     [Parameter]
-    public ConcurrentQueue<LogEntry> LogMessages { get; set; } = new();
-    [Parameter]
-    public string Workerid { get; set; } = "";
-
+    public string WorkerId { get; set; } = "";
 
     private bool IsSubscribed = false;
 
@@ -53,8 +34,8 @@ else
     {
         if (SignalRService.HubConnection != null)
         {
-            // Eventuelt logik for at tilmelde sig en specifik gruppe/worker
-            await SignalRService.HubConnection.SendAsync("SubscribeToLogs", Workerid); // Tilpasset efter behov
+            // Logik for at tilmelde sig en specifik gruppe/worker
+            await SignalRService.HubConnection.SendAsync("SubscribeToLogs", WorkerId); // Tilpasset efter behov
         }
     }
 
@@ -62,8 +43,8 @@ else
     {
         if (SignalRService.HubConnection != null)
         {
-            // Eventuelt logik for at afmelde sig en specifik gruppe/worker
-            await SignalRService.HubConnection.SendAsync("UnsubscribeFromLogs", Workerid); // Tilpasset efter behov
+            // Logik for at afmelde sig en specifik gruppe/worker
+            await SignalRService.HubConnection.SendAsync("UnsubscribeFromLogs", WorkerId); // Tilpasset efter behov
         }
     }
 
@@ -71,12 +52,5 @@ else
     {
         // Start SignalR-forbindelsen, hvis den ikke allerede er startet
         await SignalRService.StartConnectionAsync();
-    }
-    
-    protected override bool ShouldRender()
-    {
-        // Logik til kun at rerender, når nødvendigt
-        // Du kan implementere checks her for at afgøre, om komponenten faktisk skal opdateres
-        return IsSubscribed;  // Returner true kun hvis der er en ændring, der kræver rerendering
     }
 }
