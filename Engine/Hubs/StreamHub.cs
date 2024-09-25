@@ -132,7 +132,7 @@ public class StreamHub
         };
         await hubConnection.InvokeAsync("EngineConnected", engineModel);
         Console.WriteLine($"------###################");
-        var workers = _workerManager.GetAllWorkers();
+        var workers = _workerManager.GetAllWorkers(EngineId);
         Console.WriteLine("kkkkk");
         Console.WriteLine($"-------List workers count: {workers.Count}");
         await hubConnection.InvokeAsync("ReportWorkers", workers);

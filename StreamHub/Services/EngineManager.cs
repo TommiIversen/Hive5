@@ -12,6 +12,32 @@ public class EngineManager
     {
         return _engines.GetOrAdd(baseInfo.EngineId, id => new EngineViewModel { BaseInfo = baseInfo });
     }
+    
+    public void AddOrUpdateWorker(WorkerOut workerOut)
+    {
+        if (_engines.TryGetValue(workerOut.EngineId, out var engine))
+        {
+            if (engine.Workers.TryGetValue(workerOut.WorkerId, out var workerViewModel))
+            {
+                // Update the existing worker
+                workerViewModel.Worker = workerOut;
+            }
+            else
+            {
+                engine.Workers[workerOut.WorkerId] = new WorkerViewModel
+                {
+                    WorkerId = workerOut.WorkerId,
+                    Worker = workerOut
+                };
+            }
+        }
+        else
+        {
+            // Handle the case where the engine does not exist
+            Console.WriteLine($"Engine {workerOut.EngineId} not found. Cannot add or update worker.");
+        }
+    }
+    
 
     public bool TryGetEngine(Guid engineId, out EngineViewModel engineInfo)
     {

@@ -78,6 +78,10 @@ else
                                 <tr>
                                     <td>
                                         <div>@worker.WorkerId</div>
+                                        <div>@worker.Worker.Name</div>
+                                        <div>@worker.Worker.Description</div>
+
+
                                         <div>
                                             <button @onclick="() => StopWorker(engine.BaseInfo.EngineId, worker.WorkerId)"
                                                     disabled="@worker.IsProcessing">

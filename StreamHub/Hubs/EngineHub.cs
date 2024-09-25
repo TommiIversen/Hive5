@@ -21,8 +21,11 @@ public class EngineHub(
     public async Task ReportWorkers(List<WorkerOut> workers)
     {
         Console.WriteLine($"-----------Reporting workers: {workers.Count}");
-        foreach (var worker in workers)
-            Console.WriteLine($"Worker: {worker.Name}");
+        foreach (WorkerOut worker in workers)
+        {
+            engineManager.AddOrUpdateWorker(worker);
+            Console.WriteLine($"Addddddd Worker: {worker.Name}");
+        }
     }
 
     public async Task ReceiveMetric(Metric metric)
@@ -64,7 +67,8 @@ public class EngineHub(
 
             // Opret en cancellation token med timeout
             using var timeoutCts = new CancellationTokenSource(timeoutMilliseconds);
-            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationService.Token, timeoutCts.Token);
+            using var linkedCts =
+                CancellationTokenSource.CreateLinkedTokenSource(cancellationService.Token, timeoutCts.Token);
             try
             {
                 Console.WriteLine($"Forwarding StopWorker request for worker {workerId} on engine {engineId}");
@@ -94,7 +98,7 @@ public class EngineHub(
             return new CommandResult(false, "Engine not found.");
         }
     }
-   
+
     public override async Task OnConnectedAsync()
     {
         var clientType = Context.GetHttpContext()?.Request.Query["clientType"].ToString();
@@ -116,7 +120,7 @@ public class EngineHub(
 
         await base.OnConnectedAsync();
     }
-    
+
     public override Task OnDisconnectedAsync(Exception? exception)
     {
         Console.WriteLine($"Client disconnected: {Context.ConnectionId}");

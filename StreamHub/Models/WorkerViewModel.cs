@@ -1,10 +1,13 @@
 ﻿using System.Collections.Concurrent;
+using Common.Models;
 
 namespace StreamHub.Models;
 
 public class WorkerViewModel
 {
     public required Guid WorkerId { get; set; }
+    
+    public WorkerOut Worker { get; set; }
     public ConcurrentQueue<string> LogMessages { get; set; } = new();
     public string? LastImage { get; set; }
     

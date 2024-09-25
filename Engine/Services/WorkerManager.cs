@@ -64,9 +64,14 @@ public class WorkerManager
         }
     }
 
-    public List<WorkerOut> GetAllWorkers()
+    public List<WorkerOut> GetAllWorkers(Guid engineId)
     {
+        // FIX - inject ikke enginID her
         Log.Information($"Getting all workers...");
+        
+        foreach (var worker in _workersBaseInfo.Values)
+            worker.EngineId = engineId;
+        
         return _workersBaseInfo.Values.ToList();
     }
 
