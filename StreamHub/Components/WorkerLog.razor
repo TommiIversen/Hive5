@@ -70,6 +70,7 @@ else
     protected override async Task OnInitializedAsync()
     {
         // Start SignalR-forbindelsen, hvis den ikke allerede er startet
+        Console.WriteLine("----------------------------WorkerLogSubscription initialized.");
         await SignalRService.StartConnectionAsync();
     }
     
