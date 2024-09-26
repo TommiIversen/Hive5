@@ -65,4 +65,9 @@ public class EngineManager
     {
         return _engines.Values;
     }
+    
+    public bool RemoveEngine(Guid engineId)
+    {
+        return _engines.TryRemove(engineId, out _);
+    }
 }

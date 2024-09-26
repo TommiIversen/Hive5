@@ -35,6 +35,9 @@ else
             var isOffline = string.IsNullOrEmpty(engine.ConnectionId);
             var rowStyle = isOffline ? "background-color: #445566;" : ""; // Rød baggrund hvis offline
 
+            <button @onclick="() => RemoveEngine(engine.BaseInfo.EngineId)">
+                Remove Engine
+            </button>
 
             <tr style="@rowStyle">
                 <td>
@@ -102,10 +105,7 @@ else
                                     <td>
                                     </td>
                                     <td>
-
-
                                         <WorkerLog LogMessages="worker.LogMessages" WorkerId="@worker.WorkerId.ToString()"/>
-
                                     </td>
                                     <td>
                                         @if (!string.IsNullOrEmpty(worker.LastImage))
@@ -196,6 +196,20 @@ else
         }
     }
 
+    private async Task RemoveEngine(Guid engineId)
+    {
+        var success = EngineManager.RemoveEngine(engineId);
+        if (success)
+        {
+            Console.WriteLine($"Engine {engineId} removed successfully.");
+            await InvokeAsync(StateHasChanged);
+        }
+        else
+        {
+            Console.WriteLine($"Failed to remove engine {engineId}. Engine not found.");
+        }
+    }
+    
     private async Task<string> StopWorker(Guid engineId, Guid workerId)
     {
         var result = await WorkerService.StopWorkerAsync(engineId, workerId);
@@ -203,6 +217,5 @@ else
         await InvokeAsync(StateHasChanged);
         return result.Message;
     }
-
 }
 
