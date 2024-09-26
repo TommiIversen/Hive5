@@ -33,11 +33,12 @@ public class MessageQueue(int maxQueueSize)
         return _messageQueue.Count;
     }
 }
+
 public class MultiQueue
 {
     private readonly ILogger<MultiQueue> _logger;
-    private readonly ConcurrentDictionary<Type, Queue<BaseMessage?>> _queues = new();
-    private readonly ConcurrentDictionary<string, Queue<BaseMessage?>> _uniqueQueues = new();
+    private readonly ConcurrentDictionary<Type, ConcurrentQueue<BaseMessage>> _queues = new();  
+    private readonly ConcurrentDictionary<string, ConcurrentQueue<BaseMessage>> _uniqueQueues = new();
     private readonly int _defaultQueueLimit;
     private readonly SemaphoreSlim _messageAvailable = new(0);  // Semaphore til at signalere nye beskeder
     private const bool DebugFlag = false;
@@ -52,71 +53,83 @@ public class MultiQueue
     {
     }
 
-    public void EnqueueMessage(BaseMessage? baseMessage, string uniqueId = "")
+    public void EnqueueMessage(BaseMessage baseMessage, string uniqueId = "")
     {
+        
         if (!string.IsNullOrEmpty(uniqueId))
         {
-            if (!_uniqueQueues.ContainsKey(uniqueId))
-            {
-                _uniqueQueues[uniqueId] = new Queue<BaseMessage?>(1);  // Opret en ny kø for uniqueId
-            }
+            var uniqueQueue = _uniqueQueues.GetOrAdd(uniqueId, _ => new ConcurrentQueue<BaseMessage>());  // GetOrAdd sikrer atomisk operation
 
-            var uniqueQueue = _uniqueQueues[uniqueId];
-            if (uniqueQueue.Count > 0)
+            lock (uniqueQueue)  // Brug lock her for at sikre trådsikkerhed ved begrænsning af køstørrelse
             {
-                uniqueQueue.Dequeue();  // Fjern ældste besked, så vi kun beholder én
-            }
+                if (uniqueQueue.Count >= 1)
+                {
+                    uniqueQueue.TryDequeue(out _);  // Fjern ældste besked, så vi kun beholder én
+                }
 
-            uniqueQueue.Enqueue(baseMessage);  // Tilføj den nye besked
-            if (DebugFlag)
-            {
-                _logger.LogInformation("Message for UniqueID: {UniqueId} enqueued. Queue size: {QueueSize}", uniqueId, uniqueQueue.Count);
+                uniqueQueue.Enqueue(baseMessage);  // Tilføj den nye besked
+
+                if (DebugFlag)
+                {
+                    _logger.LogInformation("Message for UniqueID: {UniqueId} enqueued. Queue size: {QueueSize}", uniqueId, uniqueQueue.Count);
+                }
             }
         }
         else
         {
-            var messageType = baseMessage.GetType();
-            if (!_queues.ContainsKey(messageType))
+            var messageType = baseMessage?.GetType();
+
+            if (messageType == null)
             {
-                _queues[messageType] = new Queue<BaseMessage?>();
+                Console.WriteLine("Message type is null");
+                return;
             }
 
-            var queue = _queues[messageType];
-            queue.Enqueue(baseMessage);
+            var queue = _queues.GetOrAdd(messageType, _ => new ConcurrentQueue<BaseMessage>());  // Brug GetOrAdd for atomisk adgang
 
-            if (queue.Count > _defaultQueueLimit)
+            lock (queue)  // Brug lock for at sikre trådsikkerhed ved køstørrelse
             {
-                queue.Dequeue();  // Fjern ældste besked, hvis køen overskrider grænsen
-            }
-            if (DebugFlag)
-            {
-                _logger.LogInformation("{MessageType} enqueued. Queue size: {QueueSize}", messageType.Name, queue.Count);
+                if (baseMessage != null) queue.Enqueue(baseMessage);
+
+                if (queue.Count > _defaultQueueLimit)
+                {
+                    queue.TryDequeue(out _);  // Fjern ældste besked, hvis køen overskrider grænsen
+                }
+
+                if (DebugFlag)
+                {
+                    _logger.LogInformation("{MessageType} enqueued. Queue size: {QueueSize}", messageType.Name, queue.Count);
+                }
             }
         }
+
         _messageAvailable.Release();
     }
 
-    public async Task<BaseMessage?> DequeueMessageAsync(CancellationToken cancellationToken)
+    public async Task<BaseMessage> DequeueMessageAsync(CancellationToken cancellationToken)
     {
-        await _messageAvailable.WaitAsync(cancellationToken);
-        foreach (var uniqueQueue in _uniqueQueues.Values)
+        while (true)
         {
-            if (uniqueQueue.Count > 0)
+            await _messageAvailable.WaitAsync(cancellationToken);  // Vent på, at der er en besked tilgængelig
+
+            foreach (var uniqueQueue in _uniqueQueues.Values)
             {
-                return uniqueQueue.Dequeue();  // Returner unik besked fra uniqueId-kø
+                if (uniqueQueue.TryDequeue(out var uniqueMessage))
+                {
+                    return uniqueMessage;  // Returner unik besked fra uniqueId-kø
+                }
+            }
+
+            foreach (var queue in _queues.Values)
+            {
+                if (queue.TryDequeue(out var message))
+                {
+                    return message;  // Returner besked fra FIFO-kø
+                }
             }
         }
-
-        foreach (var queue in _queues.Values)
-        {
-            if (queue.Count > 0)
-            {
-                return queue.Dequeue();  // Returner besked fra FIFO-kø
-            }
-        }
-
-        return null;  // Hvis ingen beskeder er tilgængelige
     }
+
 
     public Dictionary<string, int> ReportQueueContents()
     {
@@ -135,4 +148,3 @@ public class MultiQueue
         return report;
     }
 }
-

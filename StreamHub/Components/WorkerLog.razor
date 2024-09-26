@@ -11,15 +11,22 @@
 
 @if (LogMessages.Any())
 {
+    int? previousSequenceNumber = null; // Holder styr på det sidste sekvensnummer
     <ul>
         @foreach (var logMessage in LogMessages)
         {
-            var previousSequenceNumber = GetPreviousSequenceNumber(logMessage); // Hent det forrige sekvensnummer
-            
-            <li style="@(logMessage.LogSequenceNumber != previousSequenceNumber + 1 ? "background-color: red;" : "")">
+            var currentSequenceNumber = logMessage.LogSequenceNumber;
+
+            // Hvis det ikke er den første log, sammenlign sekvensnumrene
+            bool isOutOfSequence = previousSequenceNumber.HasValue && (currentSequenceNumber != previousSequenceNumber + 1);
+
+            <li style="@(isOutOfSequence ? "background-color: red;" : "")">
                 <div>@logMessage.Message</div>
                 <div>@logMessage.LogSequenceNumber</div>
             </li>
+
+            // Opdater det forrige sekvensnummer til næste iteration
+            previousSequenceNumber = currentSequenceNumber;
         }
     </ul>
 }
@@ -35,7 +42,6 @@ else
     public string Workerid { get; set; } = "";
 
     private bool _isSubscribed = false;
-    private int? _lastLogSequenceNumber; // Holder styr på det sidste sekvensnummer
 
     // Toggle Subscription Logic
     private async Task ToggleSubscription()
@@ -73,25 +79,9 @@ else
         Console.WriteLine("----------------------------WorkerLogSubscription initialized.");
         await SignalRService.StartConnectionAsync();
     }
-    
+
     protected override bool ShouldRender()
     {
         return _isSubscribed;
-    }
-
-    // Hjælpefunktion til at få det forrige sekvensnummer
-    private int GetPreviousSequenceNumber(LogEntry currentLog)
-    {
-        // Hvis der er en tidligere besked, brug dens sekvensnummer
-        if (_lastLogSequenceNumber.HasValue)
-        {
-            var previousSequence = _lastLogSequenceNumber.Value;
-            _lastLogSequenceNumber = currentLog.LogSequenceNumber; // Opdater det sidste nummer
-            return previousSequence;
-        }
-
-        // Hvis der ikke er nogen tidligere logbesked
-        _lastLogSequenceNumber = currentLog.LogSequenceNumber;
-        return currentLog.LogSequenceNumber - 1; // Dette vil forhindre første log i at blive rød
     }
 }

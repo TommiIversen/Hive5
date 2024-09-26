@@ -177,8 +177,12 @@ public class StreamHub
         while (!cancellationToken.IsCancellationRequested)
         {
             BaseMessage? baseMessage = await queue.DequeueMessageAsync(cancellationToken);
-            
-            if (baseMessage == null) continue;
+
+            if (baseMessage == null)
+            {
+                _logger.LogWarning("Dequeue returned null message");
+                continue;
+            }
             
             if (hubConnection.State == HubConnectionState.Connected)
             {

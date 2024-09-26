@@ -6,7 +6,6 @@
 @using StreamHub.Services
 @inject EngineManager EngineManager
 @inject WorkerService WorkerService
-@using StreamHub.Services
 @inject TrackingCircuitHandler TrackingHandler
 @inject BlazorSignalRService SignalRService
 
@@ -125,14 +124,8 @@ else
 }
 
 @code {
-    private HubConnection? _hubConnection;
     private string _connectionStatus = "Ikke forbundet2";
-
     private int _connectedUsers;
-
-    private bool _shouldUpdateMetrics = false;
-    private bool _shouldUpdateLogs = false;
-    private bool _shouldUpdateImages = false;
 
     private void UpdateConnectedUsers(object? sender, UserCountChangedEventArgs e)
     {
@@ -153,15 +146,6 @@ else
         _connectedUsers = TrackingHandler.GetTotalConnectedUsers();
 
         await SignalRService.StartConnectionAsync();
-
-        
-        // _hubConnection = new HubConnectionBuilder()
-        //     .WithUrl(NavigationManager.ToAbsoluteUri("/streamhub?clientType=frontend"), options =>
-        //     {
-        //         options.Transports = HttpTransportType.WebSockets; // Kun WebSockets
-        //     })
-        //     .WithAutomaticReconnect()
-        //     .Build();
 
         SignalRService.HubConnection.Reconnecting += (_) =>
         {
@@ -191,7 +175,6 @@ else
 
         SignalRService.HubConnection.On<LogEntry>("ReceiveLog", async (_) =>
         {
-            _shouldUpdateLogs = true;
             await InvokeAsync(StateHasChanged);
         });
 
@@ -223,13 +206,4 @@ else
         return result.Message;
     }
     
-    protected override void OnAfterRender(bool firstRender)
-    {
-        // Nulstil flagene efter rendering
-        _shouldUpdateMetrics = false;
-        _shouldUpdateLogs = false;
-        _shouldUpdateImages = false;
-    }
-    
-}
 }
