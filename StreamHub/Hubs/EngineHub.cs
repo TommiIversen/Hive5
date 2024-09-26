@@ -140,10 +140,21 @@ public class EngineHub(
         await base.OnConnectedAsync();
     }
 
-    public override Task OnDisconnectedAsync(Exception? exception)
+    public override async Task<Task> OnDisconnectedAsync(Exception? exception)
     {
-        Console.WriteLine($"Client disconnected: {Context.ConnectionId}");
-        engineManager.RemoveConnection(Context.ConnectionId);
+        var wasEngine = engineManager.RemoveConnection(Context.ConnectionId);
+        
+        if (wasEngine)
+        {
+            await hubContext.Clients.Group("frontendClients").SendAsync("EngineChange",  cancellationService.Token);
+
+            Console.WriteLine($"Engine disconnected: {Context.ConnectionId}");
+        }
+        else
+        {
+            Console.WriteLine($"Client disconnected: {Context.ConnectionId}");
+        }
+        
         return base.OnDisconnectedAsync(exception);
     }
 }

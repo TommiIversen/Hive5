@@ -45,13 +45,13 @@ public class EngineManager
     }
 
 
-    public void RemoveConnection(string connectionId)
+    public bool RemoveConnection(string connectionId)
     {
         var engine = _engines.Values.FirstOrDefault(e => e.ConnectionId == connectionId);
-        if (engine != null)
-        {
-            engine.ConnectionId = null;
-        }
+        if (engine == null) return false;
+        
+        engine.ConnectionId = "";
+        return true;
     }
 
     public WorkerViewModel? GetWorker(Guid engineId, Guid workerId)

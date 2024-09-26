@@ -10,7 +10,6 @@
 @inject BlazorSignalRService SignalRService
 
 
-
 <h3>StreamHub Dashboard</h3>
 <h3>Connected Users: @_connectedUsers</h3>
 
@@ -32,10 +31,16 @@ else
         <tbody>
         @foreach (var engine in EngineManager.GetAllEngines())
         {
-            <tr>
+            // Hvis ConnectionId er null eller tom, så marker som offline (rød baggrund)
+            var isOffline = string.IsNullOrEmpty(engine.ConnectionId);
+            var rowStyle = isOffline ? "background-color: #445566;" : ""; // Rød baggrund hvis offline
+
+
+            <tr style="@rowStyle">
                 <td>
                     <div>
                         <div>BaseInfo</div>
+                        <strong>@engine.ConnectionId</strong> <br/>
                         <strong>Engine Name:</strong> @engine.BaseInfo.EngineName <br/>
                         <strong>Engine Description</strong> @engine.BaseInfo.EngineDescription <br/>
                         <strong>Engine ID:</strong> @engine.BaseInfo.EngineId <br/>
@@ -99,8 +104,8 @@ else
                                     <td>
 
 
-                                        <WorkerLog LogMessages="worker.LogMessages" WorkerId="@worker.WorkerId.ToString()" />
-                                        
+                                        <WorkerLog LogMessages="worker.LogMessages" WorkerId="@worker.WorkerId.ToString()"/>
+
                                     </td>
                                     <td>
                                         @if (!string.IsNullOrEmpty(worker.LastImage))
@@ -138,7 +143,7 @@ else
     {
         TrackingHandler.OnUserCountChanged -= UpdateConnectedUsers;
     }
-    
+
     protected override async Task OnInitializedAsync()
     {
         // Subscribe til OnUserCountChanged eventet
@@ -168,21 +173,14 @@ else
             return Task.CompletedTask;
         };
 
-        SignalRService.HubConnection.On<Metric>("UpdateMetric", async (_) =>
-        {
-            await InvokeAsync(StateHasChanged);
-        });
+        SignalRService.HubConnection.On<Metric>("UpdateMetric", async (_) => { await InvokeAsync(StateHasChanged); });
 
-        SignalRService.HubConnection.On<LogEntry>("ReceiveLog", async (_) =>
-        {
-            await InvokeAsync(StateHasChanged);
-        });
+        SignalRService.HubConnection.On<LogEntry>("ReceiveLog", async (_) => { await InvokeAsync(StateHasChanged); });
 
-
-        SignalRService.HubConnection.On<ImageData>("ReceiveImage", async (_) =>
-        {
-            await InvokeAsync(StateHasChanged);
-        });
+        SignalRService.HubConnection.On<ImageData>("ReceiveImage", async (_) => { await InvokeAsync(StateHasChanged); });
+        
+        SignalRService.HubConnection.On("EngineChange", async () => { await InvokeAsync(StateHasChanged); });
+        
 
         // Start forbindelsen
         try
@@ -205,5 +203,6 @@ else
         await InvokeAsync(StateHasChanged);
         return result.Message;
     }
-    
+
 }
+
