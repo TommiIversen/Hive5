@@ -46,7 +46,7 @@ public class EngineHub(
         if (engineManager.TryGetEngine(logMessage.EngineId, out var engine))
         {
             engine.AddWorkerLog(logMessage.WorkerId, logMessage);
-            Console.WriteLine($"Time delay: {DateTime.UtcNow - logMessage.Timestamp} - {logMessage.Timestamp} - {DateTime.UtcNow} - {logMessage.Message}");
+            Console.WriteLine($"Time delay: {DateTime.UtcNow - logMessage.Timestamp} - {logMessage.Timestamp} - {DateTime.UtcNow} - {logMessage.LogSequenceNumber}");
             await hubContext.Clients.Group($"worker-{logMessage.WorkerId}").SendAsync("ReceiveLog", logMessage);
         }
         else

@@ -6,7 +6,7 @@
 
 <!-- Subscription/Unsubscription Button -->
 <button @onclick="ToggleSubscription">
-    @(IsSubscribed ? "Unsubscribe" : "Subscribe")
+    @(_isSubscribed ? "Unsubscribe" : "Subscribe")
 </button>
 
 @if (LogMessages.Any())
@@ -14,7 +14,12 @@
     <ul>
         @foreach (var logMessage in LogMessages)
         {
-            <li>@logMessage.Message</li>
+            var previousSequenceNumber = GetPreviousSequenceNumber(logMessage); // Hent det forrige sekvensnummer
+            
+            <li style="@(logMessage.LogSequenceNumber != previousSequenceNumber + 1 ? "background-color: red;" : "")">
+                <div>@logMessage.Message</div>
+                <div>@logMessage.LogSequenceNumber</div>
+            </li>
         }
     </ul>
 }
@@ -29,31 +34,28 @@ else
     [Parameter]
     public string Workerid { get; set; } = "";
 
-
-    private bool IsSubscribed = false;
+    private bool _isSubscribed = false;
+    private int? _lastLogSequenceNumber; // Holder styr på det sidste sekvensnummer
 
     // Toggle Subscription Logic
     private async Task ToggleSubscription()
     {
-        if (IsSubscribed)
+        if (_isSubscribed)
         {
-            // Unsubscribe from receiving logs
             await UnsubscribeFromLogs();
         }
         else
         {
-            // Subscribe to receiving logs
             await SubscribeToLogs();
         }
 
-        IsSubscribed = !IsSubscribed; // Toggle the subscription state
+        _isSubscribed = !_isSubscribed; // Toggle the subscription state
     }
 
     private async Task SubscribeToLogs()
     {
         if (SignalRService.HubConnection != null)
         {
-            // Eventuelt logik for at tilmelde sig en specifik gruppe/worker
             await SignalRService.HubConnection.SendAsync("SubscribeToLogs", Workerid); // Tilpasset efter behov
         }
     }
@@ -62,22 +64,34 @@ else
     {
         if (SignalRService.HubConnection != null)
         {
-            // Eventuelt logik for at afmelde sig en specifik gruppe/worker
             await SignalRService.HubConnection.SendAsync("UnsubscribeFromLogs", Workerid); // Tilpasset efter behov
         }
     }
 
     protected override async Task OnInitializedAsync()
     {
-        // Start SignalR-forbindelsen, hvis den ikke allerede er startet
         Console.WriteLine("----------------------------WorkerLogSubscription initialized.");
         await SignalRService.StartConnectionAsync();
     }
     
     protected override bool ShouldRender()
     {
-        // Logik til kun at rerender, når nødvendigt
-        // Du kan implementere checks her for at afgøre, om komponenten faktisk skal opdateres
-        return IsSubscribed;  // Returner true kun hvis der er en ændring, der kræver rerendering
+        return _isSubscribed;
+    }
+
+    // Hjælpefunktion til at få det forrige sekvensnummer
+    private int GetPreviousSequenceNumber(LogEntry currentLog)
+    {
+        // Hvis der er en tidligere besked, brug dens sekvensnummer
+        if (_lastLogSequenceNumber.HasValue)
+        {
+            var previousSequence = _lastLogSequenceNumber.Value;
+            _lastLogSequenceNumber = currentLog.LogSequenceNumber; // Opdater det sidste nummer
+            return previousSequence;
+        }
+
+        // Hvis der ikke er nogen tidligere logbesked
+        _lastLogSequenceNumber = currentLog.LogSequenceNumber;
+        return currentLog.LogSequenceNumber - 1; // Dette vil forhindre første log i at blive rød
     }
 }

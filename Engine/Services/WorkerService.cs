@@ -45,7 +45,8 @@ public class WorkerService
         {
             WorkerId = WorkerId,
             Timestamp = DateTime.UtcNow,
-            Message = $"{counter} Log message at {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff}"
+            Message = $"{counter} Log message at {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff}",
+            LogSequenceNumber = counter
         };
         _messageQueue.EnqueueMessage(log);
     }

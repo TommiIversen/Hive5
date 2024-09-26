@@ -172,17 +172,19 @@ public class StreamHub
         CancellationToken cancellationToken)
     {
         var queue = _hubQueues[hubConnection];
+        var sequenceNumber = 0;
 
         while (!cancellationToken.IsCancellationRequested)
         {
             BaseMessage? baseMessage = await queue.DequeueMessageAsync(cancellationToken);
+            
+            if (baseMessage == null) continue;
+            
             if (hubConnection.State == HubConnectionState.Connected)
             {
-                var sendTask = SendMessageAsync(hubConnection, baseMessage);
-                if (await Task.WhenAny(sendTask, Task.Delay(MessageSendTimeout, cancellationToken)) != sendTask)
-                {
-                    _logger.LogWarning("Sending message to {url} timed out", url);
-                }
+                baseMessage.EngineId = EngineId;
+                baseMessage.SequenceNumber = sequenceNumber++;
+                await SendMessageAsync(hubConnection, baseMessage);
             }
             else
             {
@@ -197,43 +199,17 @@ public class StreamHub
         switch (baseMessage)
         {
             case Metric metric:
-                metric.EngineId = EngineId;
-                await SendMetricAsync(hubConnection, metric);
+                await hubConnection.InvokeAsync("ReceiveMetric", metric);
                 break;
 
             case LogEntry log:
-                log.EngineId = EngineId;
-                await SendLogAsync(hubConnection, log);
+                await hubConnection.InvokeAsync("ReceiveLog", log);
                 break;
 
             case ImageData image:
-                image.EngineId = EngineId;
-                await SendImageAsync(hubConnection, image);
+                await hubConnection.InvokeAsync("ReceiveImage", image);
                 break;
         }
     }
 
-    private async Task SendMetricAsync(HubConnection hubConnection, Metric metric)
-    {
-        if (hubConnection.State == HubConnectionState.Connected)
-        {
-            await hubConnection.InvokeAsync("ReceiveMetric", metric);
-        }
-    }
-
-    private async Task SendLogAsync(HubConnection hubConnection, LogEntry log)
-    {
-        if (hubConnection.State == HubConnectionState.Connected)
-        {
-            await hubConnection.InvokeAsync("ReceiveLog", log);
-        }
-    }
-
-    private async Task SendImageAsync(HubConnection hubConnection, ImageData image)
-    {
-        if (hubConnection.State == HubConnectionState.Connected)
-        {
-            await hubConnection.InvokeAsync("ReceiveImage", image);
-        }
-    }
 }
