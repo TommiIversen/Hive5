@@ -55,11 +55,11 @@ else
 
     private async Task SubscribeToLogs()
     {
-        await SignalRService.HubConnection.SendAsync("SubscribeToLogs", Workerid); // Tilpasset efter behov
+        await SignalRService.HubConnection.SendAsync("SubscribeToLogs", Workerid);
     }
 
     private async Task UnsubscribeFromLogs()
     {
-        await SignalRService.HubConnection.SendAsync("UnsubscribeFromLogs", Workerid); // Tilpasset efter behov
+        await SignalRService.HubConnection.SendAsync("UnsubscribeFromLogs", Workerid);
     }
 }
