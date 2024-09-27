@@ -9,7 +9,7 @@
     @(_isSubscribed ? "Unsubscribe" : "Subscribe")
 </button>
 
-@if (LogMessages.Any())
+@if (_isSubscribed && LogMessages.Any())
 {
     int? previousSequenceNumber = null; // Holder styr på det sidste sekvensnummer
     <ul>
@@ -32,10 +32,8 @@ else
 }
 
 @code {
-    [Parameter]
-    public ConcurrentQueue<LogEntry> LogMessages { get; set; } = new();
-    [Parameter]
-    public string Workerid { get; set; } = "";
+    [Parameter] public ConcurrentQueue<LogEntry> LogMessages { get; set; } = new();
+    [Parameter] public string Workerid { get; set; } = "";
 
     private bool _isSubscribed = false;
 
@@ -52,32 +50,16 @@ else
         }
 
         _isSubscribed = !_isSubscribed; // Toggle the subscription state
+        await InvokeAsync(StateHasChanged); // Force UI update when button is clicked
     }
 
     private async Task SubscribeToLogs()
     {
-        if (SignalRService.HubConnection != null)
-        {
-            await SignalRService.HubConnection.SendAsync("SubscribeToLogs", Workerid); // Tilpasset efter behov
-        }
+        await SignalRService.HubConnection.SendAsync("SubscribeToLogs", Workerid); // Tilpasset efter behov
     }
 
     private async Task UnsubscribeFromLogs()
     {
-        if (SignalRService.HubConnection != null)
-        {
-            await SignalRService.HubConnection.SendAsync("UnsubscribeFromLogs", Workerid); // Tilpasset efter behov
-        }
-    }
-
-    protected override async Task OnInitializedAsync()
-    {
-        Console.WriteLine("----------------------------Init Log komponent.");
-        // await SignalRService.StartConnectionAsync();
-    }
-
-    protected override bool ShouldRender()
-    {
-        return _isSubscribed;
+        await SignalRService.HubConnection.SendAsync("UnsubscribeFromLogs", Workerid); // Tilpasset efter behov
     }
 }
