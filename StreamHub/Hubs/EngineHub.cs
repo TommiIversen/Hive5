@@ -21,7 +21,7 @@ public class EngineHub(
     }
 
     // SignalR messege fra klient microservice
-    public async Task ReportWorkers(List<WorkerOut> workers)
+    public void ReportWorkers(List<WorkerOut> workers)
     {
         Console.WriteLine($"-----------Reporting workers: {workers.Count}");
         foreach (var worker in workers)
@@ -88,18 +88,19 @@ public class EngineHub(
     {
         if (engineManager.TryGetEngine(engineId, out var engine))
         {
-            // Definer timeout i millisekunder
+            // handle no ConnectioonId aka Engine Offfline
+            if (string.IsNullOrEmpty(engine.ConnectionId))
+            {
+                return new CommandResult(false, "Engine Offline");
+            }
+            
             int timeoutMilliseconds = 5000;
-
-            // Opret en cancellation token med timeout
             using var timeoutCts = new CancellationTokenSource(timeoutMilliseconds);
             using var linkedCts =
                 CancellationTokenSource.CreateLinkedTokenSource(cancellationService.Token, timeoutCts.Token);
             try
             {
                 Console.WriteLine($"Forwarding StopWorker request for worker {workerId} on engine {engineId}");
-
-                // Kald InvokeAsync med timeout
                 var result = await hubContext.Clients.Client(engine.ConnectionId)
                     .InvokeAsync<CommandResult>("StopWorker", workerId, linkedCts.Token);
 
@@ -108,7 +109,6 @@ public class EngineHub(
             }
             catch (OperationCanceledException)
             {
-                // Generisk timeout/annullering fejlmeddelelse
                 Console.WriteLine($"Operation canceled for worker {workerId} due to timeout or cancellation.");
                 return new CommandResult(false, "Operation canceled or timed out.");
             }

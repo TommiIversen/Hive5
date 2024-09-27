@@ -4,17 +4,15 @@ using Microsoft.AspNetCore.SignalR.Client;
 
 namespace StreamHub.Services;
 
-public class BlazorSignalRService
+public class BlazorSignalRService: IAsyncDisposable
 {
-    public HubConnection HubConnection { get; private set; }
+    public HubConnection HubConnection { get; }
 
     public BlazorSignalRService(NavigationManager navigationManager)
     {
         HubConnection = new HubConnectionBuilder()
-            .WithUrl(navigationManager.ToAbsoluteUri("/streamhub?clientType=frontend"), options =>
-            {
-                options.Transports = HttpTransportType.WebSockets;
-            })
+            .WithUrl(navigationManager.ToAbsoluteUri("/streamhub?clientType=frontend"),
+                options => { options.Transports = HttpTransportType.WebSockets; })
             .WithAutomaticReconnect()
             .Build();
     }
@@ -26,5 +24,11 @@ public class BlazorSignalRService
             await HubConnection.StartAsync();
             Console.WriteLine("SignalR connected.");
         }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await HubConnection.DisposeAsync();
+        Console.WriteLine("SignalR Async connection disposed.");
     }
 }

@@ -151,6 +151,7 @@ else
         _connectedUsers = TrackingHandler.GetTotalConnectedUsers();
         _connectionStatus = "Forbundet";
 
+
         await SignalRService.StartConnectionAsync();
 
         SignalRService.HubConnection.Reconnecting += (_) =>
@@ -174,11 +175,11 @@ else
             return Task.CompletedTask;
         };
 
-        SignalRService.HubConnection.On("UpdateMetric", async () => { await InvokeAsync(StateHasChanged); });
+        SignalRService.HubConnection.On<Metric>("UpdateMetric", async (_) => { await InvokeAsync(StateHasChanged); });
 
-        SignalRService.HubConnection.On("ReceiveLog", async () => { await InvokeAsync(StateHasChanged); });
+        SignalRService.HubConnection.On<LogEntry>("ReceiveLog", async (_) => { await InvokeAsync(StateHasChanged); });
 
-        SignalRService.HubConnection.On("ReceiveImage", async () => { await InvokeAsync(StateHasChanged); });
+        SignalRService.HubConnection.On<ImageData>("ReceiveImage", async (_) => { await InvokeAsync(StateHasChanged); });
         
         SignalRService.HubConnection.On("EngineChange", async () => { await InvokeAsync(StateHasChanged); });
     }
@@ -205,4 +206,3 @@ else
         return result.Message;
     }
 }
-
