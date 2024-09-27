@@ -3,13 +3,25 @@
 @using Microsoft.AspNetCore.SignalR.Client
 @using StreamHub.Services
 @inject BlazorSignalRService SignalRService
+@using Microsoft.JSInterop
+@inject IJSRuntime JsRuntime
 
-<!-- Subscription/Unsubscription Button -->
-<button @onclick="ToggleSubscription">
-    @(_isSubscribed ? "Unsubscribe" : "Subscribe")
+<!-- Show/Hide Button -->
+<button @onclick="ToggleShowLog">
+    @(_showLog ? "Hide Logs" : "Show Logs")
 </button>
 
-@if (_isSubscribed && LogMessages.Any())
+<!-- Pause/Unpause Button -->
+<button @onclick="TogglePauseRendering">
+    @(_pauseRendering ? "Resume Log Updates" : "Pause Log Updates")
+</button>
+
+<!-- Download Logs Button -->
+<button @onclick="DownloadLogs">
+    Download Logs
+</button>
+
+@if (_showLog && LogMessages.Any())
 {
     int? previousSequenceNumber = null; // Holder styr på det sidste sekvensnummer
     <ul>
@@ -26,7 +38,7 @@
         }
     </ul>
 }
-else
+else if (_showLog)
 {
     <p>Ingen logbeskeder.</p>
 }
@@ -35,31 +47,119 @@ else
     [Parameter] public ConcurrentQueue<LogEntry> LogMessages { get; set; } = new();
     [Parameter] public string Workerid { get; set; } = "";
 
-    private bool _isSubscribed = false;
+    private bool _isSubscribed = false; // For backend subscription state
+    private bool _showLog = true; // Controls show/hide log visibility
+    private bool _pauseRendering = false; // Controls pause/unpause rendering state
+    private bool _forceRender = true; // Force re-render for UI changes (buttons)
 
-    // Toggle Subscription Logic
-    private async Task ToggleSubscription()
+    // When the component initializes, automatically subscribe to logs
+    protected override async Task OnInitializedAsync()
     {
-        if (_isSubscribed)
+        // Ensure that we are subscribed to logs at init
+        await SubscribeToLogs();
+    }
+
+    // Toggle Show/Hide Log
+    private async Task ToggleShowLog()
+    {
+        _showLog = !_showLog;
+
+        if (_showLog)
         {
-            await UnsubscribeFromLogs();
+            // Ensure logs are visible again, even if paused
+            if (!_pauseRendering)
+            {
+                await SubscribeToLogs();
+            }
         }
         else
         {
-            await SubscribeToLogs();
+            await UnsubscribeFromLogs();
         }
 
-        _isSubscribed = !_isSubscribed; // Toggle the subscription state
-        await InvokeAsync(StateHasChanged); // Force UI update when button is clicked
+        _forceRender = true; // Allow re-rendering for UI changes
+        await InvokeAsync(StateHasChanged); // Always allow rendering when toggling log visibility
     }
 
+    // Toggle Pause/Unpause Log Rendering
+    private async Task TogglePauseRendering()
+    {
+        _pauseRendering = !_pauseRendering;
+
+        if (!_pauseRendering && _showLog)
+        {
+            await SubscribeToLogs(); // Resume subscribing when unpausing and log is shown
+        }
+        else
+        {
+            await UnsubscribeFromLogs(); // Unsubscribe when pausing or hiding log
+        }
+
+        _forceRender = true; // Allow re-rendering for UI changes
+        await InvokeAsync(StateHasChanged); // Force UI update when pausing/unpausing
+    }
+
+    // Subscribe to logs
     private async Task SubscribeToLogs()
     {
-        await SignalRService.HubConnection.SendAsync("SubscribeToLogs", Workerid);
+        if (!_isSubscribed)
+        {
+            await SignalRService.HubConnection.SendAsync("SubscribeToLogs", Workerid);
+            _isSubscribed = true;
+        }
     }
 
+    // Unsubscribe from logs
     private async Task UnsubscribeFromLogs()
     {
-        await SignalRService.HubConnection.SendAsync("UnsubscribeFromLogs", Workerid);
+        if (_isSubscribed)
+        {
+            await SignalRService.HubConnection.SendAsync("UnsubscribeFromLogs", Workerid);
+            _isSubscribed = false;
+        }
     }
+
+    // Ensure rendering is paused for logs only, but buttons and UI should update
+    protected override bool ShouldRender()
+    {
+        if (_forceRender)
+        {
+            _forceRender = false; // Reset the force render flag
+            return true; // Allow rendering for UI changes
+        }
+
+        // Only prevent re-rendering of log data when paused, but allow re-rendering of UI (buttons)
+        return !_pauseRendering || !_showLog; // Render if not paused or if log is being shown
+    }
+
+    // Download logs as a text or CSV file
+    private async void DownloadLogs()
+    {
+        var engineId = LogMessages.FirstOrDefault()?.EngineId.ToString() ?? "Unknown Engine";
+        var workerId = LogMessages.FirstOrDefault()?.WorkerId.ToString() ?? "Unknown Worker";
+
+        // Create the log content (header + log entries)
+        var logContent = new System.Text.StringBuilder();
+        logContent.AppendLine($"EngineId: {engineId}, WorkerId: {workerId}");
+        logContent.AppendLine("Timestamp,Message");
+
+        foreach (var logEntry in LogMessages)
+        {
+            logContent.AppendLine($"{logEntry.Timestamp},{logEntry.Message}");
+        }
+
+        // Trigger file download in the browser
+        var logFileName = $"logs_{DateTime.UtcNow:yyyyMMdd_HHmmss}.txt";
+        await TriggerFileDownload(logFileName, logContent.ToString());
+    }
+
+    // Trigger file download using Blazor JavaScript interop
+    private async Task TriggerFileDownload(string fileName, string content)
+    {
+        var bytes = System.Text.Encoding.UTF8.GetBytes(content);
+        var base64 = Convert.ToBase64String(bytes);
+        var fileUrl = $"data:text/plain;base64,{base64}";
+        await JsRuntime.InvokeVoidAsync("triggerFileDownload", fileName, fileUrl);
+    }
+
 }
