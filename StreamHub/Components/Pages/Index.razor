@@ -24,8 +24,8 @@ else
     <table class="table">
         <thead>
         <tr>
-            <th>Engine Info</th>
-            <th>Workers</th>
+            <th class="col-4">Engine Info</th>
+            <th class="col-8">Workers</th>
         </tr>
         </thead>
         <tbody>
@@ -40,7 +40,7 @@ else
             </button>
 
             <tr style="@rowStyle">
-                <td>
+                <td class="col-4">
                     <div>
                         <div>BaseInfo</div>
                         <strong>@engine.ConnectionId</strong> <br/>
@@ -61,7 +61,7 @@ else
                         <strong>Used Memory (%):</strong> @(engine.LastMetric != null ? (((engine.LastMetric.TotalMemory - engine.LastMetric.AvailableMemory) / engine.LastMetric.TotalMemory) * 100).ToString("F2") : "N/A") <br/>
                         <strong>Current Process Memory Usage (MB):</strong> @(engine.LastMetric?.CurrentProcessMemoryUsage.ToString("F2") ?? "N/A") <br/>
 
-                        <LineChart EngineId="@engine.BaseInfo.EngineId.ToString()" LastMetric="@engine.LastMetric" />
+                        <LineChart EngineId="@engine.BaseInfo.EngineId.ToString()" LastMetric="@engine.LastMetric"/>
 
                         <!-- Viser CPU-brug for hver kerne, hvis det er tilgængeligt -->
                         @if (engine.LastMetric?.PerCoreCpuUsage != null && engine.LastMetric.PerCoreCpuUsage.Count > 0)
@@ -81,14 +81,16 @@ else
                         }
                     </div>
                 </td>
-                <td>
+                <td class="col-8">
+
                     @if (engine.Workers.Any())
                     {
-                        <table>
+                        <table class="w-100">
                             @foreach (var worker in engine.Workers.Values)
                             {
                                 <tr>
-                                    <td>
+                                    <td class="col-4">
+
                                         <div>@worker.WorkerId</div>
                                         <div>@worker.Worker.Name</div>
                                         <div>@worker.Worker.Description</div>
@@ -104,13 +106,14 @@ else
                                             <div>@worker.OperationResult</div>
                                         }
                                     </td>
-                                    <td>
-                                    </td>
-                                    <td>
+            
+                                    <td class="col-4">
+
                                         <WorkerLog LogMessages="worker.LogMessages" WorkerId="@worker.WorkerId.ToString()"/>
                                     </td>
-                                    <td>
-                                        @if (!string.IsNullOrEmpty(worker.LastImage))
+                                    <td class="col-4">
+
+                                    @if (!string.IsNullOrEmpty(worker.LastImage))
                                         {
                                             <img src="@worker.LastImage" alt="Worker Image" width="200"/>
                                         }
@@ -182,7 +185,7 @@ else
         SignalRService.HubConnection.On<LogEntry>("ReceiveLog", async (_) => { await InvokeAsync(StateHasChanged); });
 
         SignalRService.HubConnection.On<ImageData>("ReceiveImage", async (_) => { await InvokeAsync(StateHasChanged); });
-        
+
         SignalRService.HubConnection.On("EngineChange", async () => { await InvokeAsync(StateHasChanged); });
     }
 
@@ -199,7 +202,7 @@ else
             Console.WriteLine($"Failed to remove engine {engineId}. Engine not found.");
         }
     }
-    
+
     private async Task<string> StopWorker(Guid engineId, Guid workerId)
     {
         var result = await WorkerService.StopWorkerAsync(engineId, workerId);
@@ -207,4 +210,5 @@ else
         await InvokeAsync(StateHasChanged);
         return result.Message;
     }
+
 }
