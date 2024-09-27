@@ -31,7 +31,11 @@
                     x: {
                         type: 'time',
                         time: {
-                            unit: 'second'
+                            unit: 'minute', // Vis kun tidsstempler hver minut
+                            tooltipFormat: 'HH:mm:ss', // Viser tid i 24-timers format
+                            displayFormats: {
+                                minute: 'HH:mm' // Formatér x-aksen for hvert minut
+                            }
                         }
                     },
                     y: {
