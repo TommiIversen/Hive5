@@ -12,6 +12,11 @@
     <link rel="stylesheet" href="@Assets["StreamHub.styles.css"]"/>
     <ImportMap/>
     <link rel="icon" type="image/png" href="favicon.png"/>
+
+    <script src="libs/chart.min.js"></script>
+    <script src="libs/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <script src="js/chartInterop.js"></script>
+
     @* <HeadOutlet @rendermode="InteractiveServer"/> *@
     <HeadOutlet @rendermode="new InteractiveServerRenderMode(prerender: false)" />
 

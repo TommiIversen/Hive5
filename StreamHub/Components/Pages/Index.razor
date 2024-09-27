@@ -61,6 +61,8 @@ else
                         <strong>Used Memory (%):</strong> @(engine.LastMetric != null ? (((engine.LastMetric.TotalMemory - engine.LastMetric.AvailableMemory) / engine.LastMetric.TotalMemory) * 100).ToString("F2") : "N/A") <br/>
                         <strong>Current Process Memory Usage (MB):</strong> @(engine.LastMetric?.CurrentProcessMemoryUsage.ToString("F2") ?? "N/A") <br/>
 
+                        <LineChart EngineId="@engine.BaseInfo.EngineId.ToString()" LastMetric="@engine.LastMetric" />
+
                         <!-- Viser CPU-brug for hver kerne, hvis det er tilgængeligt -->
                         @if (engine.LastMetric?.PerCoreCpuUsage != null && engine.LastMetric.PerCoreCpuUsage.Count > 0)
                         {
