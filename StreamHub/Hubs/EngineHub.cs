@@ -11,16 +11,16 @@ public class EngineHub(
     : Hub
 {
     
-    // SignalR messege fra klient microservice
+    // SignalR message fra klient microservice
     public async Task EngineConnected(EngineBaseInfo engineInfo)
     {
         Console.WriteLine($"Engine connected: {engineInfo.EngineId}");
         var engine = engineManager.GetOrAddEngine(engineInfo);
         engine.ConnectionId = Context.ConnectionId;
-        await Clients.Caller.SendAsync("EngineAcknowledged");
+        await Clients.Caller.SendAsync("EngineAcknowledged", engineInfo.EngineId);
     }
 
-    // SignalR messege fra klient microservice
+    // SignalR message fra klient microservice
     public void ReportWorkers(List<WorkerOut> workers)
     {
         Console.WriteLine($"-----------Reporting workers: {workers.Count}");
@@ -31,7 +31,7 @@ public class EngineHub(
         }
     }
 
-    // SignalR messege fra klient microservice
+    // SignalR message fra klient microservice
     public async Task ReceiveMetric(Metric metric)
     {
         if (engineManager.TryGetEngine(metric.EngineId, out var engine))
@@ -45,13 +45,14 @@ public class EngineHub(
         }
     }
 
-    // SignalR messege fra klient microservice
+    // SignalR message fra klient microservice
     public async Task ReceiveLog(LogEntry logMessage)
     {
         if (engineManager.TryGetEngine(logMessage.EngineId, out var engine))
         {
-            TimeSpan delay = DateTime.UtcNow - logMessage.Timestamp;
-            Console.WriteLine($"Time delay: {delay.TotalMilliseconds} Milliseconds - {logMessage.Timestamp} - {DateTime.UtcNow} - {logMessage.LogSequenceNumber}");
+            // For debugging msg sequence + delay in the system
+            //TimeSpan delay = DateTime.UtcNow - logMessage.Timestamp;
+            //Console.WriteLine($"Time delay: {delay.TotalMilliseconds} Milliseconds - {logMessage.Timestamp} - {DateTime.UtcNow} - {logMessage.LogSequenceNumber}");
             engine.AddWorkerLog(logMessage.WorkerId, logMessage);
             await hubContext.Clients.Group($"worker-{logMessage.WorkerId}").SendAsync("ReceiveLog", logMessage);
         }
@@ -61,7 +62,7 @@ public class EngineHub(
         }
     }
     
-    // SignalR messege fra klient microservice
+    // SignalR message fra klient microservice
     public async Task ReceiveImage(ImageData imageData)
     {
         var worker = engineManager.GetWorker(imageData.EngineId, imageData.WorkerId);
@@ -128,7 +129,6 @@ public class EngineHub(
     public override async Task OnConnectedAsync()
     {
         var clientType = Context.GetHttpContext()?.Request.Query["clientType"].ToString();
-
         switch (clientType)
         {
             case "backend":
@@ -143,7 +143,6 @@ public class EngineHub(
                 Console.WriteLine($"Unknown client connected: {Context.ConnectionId}");
                 break;
         }
-
         await base.OnConnectedAsync();
     }
 
