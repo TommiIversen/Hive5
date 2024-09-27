@@ -15,7 +15,7 @@
 
     private IJSObjectReference? _chart;
 
-    private DateTime[] _timePoints = new DateTime[30];
+    private long[] _timePoints = new long[30];
     private double[] _cpuUsage = new double[30];
     private double[] _netRx = new double[30];
     private double[] _netTx = new double[30];
@@ -48,15 +48,16 @@
             // Simuleret startdata
             for (int i = 0; i < 30; i++)
             {
-                _timePoints[29 - i] = DateTime.UtcNow.AddSeconds(i * -10); // Ældste data først, så det nyeste til sidst
+                _timePoints[29 - i] = DateTimeOffset.UtcNow.AddSeconds(i * -10).ToUnixTimeMilliseconds(); // Ældste data først, så det nyeste til sidst
                 _cpuUsage[29 - i] = Random.Shared.NextDouble() * 5;
                 _netRx[29 - i] = Random.Shared.NextDouble() * 13;
                 _netTx[29 - i] = Random.Shared.NextDouble() * 4;
             }
 
+
             var initialData = new
             {
-                labels = _timePoints.Select(t => t.ToString("yyyy-MM-dd HH:mm:ss")).ToArray(),
+                labels = _timePoints,
                 cpuData = _cpuUsage,
                 rxData = _netRx,
                 txData = _netTx
@@ -69,9 +70,13 @@
 
     private async Task UpdateChartData(double newCpu, double newRx, double newTx)
     {
-        var newTime = DateTime.UtcNow;
-        await JsRuntime.InvokeVoidAsync("chartInterop.updateLineChart", _chart, newTime.ToString("yyyy-MM-dd HH:mm:ss"), newCpu, newRx, newTx);
+        var newTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();  // UNIX timestamp in milliseconds
+
+        // debug with time
+        Console.WriteLine($"Updating chart for engine {EngineId} at {newTime}");
+        await JsRuntime.InvokeVoidAsync("chartInterop.updateLineChart", _chart, newTime, newCpu, newRx, newTx);
     }
+    
 
     private string GetCanvasId() => $"cpuChart-{EngineId}";
 }
