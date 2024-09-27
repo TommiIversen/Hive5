@@ -10,6 +10,8 @@ public class EngineHub(
     IHubContext<EngineHub> hubContext)
     : Hub
 {
+    
+    // SignalR messege fra klient microservice
     public async Task EngineConnected(EngineBaseInfo engineInfo)
     {
         Console.WriteLine($"Engine connected: {engineInfo.EngineId}");
@@ -18,16 +20,18 @@ public class EngineHub(
         await Clients.Caller.SendAsync("EngineAcknowledged");
     }
 
+    // SignalR messege fra klient microservice
     public async Task ReportWorkers(List<WorkerOut> workers)
     {
         Console.WriteLine($"-----------Reporting workers: {workers.Count}");
-        foreach (WorkerOut worker in workers)
+        foreach (var worker in workers)
         {
             engineManager.AddOrUpdateWorker(worker);
             Console.WriteLine($"Addddddd Worker: {worker.Name}");
         }
     }
 
+    // SignalR messege fra klient microservice
     public async Task ReceiveMetric(Metric metric)
     {
         if (engineManager.TryGetEngine(metric.EngineId, out var engine))
@@ -41,12 +45,13 @@ public class EngineHub(
         }
     }
 
+    // SignalR messege fra klient microservice
     public async Task ReceiveLog(LogEntry logMessage)
     {
         if (engineManager.TryGetEngine(logMessage.EngineId, out var engine))
         {
             TimeSpan delay = DateTime.UtcNow - logMessage.Timestamp;
-            Console.WriteLine($"Time delay: {delay.TotalSeconds} seconds - {logMessage.Timestamp} - {DateTime.UtcNow} - {logMessage.LogSequenceNumber}");
+            Console.WriteLine($"Time delay: {delay.TotalMilliseconds} Milliseconds - {logMessage.Timestamp} - {DateTime.UtcNow} - {logMessage.LogSequenceNumber}");
             engine.AddWorkerLog(logMessage.WorkerId, logMessage);
             await hubContext.Clients.Group($"worker-{logMessage.WorkerId}").SendAsync("ReceiveLog", logMessage);
         }
@@ -56,27 +61,29 @@ public class EngineHub(
         }
     }
     
+    // SignalR messege fra klient microservice
+    public async Task ReceiveImage(ImageData imageData)
+    {
+        var worker = engineManager.GetWorker(imageData.EngineId, imageData.WorkerId);
+        if (worker != null) worker.LastImage = $"data:image/jpeg;base64,{Convert.ToBase64String(imageData.ImageBytes)}";
+        await hubContext.Clients.Group("frontendClients").SendAsync("ReceiveImage", imageData, cancellationService.Token);
+    }
+    
+    // Invoke SignalR fra blazor frontend
     public async Task SubscribeToLogs(string workerId)
     {
         Console.WriteLine($"Subscribing to logs for worker {workerId}");
         await Groups.AddToGroupAsync(Context.ConnectionId, $"worker-{workerId}");
     }
 
+    // Invoke SignalR fra blazor frontend
     public async Task UnsubscribeFromLogs(string workerId)
     {
         Console.WriteLine($"Unsubscribing from logs for worker {workerId}");
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"worker-{workerId}");
     }
-
-    public async Task ReceiveImage(ImageData imageData)
-    {
-        var worker = engineManager.GetWorker(imageData.EngineId, imageData.WorkerId);
-        if (worker != null) worker.LastImage = $"data:image/jpeg;base64,{Convert.ToBase64String(imageData.ImageBytes)}";
-        //await hubContext.Clients.All.SendAsync("ReceiveImage", imageData, cancellationService.Token);
-        await hubContext.Clients.Group("frontendClients").SendAsync("ReceiveImage", imageData, cancellationService.Token);
-
-    }
-
+    
+    // kaldes direkte fra blazor frontend c# kode:         var result = await WorkerService.StopWorkerAsync(engineId, workerId);
     public async Task<CommandResult> StopWorker(Guid engineId, Guid workerId)
     {
         if (engineManager.TryGetEngine(engineId, out var engine))
@@ -143,18 +150,15 @@ public class EngineHub(
     public override async Task<Task> OnDisconnectedAsync(Exception? exception)
     {
         var wasEngine = engineManager.RemoveConnection(Context.ConnectionId);
-        
         if (wasEngine)
         {
             await hubContext.Clients.Group("frontendClients").SendAsync("EngineChange",  cancellationService.Token);
-
             Console.WriteLine($"Engine disconnected: {Context.ConnectionId}");
         }
         else
         {
             Console.WriteLine($"Client disconnected: {Context.ConnectionId}");
         }
-        
         return base.OnDisconnectedAsync(exception);
     }
 }

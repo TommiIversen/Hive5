@@ -149,6 +149,7 @@ else
         // Subscribe til OnUserCountChanged eventet
         TrackingHandler.OnUserCountChanged += UpdateConnectedUsers;
         _connectedUsers = TrackingHandler.GetTotalConnectedUsers();
+        _connectionStatus = "Forbundet";
 
         await SignalRService.StartConnectionAsync();
 
@@ -173,27 +174,13 @@ else
             return Task.CompletedTask;
         };
 
-        SignalRService.HubConnection.On<Metric>("UpdateMetric", async (_) => { await InvokeAsync(StateHasChanged); });
+        SignalRService.HubConnection.On("UpdateMetric", async () => { await InvokeAsync(StateHasChanged); });
 
-        SignalRService.HubConnection.On<LogEntry>("ReceiveLog", async (_) => { await InvokeAsync(StateHasChanged); });
+        SignalRService.HubConnection.On("ReceiveLog", async () => { await InvokeAsync(StateHasChanged); });
 
-        SignalRService.HubConnection.On<ImageData>("ReceiveImage", async (_) => { await InvokeAsync(StateHasChanged); });
+        SignalRService.HubConnection.On("ReceiveImage", async () => { await InvokeAsync(StateHasChanged); });
         
         SignalRService.HubConnection.On("EngineChange", async () => { await InvokeAsync(StateHasChanged); });
-        
-
-        // Start forbindelsen
-        try
-        {
-            //await _hubConnection.StartAsync();
-            _connectionStatus = "Forbundet";
-            Console.WriteLine("SignalR connected.");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error starting SignalR connection: {ex.Message}");
-            _connectionStatus = "Fejl ved oprettelse af forbindelse";
-        }
     }
 
     private async Task RemoveEngine(Guid engineId)
