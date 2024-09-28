@@ -3,6 +3,8 @@
 @using Common.Models
 @using Microsoft.AspNetCore.SignalR.Client
 @using StreamHub.Services
+@implements IDisposable
+
 
 <canvas id="@GetCanvasId()" width="400" height="150"></canvas>
 
@@ -28,6 +30,12 @@
                 await UpdateChart(metric.PerCoreCpuUsage);
             }
         });
+    }
+    
+    public void Dispose()
+    {
+        Console.WriteLine($"Disposing Bar CPU chart for engine {EngineId}");
+        SignalRService.HubConnection.Remove("UpdateMetric");
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)

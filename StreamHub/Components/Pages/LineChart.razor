@@ -3,6 +3,7 @@
 @using StreamHub.Services
 @inject IJSRuntime JsRuntime
 @inject BlazorSignalRService SignalRService
+@implements IDisposable
 
 
 <h3>Line Chart for Engine @EngineId</h3>
@@ -19,7 +20,6 @@
     private double[] _cpuUsage = new double[30];
     private double[] _netRx = new double[30];
     private double[] _netTx = new double[30];
-
     
     protected override async Task OnInitializedAsync()
     {
@@ -28,11 +28,16 @@
         {
             if (metric.EngineId.ToString() == EngineId)
             {
-                Console.WriteLine($"Updating Historic chart for engine {EngineId} vs {metric.EngineId}");
+                Console.WriteLine($"Updating Historic chart for engine {EngineId}");
                 if (LastMetric != null) await UpdateChartData(LastMetric.CPUUsage, LastMetric.CurrentProcessCpuUsage, LastMetric.PerCoreCpuUsage[0]);
             }
         });
+    }
 
+    public void Dispose()
+    {
+        Console.WriteLine($"Disposing Historic Line chart for engine {EngineId}");
+        SignalRService.HubConnection.Remove("UpdateMetric");
     }
     
     protected override async Task OnAfterRenderAsync(bool firstRender)
