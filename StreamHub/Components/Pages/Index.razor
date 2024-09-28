@@ -61,23 +61,16 @@ else
                         <strong>Used Memory (%):</strong> @(engine.LastMetric != null ? (((engine.LastMetric.TotalMemory - engine.LastMetric.AvailableMemory) / engine.LastMetric.TotalMemory) * 100).ToString("F2") : "N/A") <br/>
                         <strong>Current Process Memory Usage (MB):</strong> @(engine.LastMetric?.CurrentProcessMemoryUsage.ToString("F2") ?? "N/A") <br/>
 
-                        <LineChart EngineId="@engine.BaseInfo.EngineId.ToString()" LastMetric="@engine.LastMetric"/>
-
                         <!-- Viser CPU-brug for hver kerne, hvis det er tilgængeligt -->
                         @if (engine.LastMetric?.PerCoreCpuUsage != null && engine.LastMetric.PerCoreCpuUsage.Count > 0)
                         {
+                            <LineChart EngineId="@engine.BaseInfo.EngineId.ToString()" LastMetric="@engine.LastMetric"/>
                             <strong>Per Core CPU Usage (%):</strong>
-                            <br/>
-                            <ul>
-                                @foreach (var usage in engine.LastMetric.PerCoreCpuUsage)
-                                {
-                                    <li>@usage.ToString("F2")%</li>
-                                }
-                            </ul>
+                            <CpuUsageBarChart EngineId="@engine.BaseInfo.EngineId.ToString()" LastMetric="@engine.LastMetric"/>
                         }
                         else
                         {
-                            <strong>Per Core CPU Usage (%):</strong>
+                            <strong>No data jet</strong>
                         }
                     </div>
                 </td>
@@ -106,14 +99,14 @@ else
                                             <div>@worker.OperationResult</div>
                                         }
                                     </td>
-            
+
                                     <td class="col-4">
 
                                         <WorkerLog LogMessages="worker.LogMessages" WorkerId="@worker.WorkerId.ToString()"/>
                                     </td>
                                     <td class="col-4">
 
-                                    @if (!string.IsNullOrEmpty(worker.LastImage))
+                                        @if (!string.IsNullOrEmpty(worker.LastImage))
                                         {
                                             <img src="@worker.LastImage" alt="Worker Image" width="200"/>
                                         }

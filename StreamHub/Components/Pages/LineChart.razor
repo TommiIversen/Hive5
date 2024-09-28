@@ -23,19 +23,14 @@
     
     protected override async Task OnInitializedAsync()
     {
-        Console.WriteLine($"Initializing chart for engine {EngineId}");
-        SignalRService.HubConnection.On<Metric>("UpdateMetric", async (_) =>
+        Console.WriteLine($"Initializing Historic Line chart for engine {EngineId}");
+        SignalRService.HubConnection.On<Metric>("UpdateMetric", async (metric) =>
         {
-            Console.WriteLine($"RENDERERERE  Received metric for engine {EngineId}");
-            
-            if (LastMetric != null)
+            if (metric.EngineId.ToString() == EngineId)
             {
-                // Opdater grafen med de nyeste metrics når de kommer ind som parameter
-                Console.WriteLine($"Updating chart for engine {EngineId}");
-                Console.WriteLine($"CPU: {LastMetric.CPUUsage}, Process CPU: {LastMetric.CurrentProcessCpuUsage}");
-                await UpdateChartData(LastMetric.CPUUsage, LastMetric.CurrentProcessCpuUsage, LastMetric.PerCoreCpuUsage[0]);
+                Console.WriteLine($"Updating Historic chart for engine {EngineId} vs {metric.EngineId}");
+                if (LastMetric != null) await UpdateChartData(LastMetric.CPUUsage, LastMetric.CurrentProcessCpuUsage, LastMetric.PerCoreCpuUsage[0]);
             }
-            
         });
 
     }
@@ -71,12 +66,8 @@
     private async Task UpdateChartData(double newCpu, double newRx, double newTx)
     {
         var newTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();  // UNIX timestamp in milliseconds
-
-        // debug with time
-        Console.WriteLine($"Updating chart for engine {EngineId} at {newTime}");
         await JsRuntime.InvokeVoidAsync("chartInterop.updateLineChart", _chart, newTime, newCpu, newRx, newTx);
     }
     
-
     private string GetCanvasId() => $"cpuChart-{EngineId}";
 }

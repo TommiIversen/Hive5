@@ -1,0 +1,51 @@
+﻿@inject IJSRuntime JsRuntime
+@inject BlazorSignalRService SignalRService
+@using Common.Models
+@using Microsoft.AspNetCore.SignalR.Client
+@using StreamHub.Services
+
+<canvas id="@GetCanvasId()" width="400" height="150"></canvas>
+
+@code {
+    [Parameter] public string? EngineId { get; set; }
+    [Parameter] public Metric? LastMetric { get; set; }
+
+    private IJSObjectReference? _chart;
+    private readonly List<string> _coreNames = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        for (int i = 0; i < (LastMetric?.PerCoreCpuUsage.Count ?? 0); i++)
+        {
+            _coreNames.Add($"Core {i}");
+        }
+
+        SignalRService.HubConnection.On<Metric>("UpdateMetric", async (metric) =>
+        {
+            if (metric.EngineId.ToString() == EngineId)
+            {
+                Console.WriteLine($"Updating Bar CPU chart for engine {EngineId}");
+                await UpdateChart(metric.PerCoreCpuUsage);
+            }
+        });
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && LastMetric != null)
+        {
+            Console.WriteLine($"First render for engine {EngineId}");
+            _chart = await JsRuntime.InvokeAsync<IJSObjectReference>("barChartInterop.createBarChart", GetCanvasId(), _coreNames, LastMetric.PerCoreCpuUsage);
+        }
+    }
+
+    private async Task UpdateChart(List<double> updatedCoreUsage)
+    {
+        if (_chart != null)
+        {
+            await JsRuntime.InvokeVoidAsync("barChartInterop.updateBarChart", _chart, updatedCoreUsage);
+        }
+    }
+
+    private string GetCanvasId() => $"cpuBarChart-{EngineId}";
+}
