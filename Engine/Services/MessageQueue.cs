@@ -1,10 +1,55 @@
 ﻿using System.Collections.Concurrent;
+using System.Threading.Channels;
 using Common.Models;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Engine.Services;
 
-public class MessageQueue(int maxQueueSize)
+
+public class MessageQueue
+{
+    private readonly Channel<BaseMessage> _messageChannel;
+
+    public MessageQueue(int maxQueueSize)
+    {
+        // BoundedChannel med købegrænsning og ældste besked bliver fjernet, hvis køen er fuld
+        var options = new BoundedChannelOptions(maxQueueSize)
+        {
+            FullMode = BoundedChannelFullMode.DropOldest  // Fjern ældste besked, når køen er fuld
+        };
+        _messageChannel = Channel.CreateBounded<BaseMessage>(options);
+    }
+    
+    public void EnqueueMessage(BaseMessage baseMessage)
+    {
+        // Vi bruger TryWrite for synkron håndtering. Returnerer false, hvis køen er fuld
+        if (!_messageChannel.Writer.TryWrite(baseMessage))
+        {
+            Console.WriteLine("MessageQueue: Queue is full, dropping oldest message.");
+        }
+    }
+
+    public async Task EnqueueMessageAsync(BaseMessage baseMessage, CancellationToken cancellationToken)
+    {
+        // Vent asynkront på, at der er plads i kanalen, hvis den er fuld
+        await _messageChannel.Writer.WriteAsync(baseMessage, cancellationToken);
+    }
+
+    public async Task<BaseMessage?> DequeueMessageAsync(CancellationToken cancellationToken)
+    {
+        // Vent på at modtage en besked fra køen
+        return await _messageChannel.Reader.ReadAsync(cancellationToken);
+    }
+    
+    public int GetQueueSize()
+    {
+        // Returnér antallet af beskeder i køen
+        return _messageChannel.Reader.Count;
+    }
+}
+
+
+public class MessageQueueOld(int maxQueueSize)
 {
     private readonly ConcurrentQueue<BaseMessage> _messageQueue = new();
     private readonly SemaphoreSlim _messageAvailable = new(0);
