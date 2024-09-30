@@ -4,10 +4,15 @@ using System.Runtime.Versioning;
 
 namespace Engine.Utils;
 
-public class CpuUsageMonitor
+public class CpuUsageMonitor : IDisposable
 {
     private TimeSpan _lastTotalProcessorTime = TimeSpan.Zero;
     private DateTime _lastMeasurementTime = DateTime.UtcNow;
+    
+    private PerformanceCounter? _totalCpuCounter;
+    private PerformanceCounter[]? _perCoreCpuCounters;
+    private bool _disposed;
+
     
     public async Task<double> GetTotalCpuUsageAsync(CancellationToken cancellationToken)
     {
@@ -66,35 +71,42 @@ public class CpuUsageMonitor
     [SupportedOSPlatform("windows")]
     private Task<double> GetWindowsTotalCpuUsageAsync(CancellationToken cancellationToken)
     {
+        if (_totalCpuCounter == null)
+        {
+            _totalCpuCounter = new PerformanceCounter("Processor", "% Processor Time", "_Total");
+            _totalCpuCounter.NextValue();
+        }
+
         return Task.Run(() =>
         {
-            var cpuCounter = new PerformanceCounter("Processor", "% Processor Time", "_Total");
-            cpuCounter.NextValue();
-            Thread.Sleep(1000); // CPU-usage data needs a bit of delay for accuracy
-            return (double)cpuCounter.NextValue();
+            Thread.Sleep(1000);
+            return (double)_totalCpuCounter.NextValue();
         }, cancellationToken);
     }
     
     [SupportedOSPlatform("windows")]
     private Task<double[]> GetWindowsPerCoreCpuUsageAsync(CancellationToken cancellationToken)
     {
-        return Task.Run(() =>
+        if (_perCoreCpuCounters == null)
         {
             int coreCount = Environment.ProcessorCount;
-            var cpuCounters = new PerformanceCounter[coreCount];
+            _perCoreCpuCounters = new PerformanceCounter[coreCount];
 
             for (int i = 0; i < coreCount; i++)
             {
-                cpuCounters[i] = new PerformanceCounter("Processor", "% Processor Time", i.ToString());
-                cpuCounters[i].NextValue();
+                _perCoreCpuCounters[i] = new PerformanceCounter("Processor", "% Processor Time", i.ToString());
+                _perCoreCpuCounters[i].NextValue();
             }
+        }
 
-            Thread.Sleep(1000); // CPU-usage data needs a bit of delay for accuracy
+        return Task.Run(() =>
+        {
+            Thread.Sleep(1000);
 
-            double[] cpuUsages = new double[coreCount];
-            for (int i = 0; i < coreCount; i++)
+            double[] cpuUsages = new double[_perCoreCpuCounters.Length];
+            for (int i = 0; i < _perCoreCpuCounters.Length; i++)
             {
-                cpuUsages[i] = cpuCounters[i].NextValue();
+                cpuUsages[i] = _perCoreCpuCounters[i].NextValue();
             }
 
             return cpuUsages;
@@ -151,5 +163,33 @@ public class CpuUsageMonitor
         long totalTime = cpuValues.Sum();
 
         return 100.0 * (totalTime - idleTime) / totalTime;
+    }
+
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (!_disposed)
+        {
+            if (disposing)
+            {
+                _totalCpuCounter?.Dispose();
+
+                if (_perCoreCpuCounters != null)
+                {
+                    foreach (var counter in _perCoreCpuCounters)
+                    {
+                        counter?.Dispose();
+                    }
+                }
+            }
+
+            _disposed = true;
+        }
+    }
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
     }
 }
