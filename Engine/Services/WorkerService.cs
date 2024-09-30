@@ -13,6 +13,7 @@ public class WorkerService
     public bool IsRunning { get; private set; }
     private int _logCounter = 0;
     private int _logImgCounter = 0;
+    private readonly ImageGenerator _generator = new();
 
 
     public WorkerService(MessageQueue messageQueue)
@@ -67,9 +68,8 @@ public class WorkerService
     private byte[] GenerateFakeImage()
     {
         // fake image data (placeholder)
-        var generator = new ImageGenerator();
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            return generator.GenerateImageWithNumber(_logImgCounter++);
+            return _generator.GenerateImageWithNumber(_logImgCounter++);
         return [0, 0, 0];
     }
 }

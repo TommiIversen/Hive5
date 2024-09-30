@@ -1,4 +1,5 @@
-﻿using System.Drawing;
+﻿using System.Buffers;
+using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
@@ -8,20 +9,36 @@ namespace Engine.Utils;
 
 public class ImageGenerator
 {
+    private const int Width = 300;
+    private const int Height = 220;
+    private readonly Font _font;
+    private readonly Brush _brush;
+    private readonly StringFormat _format;
+    private readonly ArrayPool<byte> _arrayPool;
+    private const int BufferSize = 32 * 1024;
+
     [SupportedOSPlatform("windows")]
+    public ImageGenerator()
+    {
+        // Initialisér skrifttype, pensel og format én gang i konstruktøren
+        _font = new Font("Arial", 40, FontStyle.Bold);
+        _brush = new SolidBrush(Color.Black);
+        _format = new StringFormat
+        {
+            Alignment = StringAlignment.Center,
+            LineAlignment = StringAlignment.Center
+        };
+        _arrayPool = System.Buffers.ArrayPool<byte>.Shared; // Genbrug array pool
+    }
+
     public byte[] GenerateImageWithNumber(int number)
     {
-        
         // Hvis vi ikke er på Windows, returner en fake bytearray
         if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
             return GenerateFakeImage();
         }
-        
-        // Definer størrelse på billedet
-        const int width = 300;
-        const int height = 220;
-        
+
         // Beregn farver baseret på nummeret ved hjælp af modulus 255
         int r1 = number % 255;
         int g1 = (number * 2) % 255;
@@ -31,48 +48,46 @@ public class ImageGenerator
         int g2 = (number + 150) % 255;
         int b2 = (number + 200) % 255;
 
-        // Opret et nyt bitmap billede
-        using (Bitmap bitmap = new Bitmap(width, height))
+        using var bitmap = new Bitmap(Width, Height);
+        using (var graphics = Graphics.FromImage(bitmap))
         {
-            // Opret en grafisk kontekst
-            using (Graphics graphics = Graphics.FromImage(bitmap))
+            // Opret en gradient baggrund (fra blå til hvid)
+            using (var gradientBrush = new LinearGradientBrush(
+                       new Rectangle(0, 0, Width, Height),
+                       Color.FromArgb(r1, g1, b1),   // Startfarve
+                       Color.FromArgb(r2, g2, b2),   // Slutfarve
+                       LinearGradientMode.Horizontal))
             {
-                // Opret en gradient baggrund (fra blå til hvid)
-                using (LinearGradientBrush gradientBrush = new LinearGradientBrush(
-                           new Rectangle(0, 0, width, height),
-                           Color.FromArgb(r1, g1, b1),   // Startfarve
-                           Color.FromArgb(r2, g2, b2),   // Slutfarve
-                           LinearGradientMode.Horizontal)) // Retning af gradienten
-                {
-                    // Fyld baggrunden med gradienten
-                    graphics.FillRectangle(gradientBrush, 0, 0, width, height);
-                }
-
-                // Definer skrifttype og pensel
-                Font font = new Font("Arial", 40, FontStyle.Bold);
-                Brush brush = new SolidBrush(Color.Black);
-
-                // Tegn tallet i midten af billedet
-                StringFormat format = new StringFormat
-                {
-                    Alignment = StringAlignment.Center,
-                    LineAlignment = StringAlignment.Center
-                };
-                graphics.DrawString(number.ToString(), font, brush, new RectangleF(0, 0, width, height), format);
+                // Fyld baggrunden med gradienten
+                graphics.FillRectangle(gradientBrush, 0, 0, Width, Height);
             }
+            // Tegn tallet i midten af billedet
+            graphics.DrawString(number.ToString(), _font, _brush, new RectangleF(0, 0, Width, Height), _format);
+        }
 
-            // Gem billedet i en MemoryStream og konverter til byte array
-            using (MemoryStream memoryStream = new MemoryStream())
-            {
-                bitmap.Save(memoryStream, ImageFormat.Jpeg);
-                return memoryStream.ToArray();
-            }
+        // Brug en buffer fra poolen til at undgå gentagne allokeringer
+        byte[] buffer = _arrayPool.Rent(BufferSize);
+
+        try
+        {
+            using MemoryStream memoryStream = new MemoryStream(buffer);
+            bitmap.Save(memoryStream, ImageFormat.Jpeg);
+
+            int lengthUsed = (int)memoryStream.Position;
+            var result = new byte[lengthUsed];
+            Array.Copy(buffer, result, lengthUsed);
+
+            return result;
+        }
+        finally
+        {
+            _arrayPool.Return(buffer);
         }
     }
-    
+
     private byte[] GenerateFakeImage()
     {
         // Returner en simpel fake bytearray som placeholder på ikke-Windows platforme
-        return new byte[] { 0, 0, 0 }; // Kan tilpasses efter behov
+        return new byte[] { 0, 0, 0 };
     }
 }
