@@ -39,7 +39,7 @@ builder.Services.AddSingleton<WorkerManager>();
 var streamHubUrls = new List<string>
 {
     "http://127.0.0.1:9000/streamhub",
-    "http://127.0.0.1:8000/streamhub"
+    "http://127.0.0.1:8999/streamhub"
 };
 
 //builder.Services.AddSingleton(provider => new StreamHub(provider.GetRequiredService<MessageQueue>(), streamHubUrls, 100));
