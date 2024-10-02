@@ -13,7 +13,6 @@ public class WorkerManager
     // gem her til vi får en database
     private readonly Dictionary<Guid, WorkerOut> _workersBaseInfo = new();
 
-
     public WorkerManager(MessageQueue messageQueue)
     {
         _messageQueue = messageQueue;
@@ -50,6 +49,7 @@ public class WorkerManager
         if (_workers.TryGetValue(workerId, out var worker))
         {
             worker.Start();
+            SendWorkerEvent(workerId, WorkerEventType.Updated);
             return new CommandResult(true, "Worker started");
         }
         return new CommandResult(false, "Worker not found");
@@ -60,6 +60,7 @@ public class WorkerManager
         if (_workers.TryGetValue(workerId, out var worker))
         {
             worker.Stop();
+            SendWorkerEvent(workerId, WorkerEventType.Updated);
             return new CommandResult(true, "Worker stopped");
         }
 
@@ -82,4 +83,25 @@ public class WorkerManager
     {
         _workers.Remove(workerId);
     }
+    
+    private void SendWorkerEvent(Guid workerId, WorkerEventType eventType)
+    {
+        if (_workersBaseInfo.TryGetValue(workerId, out var workerOut))
+        {
+            // Opdater `IsRunning` status baseret på `WorkerService`
+            if (_workers.TryGetValue(workerId, out var workerService))
+            {
+                workerOut.IsRunning = workerService.IsRunning;
+            }
+
+            var workerEvent = workerOut.ToWorkerEvent(eventType);
+            _messageQueue.EnqueueMessage(workerEvent);
+        }
+        else
+        {
+            Log.Warning($"WorkerOut not found for WorkerId: {workerId}");
+        }
+    }
+    
 }
+

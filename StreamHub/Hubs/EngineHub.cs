@@ -77,6 +77,12 @@ public class EngineHub(
         await hubContext.Clients.Group("frontendClients").SendAsync("ReceiveImage", imageData, cancellationService.Token);
     }
     
+    
+    public async Task ReceiveDeadLetter(object deadLetter)
+    {
+        Console.WriteLine($"Dead letter received: {deadLetter}");
+    }
+    
     // Invoke SignalR fra blazor frontend
     public async Task SubscribeToLogs(string workerId)
     {
