@@ -1,4 +1,6 @@
 ﻿using Common.Models;
+using Engine.Interfaces;
+using Engine.Utils;
 using Serilog;
 
 namespace Engine.Services;
@@ -20,9 +22,13 @@ public class WorkerManager
     public IReadOnlyDictionary<Guid, WorkerService> Workers => _workers;
 
     public WorkerService AddWorker(WorkerCreate workerCreate)
+
     {
         Log.Information($"Adding worker... {workerCreate.Name}");
-        var worker = new WorkerService(_messageQueue);
+        IStreamerRunner streamerRunner = new FakeStreamerRunner();
+        
+        var worker = new WorkerService(_messageQueue, streamerRunner);
+
         var workerOut = new WorkerOut
         {
             WorkerId = worker.WorkerId,
