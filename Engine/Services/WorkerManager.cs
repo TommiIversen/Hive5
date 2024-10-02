@@ -34,7 +34,7 @@ public class WorkerManager
             Description = workerCreate.Description,
             Command = workerCreate.Command,
             Enabled = true,              // Eksempel: Default til enabled
-            IsRunning = false            // Eksempel: Sæt default til ikke kørende
+            IsRunning = false,
         };
 
         // Tilføj WorkerService til _workers

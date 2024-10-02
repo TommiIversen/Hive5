@@ -58,7 +58,7 @@ public class MemoryUsageMonitor
     public double GetCurrentProcessMemoryUsage()
     {
         Process process = Process.GetCurrentProcess();
-        return process.WorkingSet64 / (1024.0 * 1024.0); // Returnerer i MB
+        return process.WorkingSet64 / (1024.0 * 1024.0); // Returnerer i MB  TODO: SOH issue
     }
 
     // Windows-specific memory retrieval using GlobalMemoryStatusEx

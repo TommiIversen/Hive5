@@ -7,9 +7,9 @@ public class MetricsService
 {
     private readonly MessageQueue _messageQueue;
     private readonly CancellationTokenSource _cancellationTokenSource = new();
-    private readonly TimeSpan _interval = TimeSpan.FromSeconds(2);  // Metrics every 10 seconds
-    private readonly CpuUsageMonitor _cpuUsageMonitor = new(); // Tilføjet CpuUsageMonitor til at måle CPU-forbrug
-    private readonly MemoryUsageMonitor _memoryUsageMonitor = new(); // Tilføjet MemoryUsageMonitor til at måle RAM-forbrug
+    private readonly TimeSpan _interval = TimeSpan.FromSeconds(2);
+    private readonly CpuUsageMonitor _cpuUsageMonitor = new();
+    private readonly MemoryUsageMonitor _memoryUsageMonitor = new();
 
         
     public MetricsService(MessageQueue messageQueue)
@@ -17,7 +17,6 @@ public class MetricsService
         _messageQueue = messageQueue;
     }
 
-    // Start the metrics loop
     public void Start()
     {
         _ = Task.Run(async () => await GenerateMetricsAsync(_cancellationTokenSource.Token));

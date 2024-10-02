@@ -30,6 +30,13 @@ public class EngineHub(
             Console.WriteLine($"Addddddd Worker: {worker.Name}");
         }
     }
+    
+    public void ReceiveWorkerEvent(WorkerEvent workerEvent)
+    {
+        Console.WriteLine($"ReceiveWorkerEvent: {workerEvent.EventType} - {workerEvent.Name}");
+        engineManager.AddOrUpdateWorker(workerEvent);
+    }
+    
 
     // SignalR message fra klient microservice
     public async Task ReceiveMetric(Metric metric)

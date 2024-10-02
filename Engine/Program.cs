@@ -42,8 +42,6 @@ var streamHubUrls = new List<string>
     "http://127.0.0.1:8999/streamhub"
 };
 
-//builder.Services.AddSingleton(provider => new StreamHub(provider.GetRequiredService<MessageQueue>(), streamHubUrls, 100));
-
 // Registrer StreamHub med injektion af loggerFactory og MessageQueue
 builder.Services.AddSingleton<StreamHub>(provider => new StreamHub(
     provider.GetRequiredService<MessageQueue>(),
@@ -59,12 +57,9 @@ builder.Services.AddSingleton<MetricsService>();
 
 var app = builder.Build();
 
-var messageQueue = app.Services.GetRequiredService<MessageQueue>();
 
 // Retrieve the StreamHub instance and initialize it
-var streamHubService = app.Services.GetRequiredService<StreamHub>();
-//_ = Task.Run(async () => await streamHubService.StartAsync());
-
+app.Services.GetRequiredService<StreamHub>();
 
 var metricsService = app.Services.GetRequiredService<MetricsService>();
 metricsService.Start();
