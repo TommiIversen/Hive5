@@ -11,37 +11,42 @@ public class WorkerService
     private readonly EngineManager _engineManager;
     private readonly CancellationService _cancellationService;
 
-    public WorkerService(IHubContext<EngineHub> hubContext, EngineManager engineManager, CancellationService cancellationService)
+    public WorkerService(IHubContext<EngineHub> hubContext, EngineManager engineManager,
+        CancellationService cancellationService)
     {
         _hubContext = hubContext;
         _engineManager = engineManager;
         _cancellationService = cancellationService;
     }
 
-    public async Task<CommandResult> StopWorkerAsync(Guid engineId, Guid workerId, int timeoutMilliseconds = 5000)
+    public async Task<CommandResult> HandleWorkerOperationAsync(Guid engineId, Guid workerId, string operation,
+        int timeoutMilliseconds = 5000)
     {
         var worker = _engineManager.GetWorker(engineId, workerId);
         if (worker == null)
         {
-            Console.WriteLine($"StopWorker: Worker {workerId} not found");
+            Console.WriteLine($"{operation}: Worker {workerId} not found");
             return new CommandResult(false, "Worker not found.");
         }
+
         worker.IsProcessing = true;
-        
+
         if (_engineManager.TryGetEngine(engineId, out var engine))
         {
             using var timeoutCts = new CancellationTokenSource(timeoutMilliseconds);
-            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(_cancellationService.Token, timeoutCts.Token);
+            using var linkedCts =
+                CancellationTokenSource.CreateLinkedTokenSource(_cancellationService.Token, timeoutCts.Token);
             var msg = "";
             try
             {
-                Console.WriteLine($"Forwarding StopWorker request for worker {workerId} on engine {engineId}");
+                Console.WriteLine($"Forwarding {operation} request for worker {workerId} on engine {engineId}");
 
+                // Invoke the specified operation (StartWorker or StopWorker)
                 var result = await _hubContext.Clients.Client(engine.ConnectionId)
-                    .InvokeAsync<CommandResult>("StopWorker", workerId, linkedCts.Token);
+                    .InvokeAsync<CommandResult>(operation, workerId, linkedCts.Token);
 
                 msg = $"{result.Message} Time: {DateTime.Now}";
-                return new CommandResult(true, $"Worker {workerId} stopped: {result.Message}");
+                return new CommandResult(true, $"Worker {workerId} {operation.ToLower()}: {result.Message}");
             }
             catch (OperationCanceledException)
             {
@@ -50,7 +55,7 @@ public class WorkerService
             }
             catch (Exception ex)
             {
-                msg = $"Error stopping worker {workerId}: {ex.Message}";
+                msg = $"Error {operation.ToLower()}ing worker {workerId}: {ex.Message}";
                 return new CommandResult(false, msg);
             }
             finally
@@ -62,8 +67,19 @@ public class WorkerService
         }
         else
         {
-            Console.WriteLine($"StopWorker: Engine {engineId} not found");
+            Console.WriteLine($"{operation}: Engine {engineId} not found");
             return new CommandResult(false, "Engine not found.");
         }
+    }
+
+
+    public async Task<CommandResult> StopWorkerAsync(Guid engineId, Guid workerId, int timeoutMilliseconds = 5000)
+    {
+        return await HandleWorkerOperationAsync(engineId, workerId, "StopWorker", timeoutMilliseconds);
+    }
+
+    public async Task<CommandResult> StartWorkerAsync(Guid engineId, Guid workerId, int timeoutMilliseconds = 5000)
+    {
+        return await HandleWorkerOperationAsync(engineId, workerId, "StartWorker", timeoutMilliseconds);
     }
 }

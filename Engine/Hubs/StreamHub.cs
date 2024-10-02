@@ -1,6 +1,5 @@
 ﻿using System.Collections.Concurrent;
 using Common.Models;
-using Engine.Commands;
 using Engine.Services;
 using Microsoft.AspNetCore.Http.Connections;
 using Microsoft.AspNetCore.SignalR.Client;
@@ -13,7 +12,6 @@ public class StreamHub
     private readonly MessageQueue _globalMessageQueue;
     private readonly CancellationTokenSource _cancellationTokenSource = new();
 
-    private readonly CommandDispatcher _commandDispatcher = new();
     private Guid EngineId { get; } = Guid.NewGuid();
     private readonly ILogger<StreamHub> _logger;
     private const bool DebugFlag = false;
@@ -22,18 +20,18 @@ public class StreamHub
 
 
     public StreamHub(
-        MessageQueue globalMessageQueue, 
-        ILogger<StreamHub> logger, 
+        MessageQueue globalMessageQueue,
+        ILogger<StreamHub> logger,
         ILoggerFactory loggerFactory,
-        IEnumerable<string> hubUrls, 
-        int maxQueueSize, 
+        IEnumerable<string> hubUrls,
+        int maxQueueSize,
         WorkerManager workerManager)
     {
         _logger = logger;
         _globalMessageQueue = globalMessageQueue;
         _loggerFactory = loggerFactory;
         _workerManager = workerManager;
-        
+
         foreach (var url in hubUrls)
         {
             try
@@ -54,37 +52,25 @@ public class StreamHub
                 hubConnection.On("StopWorker", async (Guid workerId) =>
                 {
                     logger.LogInformation("hubConnection.On: Got StopWorker: {WorkerId}", workerId);
-                    try
-                    {
-                        var command = new StopWorkerCommand(workerId);
-                        logger.LogInformation("Stopping worker {WorkerId}", workerId);
-                        var result = await _commandDispatcher.DispatchAsync(command);
-                        logger.LogInformation("Worker {WorkerId} stopped: {Success} {Message}", workerId,
-                            result.Success, result.Message);
-                        return result;
-                    }
-                    catch (Exception ex)
-                    {
-                        logger.LogError(ex, "Error stopping worker {WorkerId}", workerId);
-                        return new CommandResult(false, $"Error: {ex.Message}");
-                    }
+                    var commandResult = _workerManager.StopWorker(workerId);
+                    return commandResult;
                 });
 
 
                 hubConnection.On("StartWorker", async (Guid workerId) =>
                 {
                     logger.LogInformation("hubConnection.On: Got StartWorker: {WorkerId}", workerId);
-                    var command = new StartWorkerCommand(workerId);
-                    var result = await _commandDispatcher.DispatchAsync(command);
-                    return result;
+                    var commandResult = _workerManager.StartWorker(workerId);
+                    return commandResult;
                 });
 
                 hubConnection.Reconnected += async (_) =>
                 {
-                    logger.LogInformation("hubConnection:: Reconnected to streamhub {url} - {ConnectionId}", url, hubConnection.ConnectionId);
+                    logger.LogInformation("hubConnection:: Reconnected to streamhub {url} - {ConnectionId}", url,
+                        hubConnection.ConnectionId);
                     await SendEngineConnectedAsync(hubConnection, url);
                 };
-                
+
 
                 hubConnection.Closed += async (error) =>
                 {
@@ -92,7 +78,8 @@ public class StreamHub
                     await TryReconnect(hubConnection, url, _cancellationTokenSource.Token);
                 };
 
-                _hubConnectionMessageQueue[hubConnection] = new MultiQueue(loggerFactory.CreateLogger<MultiQueue>(), maxQueueSize);
+                _hubConnectionMessageQueue[hubConnection] =
+                    new MultiQueue(loggerFactory.CreateLogger<MultiQueue>(), maxQueueSize);
                 _ = Task.Run(async () => await TryReconnect(hubConnection, url, _cancellationTokenSource.Token));
             }
             catch (Exception ex)
@@ -100,6 +87,7 @@ public class StreamHub
                 logger.LogError(ex, "Failed to connect to {Url}", url);
             }
         }
+
         _ = Task.Run(async () => await RouteMessagesToClientQueuesAsync(_cancellationTokenSource.Token));
     }
 
@@ -110,7 +98,8 @@ public class StreamHub
             try
             {
                 await hubConnection.StartAsync(token);
-                _logger.LogInformation("TryReconnect. Connected to {Url} {ConnectionId}", url, hubConnection.ConnectionId);
+                _logger.LogInformation("TryReconnect. Connected to {Url} {ConnectionId}", url,
+                    hubConnection.ConnectionId);
                 await SendEngineConnectedAsync(hubConnection, url);
                 break;
             }
@@ -136,16 +125,10 @@ public class StreamHub
         await hubConnection.InvokeAsync("EngineConnected", engineModel);
         var workers = _workerManager.GetAllWorkers(EngineId);
 
-        foreach (var worker in workers)
+        foreach (var workerEventCreated in workers.Select(worker => worker.ToWorkerEvent()))
         {
-            WorkerEvent workerEventCreated = worker.ToWorkerEvent(WorkerEventType.Updated);
             await hubConnection.InvokeAsync("ReceiveWorkerEvent", workerEventCreated);
         }
-        
-        //var workerEventCreated = new WorkerEvent(workers, WorkerEventType.Created);
-
-        
-        //await hubConnection.InvokeAsync("ReportWorkers", workers);
         await ProcessClientMessagesAsync(hubConnection, streamhubUrl, _cancellationTokenSource.Token);
     }
 
@@ -162,7 +145,8 @@ public class StreamHub
             {
                 if (baseMessage is ImageData imageMessage)
                 {
-                    _hubConnectionMessageQueue[hubConnection].EnqueueMessage(imageMessage, $"IMAGE-{imageMessage.WorkerId.ToString()}");
+                    _hubConnectionMessageQueue[hubConnection]
+                        .EnqueueMessage(imageMessage, $"IMAGE-{imageMessage.WorkerId.ToString()}");
                     continue;
                 }
 
@@ -202,7 +186,7 @@ public class StreamHub
             }
         }
     }
-    
+
     private void EnrichMessage(BaseMessage baseMessage, int sequenceNumber)
     {
         baseMessage.EngineId = EngineId;

@@ -1,9 +1,8 @@
 ﻿@page "/"
 @using Common.Models
-@using Microsoft.AspNetCore.Http.Connections
-@inject NavigationManager NavigationManager
 @using Microsoft.AspNetCore.SignalR.Client
 @using StreamHub.Services
+@inject NavigationManager NavigationManager
 @inject EngineManager EngineManager
 @inject WorkerService WorkerService
 @inject TrackingCircuitHandler TrackingHandler
@@ -58,7 +57,7 @@ else
                         <strong>Total Memory (MB):</strong> @(engine.LastMetric?.TotalMemory.ToString("F2") ?? "N/A") <br/>
                         <strong>Available Memory (MB):</strong> @(engine.LastMetric?.AvailableMemory.ToString("F2") ?? "N/A") <br/>
                         <strong>Used Memory (MB):</strong> @(engine.LastMetric != null ? (engine.LastMetric.TotalMemory - engine.LastMetric.AvailableMemory).ToString("F2") : "N/A") <br/>
-                        <strong>Used Memory (%):</strong> @(engine.LastMetric != null ? (((engine.LastMetric.TotalMemory - engine.LastMetric.AvailableMemory) / engine.LastMetric.TotalMemory) * 100).ToString("F2") : "N/A") <br/>
+                        <strong>Used Memory (%):</strong> @(engine.LastMetric != null ? ((engine.LastMetric.TotalMemory - engine.LastMetric.AvailableMemory) / engine.LastMetric.TotalMemory * 100).ToString("F2") : "N/A") <br/>
                         <strong>Current Process Memory Usage (MB):</strong> @(engine.LastMetric?.CurrentProcessMemoryUsage.ToString("F2") ?? "N/A") <br/>
 
                         <!-- Viser CPU-brug for hver kerne, hvis det er tilgængeligt -->
@@ -87,10 +86,16 @@ else
                                         <div>@worker.WorkerId</div>
                                         <div>@worker.Worker.Name</div>
                                         <div>@worker.Worker.Description</div>
+                                        <div>@worker.Worker.IsRunning</div>
+
                                         <div>
                                             <button @onclick="() => StopWorker(engine.BaseInfo.EngineId, worker.WorkerId)"
                                                     disabled="@worker.IsProcessing">
                                                 Stop
+                                            </button>
+                                            <button @onclick="() => StartWorker(engine.BaseInfo.EngineId, worker.WorkerId)"
+                                                    disabled="@worker.IsProcessing">
+                                                Start
                                             </button>
                                         </div>
                                         <!-- Show result of the operation -->
@@ -152,32 +157,32 @@ else
 
         await SignalRService.StartConnectionAsync();
 
-        SignalRService.HubConnection.Reconnecting += (_) =>
+        SignalRService.HubConnection.Reconnecting += _ =>
         {
             _connectionStatus = "Genopretter forbindelse...";
             InvokeAsync(StateHasChanged);
             return Task.CompletedTask;
         };
 
-        SignalRService.HubConnection.Reconnected += (_) =>
+        SignalRService.HubConnection.Reconnected += _ =>
         {
             _connectionStatus = "Forbundet";
             InvokeAsync(StateHasChanged);
             return Task.CompletedTask;
         };
 
-        SignalRService.HubConnection.Closed += (_) =>
+        SignalRService.HubConnection.Closed += _ =>
         {
             _connectionStatus = "Ikke forbundet";
             InvokeAsync(StateHasChanged);
             return Task.CompletedTask;
         };
 
-        SignalRService.HubConnection.On<Metric>("UpdateMetric", async (_) => { await InvokeAsync(StateHasChanged); });
+        SignalRService.HubConnection.On<Metric>("UpdateMetric", async _ => { await InvokeAsync(StateHasChanged); });
 
-        SignalRService.HubConnection.On<LogEntry>("ReceiveLog", async (_) => { await InvokeAsync(StateHasChanged); });
+        SignalRService.HubConnection.On<LogEntry>("ReceiveLog", async _ => { await InvokeAsync(StateHasChanged); });
 
-        SignalRService.HubConnection.On<ImageData>("ReceiveImage", async (_) => { await InvokeAsync(StateHasChanged); });
+        SignalRService.HubConnection.On<ImageData>("ReceiveImage", async _ => { await InvokeAsync(StateHasChanged); });
 
         SignalRService.HubConnection.On("EngineChange", async () => { await InvokeAsync(StateHasChanged); });
     }
@@ -203,5 +208,14 @@ else
         await InvokeAsync(StateHasChanged);
         return result.Message;
     }
+
+    private async Task<string> StartWorker(Guid engineId, Guid workerId)
+    {
+        var result = await WorkerService.StartWorkerAsync(engineId, workerId);
+        Console.WriteLine($"RESULT: {result.Message}");
+        await InvokeAsync(StateHasChanged);
+        return result.Message;
+    }
+
 
 }
