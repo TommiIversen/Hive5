@@ -14,6 +14,9 @@ public class WorkerViewModel
     public bool IsProcessing { get; set; }
     
     public string? OperationResult { get; set; }
+    public DateTime EventProcessedTimestamp { get; set; }
+
+    
 
     // Adds a new log message and ensures the queue has a max of 10 entries
     public void AddLogMessage(LogEntry message)

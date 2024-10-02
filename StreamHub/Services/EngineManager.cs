@@ -19,15 +19,29 @@ public class EngineManager
         {
             if (engine.Workers.TryGetValue(workerOut.WorkerId, out var workerViewModel))
             {
+                
+                if (workerViewModel.EventProcessedTimestamp >= workerOut.Timestamp)
+                {
+                    // Anvender Message Filter til at sammenligne indkommende beskeds timestamp 
+                    // med den sidst behandlede event for at implementere en Idempotent Receiver, 
+                    // som forhindrer behandling af forældede eller duplikerede beskeder.
+                    Console.WriteLine($"Skipping outdated event for worker {workerOut.WorkerId} - {workerOut.Name}");
+                    Console.WriteLine($"EventProcessedTimestamp: {workerViewModel.EventProcessedTimestamp} VS workerOut.Timestamp:  {workerOut.Timestamp}");
+                    return; // Hvis eventet er ældre eller lig med den nuværende tilstand, gør ingenting
+                }
+                
                 // Update the existing worker
                 workerViewModel.Worker = workerOut;
+                workerViewModel.EventProcessedTimestamp = workerOut.Timestamp; // Opdater tidsstemplet
+
             }
             else
             {
                 engine.Workers[workerOut.WorkerId] = new WorkerViewModel
                 {
                     WorkerId = workerOut.WorkerId,
-                    Worker = workerOut
+                    Worker = workerOut,
+                    EventProcessedTimestamp = workerOut.Timestamp
                 };
             }
         }

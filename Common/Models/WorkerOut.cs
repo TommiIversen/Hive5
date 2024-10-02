@@ -31,7 +31,7 @@ public static class WorkerOutExtensions
             Enabled = workerOut.Enabled,
             IsRunning = workerOut.IsRunning,
             EngineId = workerOut.EngineId,
-            Timestamp = workerOut.Timestamp,
+            Timestamp =  DateTime.UtcNow,
             SequenceNumber = workerOut.SequenceNumber,
             EventType = eventType
         };

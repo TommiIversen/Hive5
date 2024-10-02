@@ -9,6 +9,8 @@ namespace Engine.Hubs;
 public class StreamHub
 {
     private readonly ConcurrentDictionary<HubConnection, MultiQueue> _hubConnectionMessageQueue = new();
+    private readonly ConcurrentDictionary<HubConnection, DateTime> _hubConnectionSyncTimestamps = new();
+
     private readonly MessageQueue _globalMessageQueue;
     private readonly CancellationTokenSource _cancellationTokenSource = new();
 
@@ -117,6 +119,9 @@ public class StreamHub
 
     private async Task SendEngineConnectedAsync(HubConnection hubConnection, string streamhubUrl)
     {
+        var syncTimestamp = DateTime.UtcNow; // Gem tidspunktet for synkroniseringen
+        _hubConnectionSyncTimestamps[hubConnection] = syncTimestamp; // Opdater dictionary med timestamp for denne forbindelse
+        
         Console.WriteLine($"------Sending engine Init messages to streamHub on: {streamhubUrl}");
         var engineModel = new EngineBaseInfo
         {
@@ -170,10 +175,23 @@ public class StreamHub
         var queue = _hubConnectionMessageQueue[hubConnection];
         var sequenceNumber = 0;
 
+        // Slå synkroniseringstidspunktet op
+        if (!_hubConnectionSyncTimestamps.TryGetValue(hubConnection, out var syncTimestamp))
+        {
+            syncTimestamp = DateTime.MinValue; // Hvis ingen timestamp er fundet, lad den være ældre end alle beskeder
+        }
+        
         while (!cancellationToken.IsCancellationRequested)
         {
             BaseMessage baseMessage = await queue.DequeueMessageAsync(cancellationToken);
-
+            
+            // Message Filter: Filtrer forældede WorkerEvent-beskeder
+            if (baseMessage is WorkerEvent workerEvent && workerEvent.Timestamp < syncTimestamp)
+            {
+                Console.WriteLine($"✂Skipping outdated event for streamHub: {url} - {workerEvent.EventType} {workerEvent.Name}");
+                continue;
+            }
+            
             if (hubConnection.State == HubConnectionState.Connected)
             {
                 EnrichMessage(baseMessage, sequenceNumber++);
