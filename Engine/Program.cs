@@ -1,7 +1,9 @@
 using Common.Models;
 using Engine.Components;
+using Engine.Database;
 using Engine.Hubs;
 using Engine.Services;
+using Microsoft.EntityFrameworkCore;
 using Serilog;
 
 
@@ -18,7 +20,13 @@ Log.Logger = new LoggerConfiguration()
 
 Log.Information("Blazor server applikation starter op...");
 
+
+
+
 var builder = WebApplication.CreateBuilder(args);
+
+// Initialiser SQLite, så det kan bruges korrekt
+SQLitePCL.Batteries.Init();
 
 // Tilføj Serilog som logger til DI
 builder.Host.UseSerilog(Log.Logger);
@@ -26,6 +34,15 @@ builder.Host.UseSerilog(Log.Logger);
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+
+
+// Hent maskinens navn og brug det til databasefilen
+var machineName = Environment.MachineName;
+var dbFileName = $"Data Source={machineName}.db";
+
+// Registrer DbContext med maskinens navn som databasefilnavn
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseSqlite(dbFileName));
 
 
 // Registrer MessageQueue som singleton og angiv max størrelse
@@ -57,6 +74,18 @@ builder.Services.AddSingleton<MetricsService>();
 
 var app = builder.Build();
 
+
+// Opret database og seed data, hvis nødvendigt
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+    // Anvend migrationer og opret databasen, hvis den ikke findes
+    dbContext.Database.Migrate();
+
+    // Seed data ved første init
+    DbInitializer.Seed(dbContext);
+}
 
 // Retrieve the StreamHub instance and initialize it
 app.Services.GetRequiredService<StreamHub>();
