@@ -8,12 +8,12 @@ public class CpuUsageMonitor : IDisposable
 {
     private TimeSpan _lastTotalProcessorTime = TimeSpan.Zero;
     private DateTime _lastMeasurementTime = DateTime.UtcNow;
-    
+
     private PerformanceCounter? _totalCpuCounter;
     private PerformanceCounter[]? _perCoreCpuCounters;
     private bool _disposed;
 
-    
+
     public async Task<double> GetTotalCpuUsageAsync(CancellationToken cancellationToken)
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
@@ -63,7 +63,8 @@ public class CpuUsageMonitor : IDisposable
             return 0;
 
         // Beregn CPU-forbrug som en procentdel over det forløbne tidsinterval
-        double cpuUsage = (cpuTimeElapsed.TotalMilliseconds / (timeElapsed.TotalMilliseconds * Environment.ProcessorCount)) * 100;
+        double cpuUsage =
+            (cpuTimeElapsed.TotalMilliseconds / (timeElapsed.TotalMilliseconds * Environment.ProcessorCount)) * 100;
 
         return cpuUsage;
     }
@@ -83,7 +84,7 @@ public class CpuUsageMonitor : IDisposable
             return (double)_totalCpuCounter.NextValue();
         }, cancellationToken);
     }
-    
+
     [SupportedOSPlatform("windows")]
     private Task<double[]> GetWindowsPerCoreCpuUsageAsync(CancellationToken cancellationToken)
     {
@@ -124,7 +125,8 @@ public class CpuUsageMonitor : IDisposable
     private async Task<double[]> GetLinuxPerCoreCpuUsageAsync(CancellationToken cancellationToken)
     {
         var lines = await File.ReadAllLinesAsync("/proc/stat", cancellationToken);
-        var coreLines = lines.Where(line => line.StartsWith("cpu") && line.Length > 3).ToArray(); // "cpu0", "cpu1", etc.
+        var coreLines =
+            lines.Where(line => line.StartsWith("cpu") && line.Length > 3).ToArray(); // "cpu0", "cpu1", etc.
 
         double[] usages = new double[coreLines.Length];
         for (int i = 0; i < coreLines.Length; i++)

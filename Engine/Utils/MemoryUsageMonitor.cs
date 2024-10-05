@@ -18,6 +18,7 @@ public class MemoryUsageMonitor
         public ulong ullTotalVirtual;
         public ulong ullAvailVirtual;
         public ulong ullAvailExtendedVirtual;
+
         public MEMORYSTATUSEX()
         {
             dwLength = (uint)Marshal.SizeOf(typeof(MEMORYSTATUSEX));
@@ -72,6 +73,7 @@ public class MemoryUsageMonitor
                 // Returner samlet hukommelse i MB
                 return memStatus.ullTotalPhys / (1024.0 * 1024.0);
             }
+
             throw new InvalidOperationException("Unable to get total memory");
         }, cancellationToken);
     }
@@ -86,6 +88,7 @@ public class MemoryUsageMonitor
                 // Returner tilgængelig hukommelse i MB
                 return memStatus.ullAvailPhys / (1024.0 * 1024.0);
             }
+
             throw new InvalidOperationException("Unable to get available memory");
         }, cancellationToken);
     }

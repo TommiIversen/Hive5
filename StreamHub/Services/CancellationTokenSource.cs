@@ -14,6 +14,5 @@ public class CancellationService
     public void ResetToken()
     {
         _cancellationTokenSource.Dispose();
-        // Genopretter en ny token kilde hvis nødvendigt
     }
 }

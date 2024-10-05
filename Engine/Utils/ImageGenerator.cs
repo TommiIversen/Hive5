@@ -54,13 +54,14 @@ public class ImageGenerator
             // Opret en gradient baggrund (fra blå til hvid)
             using (var gradientBrush = new LinearGradientBrush(
                        new Rectangle(0, 0, Width, Height),
-                       Color.FromArgb(r1, g1, b1),   // Startfarve
-                       Color.FromArgb(r2, g2, b2),   // Slutfarve
+                       Color.FromArgb(r1, g1, b1), // Startfarve
+                       Color.FromArgb(r2, g2, b2), // Slutfarve
                        LinearGradientMode.Horizontal))
             {
                 // Fyld baggrunden med gradienten
                 graphics.FillRectangle(gradientBrush, 0, 0, Width, Height);
             }
+
             // Tegn tallet i midten af billedet
             graphics.DrawString(number.ToString(), _font, _brush, new RectangleF(0, 0, Width, Height), _format);
         }

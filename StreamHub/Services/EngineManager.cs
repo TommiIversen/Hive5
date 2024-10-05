@@ -12,28 +12,27 @@ public class EngineManager
     {
         return _engines.GetOrAdd(baseInfo.EngineId, id => new EngineViewModel { BaseInfo = baseInfo });
     }
-    
+
     public void AddOrUpdateWorker(WorkerOut workerOut)
     {
         if (_engines.TryGetValue(workerOut.EngineId, out var engine))
         {
             if (engine.Workers.TryGetValue(workerOut.WorkerId, out var workerViewModel))
             {
-                
                 if (workerViewModel.EventProcessedTimestamp >= workerOut.Timestamp)
                 {
                     // Anvender Message Filter til at sammenligne indkommende beskeds timestamp 
                     // med den sidst behandlede event for at implementere en Idempotent Receiver, 
                     // som forhindrer behandling af forældede eller duplikerede beskeder.
                     Console.WriteLine($"Skipping outdated event for worker {workerOut.WorkerId} - {workerOut.Name}");
-                    Console.WriteLine($"EventProcessedTimestamp: {workerViewModel.EventProcessedTimestamp} VS workerOut.Timestamp:  {workerOut.Timestamp}");
+                    Console.WriteLine(
+                        $"EventProcessedTimestamp: {workerViewModel.EventProcessedTimestamp} VS workerOut.Timestamp:  {workerOut.Timestamp}");
                     return; // Hvis eventet er ældre eller lig med den nuværende tilstand, gør ingenting
                 }
-                
+
                 // Update the existing worker
                 workerViewModel.Worker = workerOut;
                 workerViewModel.EventProcessedTimestamp = workerOut.Timestamp; // Opdater tidsstemplet
-
             }
             else
             {
@@ -51,7 +50,7 @@ public class EngineManager
             Console.WriteLine($"Engine {workerOut.EngineId} not found. Cannot add or update worker.");
         }
     }
-    
+
 
     public bool TryGetEngine(Guid engineId, out EngineViewModel engineInfo)
     {
@@ -63,7 +62,7 @@ public class EngineManager
     {
         var engine = _engines.Values.FirstOrDefault(e => e.ConnectionId == connectionId);
         if (engine == null) return false;
-        
+
         engine.ConnectionId = "";
         return true;
     }
@@ -79,7 +78,7 @@ public class EngineManager
     {
         return _engines.Values;
     }
-    
+
     public bool RemoveEngine(Guid engineId)
     {
         return _engines.TryRemove(engineId, out _);

@@ -11,7 +11,7 @@ public class NetworkUsageMonitor
     public class NetworkInterfaceUsage
     {
         public string InterfaceName { get; set; }
-        public double LinkSpeedGbps  { get; set; } // I bits per sekund
+        public double LinkSpeedGbps { get; set; } // I bits per sekund
         public double RxMbps { get; set; }
         public double TxMbps { get; set; }
         public double RxUsagePercent { get; set; }

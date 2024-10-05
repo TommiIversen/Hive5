@@ -1,6 +1,5 @@
 ﻿using Common.Models;
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.VisualBasic;
 using StreamHub.Hubs;
 
 namespace StreamHub.Services;
@@ -19,7 +18,7 @@ public class WorkerService
         _cancellationService = cancellationService;
     }
 
-    public async Task<CommandResult> HandleWorkerOperationAsync(Guid engineId, Guid workerId, string operation,
+    private async Task<CommandResult> HandleWorkerOperationAsync(Guid engineId, Guid workerId, string operation,
         int timeoutMilliseconds = 5000)
     {
         var worker = _engineManager.GetWorker(engineId, workerId);
@@ -82,7 +81,7 @@ public class WorkerService
     {
         return await HandleWorkerOperationAsync(engineId, workerId, "StartWorker", timeoutMilliseconds);
     }
-    
+
     public async Task<CommandResult> RemoveWorkerAsync(Guid engineId, Guid workerId, int timeoutMilliseconds = 5000)
     {
         return await HandleWorkerOperationAsync(engineId, workerId, "RemoveWorker", timeoutMilliseconds);

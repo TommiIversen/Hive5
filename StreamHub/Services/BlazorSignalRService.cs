@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.SignalR.Client;
 
 namespace StreamHub.Services;
 
-public class BlazorSignalRService: IAsyncDisposable
+public class BlazorSignalRService : IAsyncDisposable
 {
     public HubConnection HubConnection { get; }
 
