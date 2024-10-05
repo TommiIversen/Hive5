@@ -35,7 +35,7 @@ public class MessageQueue
         await _messageChannel.Writer.WriteAsync(baseMessage, cancellationToken);
     }
 
-    public async Task<BaseMessage?> DequeueMessageAsync(CancellationToken cancellationToken)
+    public async Task<BaseMessage> DequeueMessageAsync(CancellationToken cancellationToken)
     {
         // Vent på at modtage en besked fra køen
         return await _messageChannel.Reader.ReadAsync(cancellationToken);
@@ -48,36 +48,6 @@ public class MessageQueue
     }
 }
 
-
-public class MessageQueueOld(int maxQueueSize)
-{
-    private readonly ConcurrentQueue<BaseMessage> _messageQueue = new();
-    private readonly SemaphoreSlim _messageAvailable = new(0);
-
-    public void EnqueueMessage(BaseMessage baseMessage)
-    {
-        while (_messageQueue.Count >= maxQueueSize)
-        {
-            _messageQueue.TryDequeue(out _);  // Fjern ældste besked, hvis køen er fyldt
-            Console.WriteLine($"MessageQueue: Discarded message due to queue size limit. Queue size: {_messageQueue.Count}");
-        }
-
-        _messageQueue.Enqueue(baseMessage);
-        _messageAvailable.Release();
-    }
-
-    public async Task<BaseMessage?> DequeueMessageAsync(CancellationToken cancellationToken)
-    {
-        await _messageAvailable.WaitAsync(cancellationToken);
-        _messageQueue.TryDequeue(out var message);
-        return message;
-    }
-    
-    public int GetQueueSize()
-    {
-        return _messageQueue.Count;
-    }
-}
 
 public class MultiQueue
 {

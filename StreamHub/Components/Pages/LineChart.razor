@@ -29,7 +29,20 @@
             if (metric.EngineId.ToString() == EngineId)
             {
                 Console.WriteLine($"Updating Historic chart for engine {EngineId}");
-                if (LastMetric != null) await UpdateChartData(LastMetric.CPUUsage, LastMetric.CurrentProcessCpuUsage, LastMetric.PerCoreCpuUsage[0]);
+                if (LastMetric != null)
+                {
+                    var metricData = new MetricData
+                    {
+                        Timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
+                        CPUUsage = LastMetric.CPUUsage,
+                        RxUsagePercent = LastMetric.RxUsagePercent,
+                        TxUsagePercent = LastMetric.TxUsagePercent,
+                        RxMbps = LastMetric.RxMbps,
+                        TxMbps = LastMetric.TxMbps
+                    };
+                    Console.WriteLine($"KUKUK Updating chart for engine {EngineId}");
+                    await UpdateChartData(metricData);
+                }
             }
         });
     }
@@ -45,22 +58,33 @@
         if (firstRender)
         {
             Console.WriteLine($"First render for engine {EngineId}");
-            // Simuleret startdata
-            for (int i = 0; i < 30; i++)
+
+            var initialMetrics = new List<MetricData>();
+
+            // Generer simuleret startdata i omvendt rækkefølge
+            for (int i = 29; i >= 0; i--)
             {
-                _timePoints[29 - i] = DateTimeOffset.UtcNow.AddSeconds(i * -10).ToUnixTimeMilliseconds(); // Ældste data først, så det nyeste til sidst
-                _cpuUsage[29 - i] = Random.Shared.NextDouble() * 5;
-                _netRx[29 - i] = Random.Shared.NextDouble() * 13;
-                _netTx[29 - i] = Random.Shared.NextDouble() * 4;
+                initialMetrics.Add(new MetricData
+                {
+                    Timestamp = DateTimeOffset.UtcNow.AddSeconds(i * -10).ToUnixTimeMilliseconds(),
+                    CPUUsage = Random.Shared.NextDouble() * 5,
+                    RxUsagePercent = Random.Shared.NextDouble() * 13,
+                    TxUsagePercent = Random.Shared.NextDouble() * 4,
+                    RxMbps = Random.Shared.NextDouble() * 50, // Simuleret Mbps værdi
+                    TxMbps = Random.Shared.NextDouble() * 20  // Simuleret Mbps værdi
+                });
             }
 
+            // Alternativ løsning: Sortér listen efter Timestamp for at sikre korrekt rækkefølge
+            // initialMetrics = initialMetrics.OrderBy(m => m.Timestamp).ToList();
 
             var initialData = new
             {
-                labels = _timePoints,
-                cpuData = _cpuUsage,
-                rxData = _netRx,
-                txData = _netTx
+                labels = initialMetrics.Select(m => m.Timestamp).ToArray(),
+                cpuData = initialMetrics.Select(m => m.CPUUsage).ToArray(),
+                rxData = initialMetrics.Select(m => m.RxUsagePercent).ToArray(),
+                txData = initialMetrics.Select(m => m.TxUsagePercent).ToArray(),
+                metricData = initialMetrics.ToArray() // Inkluder hele MetricData for tooltips
             };
 
             // Initier grafen med startdata
@@ -68,11 +92,30 @@
         }
     }
 
-    private async Task UpdateChartData(double newCpu, double newRx, double newTx)
+
+    private async Task UpdateChartData(MetricData newMetricData)
     {
-        var newTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();  // UNIX timestamp in milliseconds
-        await JsRuntime.InvokeVoidAsync("chartInterop.updateLineChart", _chart, newTime, newCpu, newRx, newTx);
+        Console.WriteLine($"invoke {EngineId}");
+    
+        if (_chart != null) // Sørg for, at grafen er initialiseret
+        {
+            var serializedData = System.Text.Json.JsonSerializer.Serialize(newMetricData);
+            await JsRuntime.InvokeVoidAsync("chartInterop.updateLineChart", _chart, serializedData);
+        }
     }
+
     
     private string GetCanvasId() => $"cpuChart-{EngineId}";
+    
+    
+    public class MetricData
+    {
+        public long Timestamp { get; set; }
+        public double CPUUsage { get; set; }
+        public double RxUsagePercent { get; set; }
+        public double TxUsagePercent { get; set; }
+        public double RxMbps { get; set; }
+        public double TxMbps { get; set; }
+    }
+    
 }

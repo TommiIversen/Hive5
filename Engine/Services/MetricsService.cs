@@ -10,7 +10,7 @@ public class MetricsService
     private readonly TimeSpan _interval = TimeSpan.FromSeconds(2);
     private readonly CpuUsageMonitor _cpuUsageMonitor = new();
     private readonly MemoryUsageMonitor _memoryUsageMonitor = new();
-
+    private readonly NetworkUsageMonitor _networkUsageMonitor = new();
         
     public MetricsService(MessageQueue messageQueue)
     {
@@ -35,7 +35,24 @@ public class MetricsService
             var totalMemory = await _memoryUsageMonitor.GetTotalMemoryAsync(cancellationToken);
             var availableMemory = await _memoryUsageMonitor.GetAvailableMemoryAsync(cancellationToken);
             var currentProcessMemoryUsage = _memoryUsageMonitor.GetCurrentProcessMemoryUsage();
+            
+            var networkUsageList = _networkUsageMonitor.GetNetworkUsage();
+            var primaryNetworkUsage = networkUsageList.FirstOrDefault();
 
+            double rxMbps = 0, txMbps = 0, rxUsagePercent = 0, txUsagePercent = 0;
+            string interfaceName = "";
+            double linkSpeedGbps = 0;
+
+            if (primaryNetworkUsage != null)
+            {
+                rxMbps = primaryNetworkUsage.RxMbps;
+                txMbps = primaryNetworkUsage.TxMbps;
+                rxUsagePercent = primaryNetworkUsage.RxUsagePercent;
+                txUsagePercent = primaryNetworkUsage.TxUsagePercent;
+                interfaceName = primaryNetworkUsage.InterfaceName;
+                linkSpeedGbps = primaryNetworkUsage.LinkSpeedGbps;
+            }
+            
             // Generate and enqueue a new metric
             var metric = new Metric
             {
@@ -46,13 +63,17 @@ public class MetricsService
                 MemoryUsage = totalMemory - availableMemory, // Brug fiktiv hukommelsesmåling for nu
                 TotalMemory = totalMemory, // Samlet RAM i systemet
                 AvailableMemory = availableMemory, // Tilgængelig RAM i systemet
-                CurrentProcessMemoryUsage = currentProcessMemoryUsage // RAM-brug for den aktuelle proces
+                CurrentProcessMemoryUsage = currentProcessMemoryUsage, // RAM-brug for den aktuelle proces
+                RxMbps = rxMbps,
+                TxMbps = txMbps,
+                RxUsagePercent = rxUsagePercent,
+                TxUsagePercent = txUsagePercent,
+                NetworkInterfaceName = interfaceName, 
+                LinkSpeedGbps = linkSpeedGbps // Link hastighed i Gbps
             };
 
-            //Console.WriteLine($"Generated metric: {metric.CPUUsage}% CPU, {metric.MemoryUsage} MB memory");
             _messageQueue.EnqueueMessage(metric);
 
-            // Wait for the next interval or exit if canceled
             try
             {
                 await Task.Delay(_interval, cancellationToken);
@@ -97,10 +118,5 @@ public class MetricsService
             Console.WriteLine($"Error measuring per core CPU usage: {ex.Message}");
             return new List<double>(); // Returner tom liste i tilfælde af fejl
         }
-    }
-
-    private double GetFakeMemoryUsage()
-    {
-        return Random.Shared.NextDouble() * 16000; // MB
     }
 }

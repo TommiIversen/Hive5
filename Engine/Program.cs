@@ -6,6 +6,15 @@ using Engine.Services;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 
+// Definér base path, hvor data skal gemmes
+var basePath = @"C:\temp\hive";
+
+// Opret mappen, hvis den ikke eksisterer
+if (!Directory.Exists(basePath))
+{
+    Directory.CreateDirectory(basePath);
+}
+
 
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Debug()
@@ -13,14 +22,13 @@ Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Override("Microsoft.AspNetCore", Serilog.Events.LogEventLevel.Warning) // ASP.NET Core-specifik logning
     .WriteTo.Console() // Logger til konsol
     .WriteTo.File(
-        path: "logs/log-.txt",
+        path: Path.Combine(basePath, "logs", "log-.txt"), // Brug basePath til logs
         rollingInterval: RollingInterval.Day, // En fil per dag
         retainedFileCountLimit: 30) // Behold kun de sidste 30 dage
     .CreateLogger();
 
+
 Log.Information("Blazor server applikation starter op...");
-
-
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -36,13 +44,13 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
 
-// Hent maskinens navn og brug det til databasefilen
+// Hent maskinens navn og brug det til databasefilen, og gem den i basePath
 var machineName = Environment.MachineName;
-var dbFileName = $"Data Source={machineName}.db";
+var dbFileName = Path.Combine(basePath, $"{machineName}.db"); // Brug basePath til databasefilen
 
 // Registrer DbContext med maskinens navn som databasefilnavn
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlite(dbFileName));
+    options.UseSqlite($"Data Source={dbFileName}")); // SQLite-database med base path
 
 
 // Registrer MessageQueue som singleton og angiv max størrelse

@@ -59,8 +59,15 @@ else
                         <strong>Used Memory (MB):</strong> @(engine.LastMetric != null ? (engine.LastMetric.TotalMemory - engine.LastMetric.AvailableMemory).ToString("F2") : "N/A") <br/>
                         <strong>Used Memory (%):</strong> @(engine.LastMetric != null ? ((engine.LastMetric.TotalMemory - engine.LastMetric.AvailableMemory) / engine.LastMetric.TotalMemory * 100).ToString("F2") : "N/A") <br/>
                         <strong>Current Process Memory Usage (MB):</strong> @(engine.LastMetric?.CurrentProcessMemoryUsage.ToString("F2") ?? "N/A") <br/>
+                        
+                        <strong>RxMbps:</strong> @(engine.LastMetric?.RxMbps.ToString("F2") ?? "N/A") <br/>
+                        <strong>TxMbps:</strong> @(engine.LastMetric?.TxMbps.ToString("F2") ?? "N/A") <br/>
+                        <strong>RxUsagePercentage:</strong> @(engine.LastMetric?.RxUsagePercent.ToString("F2") ?? "N/A") <br/>
+                        <strong>TxUsagePercentage:</strong> @(engine.LastMetric?.TxUsagePercent.ToString("F2") ?? "N/A") <br/>
+                        <strong>NetworkInterfaceName:</strong> @(engine.LastMetric?.NetworkInterfaceName ?? "N/A") <br/>
+                        <strong>LinkSpeed (Gbps):</strong> @(engine.LastMetric?.LinkSpeedGbps.ToString("F2") ?? "N/A") <br/>
 
-                        <!-- Viser CPU-brug for hver kerne, hvis det er tilgængeligt -->
+                            <!-- Viser CPU-brug for hver kerne, hvis det er tilgængeligt -->
                         @if (engine.LastMetric?.PerCoreCpuUsage != null && engine.LastMetric.PerCoreCpuUsage.Count > 0)
                         {
                             <LineChart EngineId="@engine.BaseInfo.EngineId.ToString()" LastMetric="@engine.LastMetric"/>
