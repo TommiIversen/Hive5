@@ -84,4 +84,24 @@ public class EngineManager
     {
         return _engines.TryRemove(engineId, out _);
     }
+
+    public void RemoveWorker(Guid engineId, Guid workerId)
+    {
+        if (_engines.TryGetValue(engineId, out var engine))
+        {
+            if (engine.Workers.ContainsKey(workerId))
+            {
+                engine.Workers.Remove(workerId);
+                Console.WriteLine($"Worker {workerId} successfully removed from engine {engineId}.");
+            }
+            else
+            {
+                Console.WriteLine($"Worker {workerId} not found in engine {engineId}. Cannot remove.");
+            }
+        }
+        else
+        {
+            Console.WriteLine($"Engine {engineId} not found. Cannot remove worker {workerId}.");
+        }
+    }
 }

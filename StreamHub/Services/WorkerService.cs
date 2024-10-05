@@ -82,4 +82,9 @@ public class WorkerService
     {
         return await HandleWorkerOperationAsync(engineId, workerId, "StartWorker", timeoutMilliseconds);
     }
+    
+    public async Task<CommandResult> RemoveWorkerAsync(Guid engineId, Guid workerId, int timeoutMilliseconds = 5000)
+    {
+        return await HandleWorkerOperationAsync(engineId, workerId, "RemoveWorker", timeoutMilliseconds);
+    }
 }

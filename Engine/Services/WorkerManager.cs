@@ -46,54 +46,9 @@ public class WorkerManager
         Log.Information($"Starting worker: {workerId}");
         var worker = GetWorker(workerId);
 
-        if (worker == null)
-        {
-            Log.Warning($"Worker with ID {workerId} not found.");
-            return new CommandResult(false, "Worker not found");
-        }
-
-        // Hvis worker er i 'Stopping' eller 'Starting' tilstand, vent indtil den er 'Idle' eller 'Running'
-        while (worker.GetState() == StreamerState.Stopping || worker.GetState() == StreamerState.Starting)
-        {
-            if (worker.GetState() == StreamerState.Stopping)
-            {
-                Log.Information(
-                    $"Worker {workerId} is currently stopping. Waiting for it to complete before starting...");
-            }
-            else if (worker.GetState() == StreamerState.Starting)
-            {
-                Log.Information($"Worker {workerId} is currently starting. Waiting for it to complete...");
-            }
-
-            await Task.Delay(500); // Vent i 500ms før vi tjekker igen
-        }
-
-        // Hvis worker er i 'Running' tilstand, returner, at arbejderen allerede kører
-        if (worker.GetState() == StreamerState.Running)
-        {
-            Log.Information($"Worker {workerId} is already running.");
-            return new CommandResult(true, "Worker is already running");
-        }
-
-        // Hvis worker er i 'Idle' tilstand, forsøg at starte den
-        if (worker.GetState() == StreamerState.Idle)
-        {
-            var startResult = await worker.StartAsync();
-            if (startResult.Success)
-            {
-                SendWorkerEvent(workerId, WorkerEventType.Updated);
-                return new CommandResult(true, "Worker started successfully");
-            }
-            else
-            {
-                Log.Warning($"Failed to start worker {workerId}: {startResult.Message}");
-                return new CommandResult(false, $"Failed to start worker: {startResult.Message}");
-            }
-        }
-
-        // Hvis vi ikke kan identificere tilstanden, returnerer vi en fejl
-        Log.Warning($"Worker {workerId} is in an unexpected state: {worker.GetState()}.");
-        return new CommandResult(false, $"Unexpected state for worker {workerId}");
+        if (worker != null) return await worker.StartAsync();
+        Log.Warning($"Worker with ID {workerId} not found.");
+        return new CommandResult(false, "Worker not found");
     }
 
 
@@ -101,44 +56,10 @@ public class WorkerManager
     {
         Log.Information($"Stopping worker: {workerId}");
         var worker = GetWorker(workerId);
-        if (worker == null)
-        {
-            Log.Warning($"Worker with ID {workerId} not found.");
-            return new CommandResult(false, "Worker not found");
-        }
 
-        // Hvis worker er i 'Starting' eller 'Stopping' tilstand, vent indtil den er 'Idle' eller 'Running'
-        while (worker.GetState() == StreamerState.Starting || worker.GetState() == StreamerState.Stopping)
-        {
-            Log.Information(
-                $"Worker {workerId} is currently in state {worker.GetState()}. Waiting for it to complete...");
-            await Task.Delay(500); // Vent i 500ms før vi tjekker igen
-        }
-
-        // Hvis worker er i 'Running' tilstand, forsøg at stoppe den
-        if (worker.GetState() == StreamerState.Running)
-        {
-            var stopResult = await worker.StopAsync();
-            if (!stopResult.Success)
-            {
-                Log.Warning($"Failed to stop worker {workerId}: {stopResult.Message}");
-                return new CommandResult(false, $"Failed to stop worker: {stopResult.Message}");
-            }
-
-            SendWorkerEvent(workerId, WorkerEventType.Updated);
-            return new CommandResult(true, "Worker stopped successfully");
-        }
-
-        // Hvis worker nu er i 'Idle' tilstand, kan vi returnere succes
-        if (worker.GetState() == StreamerState.Idle)
-        {
-            Log.Information($"Worker {workerId} is already idle.");
-            return new CommandResult(true, "Worker is already idle");
-        }
-
-        // Hvis vi ikke kan identificere tilstanden, returnerer vi en fejl
-        Log.Warning($"Worker {workerId} is in an unexpected state: {worker.GetState()}.");
-        return new CommandResult(false, $"Unexpected state for worker {workerId}");
+        if (worker != null) return await worker.StopAsync();
+        Log.Warning($"Worker with ID {workerId} not found.");
+        return new CommandResult(false, "Worker not found");
     }
 
 
@@ -164,24 +85,25 @@ public class WorkerManager
             return new CommandResult(false, "Worker not found");
         }
 
-        // Forsøg at stoppe worker, hvis den ikke allerede er i 'Idle'
+        // Forsøg at stoppe arbejdstageren, hvis den ikke allerede er 'Idle'
         if (worker.GetState() != StreamerState.Idle)
         {
             Log.Information($"Worker {workerId} is not idle. Attempting to stop before removal...");
-            var stopResult = await StopWorkerAsync(workerId);
+            var stopResult = await worker.StopAsync(); // Delegér stop-logikken til `WorkerService`
+
             if (!stopResult.Success)
             {
+                Log.Warning($"Failed to stop worker {workerId} before removal: {stopResult.Message}");
                 return new CommandResult(false, $"Failed to stop worker before removal: {stopResult.Message}");
             }
         }
 
-        // Fjern worker efter den er stoppet eller allerede er 'Idle'
+        // Fjern arbejdstageren, når den er stoppet eller allerede er 'Idle'
+        SendWorkerEvent(workerId, WorkerEventType.Deleted);
+
         _workers.Remove(workerId);
         _workersBaseInfo.Remove(workerId);
         Log.Information($"Worker {workerId} successfully removed.");
-
-        SendWorkerEvent(workerId, WorkerEventType.Deleted);
-
         return new CommandResult(true, "Worker removed successfully");
     }
 
@@ -201,7 +123,7 @@ public class WorkerManager
         }
         else
         {
-            Log.Warning($"WorkerOut not found for WorkerId: {workerId}");
+            Log.Warning($"Worker not found for WorkerId: {workerId}");
         }
     }
 

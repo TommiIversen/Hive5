@@ -65,6 +65,14 @@ public class StreamHub
                     var commandResult = await _workerManager.StartWorkerAsync(workerId);
                     return commandResult;
                 });
+                
+                // Handle RemoveWorker command asynchronously
+                hubConnection.On("RemoveWorker", async (Guid workerId) =>
+                {
+                    logger.LogInformation("hubConnection.On: Got RemoveWorker: {WorkerId}", workerId);
+                    var commandResult = await _workerManager.RemoveWorkerAsync(workerId);
+                    return commandResult;
+                });
 
                 hubConnection.Reconnected += async (_) =>
                 {

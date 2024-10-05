@@ -28,7 +28,6 @@
         {
             if (metric.EngineId.ToString() == EngineId)
             {
-                Console.WriteLine($"Updating Historic chart for engine {EngineId}");
                 if (LastMetric != null)
                 {
                     var metricData = new MetricData
@@ -40,7 +39,6 @@
                         RxMbps = LastMetric.RxMbps,
                         TxMbps = LastMetric.TxMbps
                     };
-                    Console.WriteLine($"KUKUK Updating chart for engine {EngineId}");
                     await UpdateChartData(metricData);
                 }
             }
@@ -95,8 +93,6 @@
 
     private async Task UpdateChartData(MetricData newMetricData)
     {
-        Console.WriteLine($"invoke {EngineId}");
-    
         if (_chart != null) // Sørg for, at grafen er initialiseret
         {
             var serializedData = System.Text.Json.JsonSerializer.Serialize(newMetricData);

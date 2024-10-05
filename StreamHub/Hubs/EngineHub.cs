@@ -10,7 +10,6 @@ public class EngineHub(
     IHubContext<EngineHub> hubContext)
     : Hub
 {
-    
     // SignalR message fra klient microservice
     public async Task EngineConnected(EngineBaseInfo engineInfo)
     {
@@ -20,7 +19,7 @@ public class EngineHub(
         await Clients.Caller.SendAsync("EngineAcknowledged", engineInfo.EngineId);
     }
 
-    // SignalR message fra klient microservice
+    // SignalR message fra Engine som reportere sine workers
     public void ReportWorkers(List<WorkerOut> workers)
     {
         Console.WriteLine($"-----------Reporting workers: {workers.Count}");
@@ -30,13 +29,22 @@ public class EngineHub(
             Console.WriteLine($"Addddddd Worker: {worker.Name}");
         }
     }
-    
+
     public void ReceiveWorkerEvent(WorkerEvent workerEvent)
     {
         Console.WriteLine($"ReceiveWorkerEvent: {workerEvent.EventType} - {workerEvent.Name}");
-        engineManager.AddOrUpdateWorker(workerEvent);
+
+        if (workerEvent.EventType == WorkerEventType.Deleted)
+        {
+            engineManager.RemoveWorker(workerEvent.EngineId, workerEvent.WorkerId);
+        }
+
+        if (workerEvent.EventType == WorkerEventType.Created || workerEvent.EventType == WorkerEventType.Updated)
+        {
+            engineManager.AddOrUpdateWorker(workerEvent);
+        }
     }
-    
+
 
     // SignalR message fra klient microservice
     public async Task ReceiveMetric(Metric metric)
@@ -68,21 +76,22 @@ public class EngineHub(
             Console.WriteLine($"ReceiveLog: Engine {logMessage.EngineId} not found");
         }
     }
-    
+
     // SignalR message fra klient microservice
     public async Task ReceiveImage(ImageData imageData)
     {
         var worker = engineManager.GetWorker(imageData.EngineId, imageData.WorkerId);
         if (worker != null) worker.LastImage = $"data:image/jpeg;base64,{Convert.ToBase64String(imageData.ImageBytes)}";
-        await hubContext.Clients.Group("frontendClients").SendAsync("ReceiveImage", imageData, cancellationService.Token);
+        await hubContext.Clients.Group("frontendClients")
+            .SendAsync("ReceiveImage", imageData, cancellationService.Token);
     }
-    
-    
+
+
     public async Task ReceiveDeadLetter(object deadLetter)
     {
         Console.WriteLine($"Dead letter received: {deadLetter}");
     }
-    
+
     // Invoke SignalR fra blazor frontend
     public async Task SubscribeToLogs(string workerId)
     {
@@ -95,48 +104,6 @@ public class EngineHub(
     {
         Console.WriteLine($"Unsubscribing from logs for worker {workerId}");
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"worker-{workerId}");
-    }
-    
-    // kaldes direkte fra blazor frontend c# kode:         var result = await WorkerService.StopWorkerAsync(engineId, workerId);
-    public async Task<CommandResult> StopWorker(Guid engineId, Guid workerId)
-    {
-        if (engineManager.TryGetEngine(engineId, out var engine))
-        {
-            // handle no ConnectioonId aka Engine Offfline
-            if (string.IsNullOrEmpty(engine.ConnectionId))
-            {
-                return new CommandResult(false, "Engine Offline");
-            }
-            
-            int timeoutMilliseconds = 5000;
-            using var timeoutCts = new CancellationTokenSource(timeoutMilliseconds);
-            using var linkedCts =
-                CancellationTokenSource.CreateLinkedTokenSource(cancellationService.Token, timeoutCts.Token);
-            try
-            {
-                Console.WriteLine($"Forwarding StopWorker request for worker {workerId} on engine {engineId}");
-                var result = await hubContext.Clients.Client(engine.ConnectionId)
-                    .InvokeAsync<CommandResult>("StopWorker", workerId, linkedCts.Token);
-
-                Console.WriteLine($"Received result: {result.Message}");
-                return new CommandResult(true, $"Worker {workerId} stopped: {result.Message}");
-            }
-            catch (OperationCanceledException)
-            {
-                Console.WriteLine($"Operation canceled for worker {workerId} due to timeout or cancellation.");
-                return new CommandResult(false, "Operation canceled or timed out.");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error stopping worker {workerId}: {ex.Message}");
-                return new CommandResult(false, "Failed to stop worker.");
-            }
-        }
-        else
-        {
-            Console.WriteLine($"StopWorker: Engine {engineId} not found");
-            return new CommandResult(false, "Engine not found.");
-        }
     }
 
     public override async Task OnConnectedAsync()
@@ -156,6 +123,7 @@ public class EngineHub(
                 Console.WriteLine($"Unknown client connected: {Context.ConnectionId}");
                 break;
         }
+
         await base.OnConnectedAsync();
     }
 
@@ -164,13 +132,14 @@ public class EngineHub(
         var wasEngine = engineManager.RemoveConnection(Context.ConnectionId);
         if (wasEngine)
         {
-            await hubContext.Clients.Group("frontendClients").SendAsync("EngineChange",  cancellationService.Token);
+            await hubContext.Clients.Group("frontendClients").SendAsync("EngineChange", cancellationService.Token);
             Console.WriteLine($"Engine disconnected: {Context.ConnectionId}");
         }
         else
         {
             Console.WriteLine($"Client disconnected: {Context.ConnectionId}");
         }
+
         return base.OnDisconnectedAsync(exception);
     }
 }

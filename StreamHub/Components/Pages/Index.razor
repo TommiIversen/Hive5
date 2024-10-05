@@ -103,6 +103,11 @@ else
                                                     disabled="@worker.IsProcessing">
                                                 Start
                                             </button>
+                                            <button @onclick="() => RemoveWorker(engine.BaseInfo.EngineId, worker.WorkerId)"
+                                                    disabled="@worker.IsProcessing">
+                                            Remove
+                                            </button>
+                                            
                                         </div>
                                         <!-- Show result of the operation -->
                                         @if (!string.IsNullOrEmpty(worker.OperationResult))
@@ -218,6 +223,15 @@ else
     private async Task<string> StartWorker(Guid engineId, Guid workerId)
     {
         var result = await WorkerService.StartWorkerAsync(engineId, workerId);
+        Console.WriteLine($"RESULT: {result.Message}");
+        await InvokeAsync(StateHasChanged);
+        return result.Message;
+    }
+    
+    
+    private async Task<string> RemoveWorker(Guid engineId, Guid workerId)
+    {
+        var result = await WorkerService.RemoveWorkerAsync(engineId, workerId);
         Console.WriteLine($"RESULT: {result.Message}");
         await InvokeAsync(StateHasChanged);
         return result.Message;
