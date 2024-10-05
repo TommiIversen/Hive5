@@ -25,14 +25,11 @@ else
             <tr>
                 <td>@worker.WorkerId</td>
                 <td>
-                    @if (worker.IsRunning)
-                    {
-                        <button @onclick="() => StopWorker(worker.WorkerId)">Stop</button>
-                    }
-                    else
-                    {
-                        <button @onclick="() => StartWorker(worker.WorkerId)">Start</button>
-                    }
+
+                    <button @onclick="() => StopWorker(worker.WorkerId)">Stop</button>
+
+                    <button @onclick="() => StartWorker(worker.WorkerId)">Start</button>
+
                 </td>
             </tr>
         }
@@ -41,13 +38,15 @@ else
 }
 
 @code {
+
     private void StartWorker(Guid workerId)
     {
-        WorkerManager.StartWorker(workerId);
+        _ = WorkerManager.StartWorkerAsync(workerId);
     }
 
     private void StopWorker(Guid workerId)
     {
-        WorkerManager.StopWorker(workerId);
+        _ = WorkerManager.StopWorkerAsync(workerId);
     }
+
 }

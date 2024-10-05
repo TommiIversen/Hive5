@@ -42,7 +42,8 @@
                         }
                     },
                     y: {
-                        beginAtZero: true
+                        beginAtZero: true,
+                        
                     }
                 },
                 plugins: {

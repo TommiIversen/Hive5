@@ -93,7 +93,7 @@ else
                                         <strong>Worker Name:</strong> @worker.Worker.Name <br/>
                                         <strong>Worker Description:</strong> @worker.Worker.Description <br/>
                                         <strong>Worker ID:</strong> @worker.WorkerId <br/>
-                                        <strong>Worker IsRunning:</strong>@worker.Worker.IsRunning <br/>
+                                        <strong>Worker IsRunning:</strong>@worker.Worker.State <br/>
                                         <div>
                                             <button @onclick="() => StopWorker(engine.BaseInfo.EngineId, worker.WorkerId)"
                                                     disabled="@worker.IsProcessing">

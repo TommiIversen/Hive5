@@ -1,4 +1,6 @@
-﻿namespace Common.Models;
+﻿using Engine.Utils;
+
+namespace Common.Models;
 
 public enum WorkerEventType
 {
@@ -15,7 +17,7 @@ public class WorkerOut: BaseMessage
     public string Description { get; set; }
     public string Command { get; set; }
     public bool Enabled { get; set; }
-    public bool IsRunning { get; set; }
+    public StreamerState State { get; set; }
 }
 
 public static class WorkerOutExtensions
@@ -29,7 +31,7 @@ public static class WorkerOutExtensions
             Description = workerOut.Description,
             Command = workerOut.Command,
             Enabled = workerOut.Enabled,
-            IsRunning = workerOut.IsRunning,
+            State = workerOut.State,
             EngineId = workerOut.EngineId,
             Timestamp =  DateTime.UtcNow,
             SequenceNumber = workerOut.SequenceNumber,

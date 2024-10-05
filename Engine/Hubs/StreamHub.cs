@@ -54,7 +54,7 @@ public class StreamHub
                 hubConnection.On("StopWorker", async (Guid workerId) =>
                 {
                     logger.LogInformation("hubConnection.On: Got StopWorker: {WorkerId}", workerId);
-                    var commandResult = _workerManager.StopWorker(workerId);
+                    var commandResult = await _workerManager.StopWorkerAsync(workerId);
                     return commandResult;
                 });
 
@@ -62,7 +62,7 @@ public class StreamHub
                 hubConnection.On("StartWorker", async (Guid workerId) =>
                 {
                     logger.LogInformation("hubConnection.On: Got StartWorker: {WorkerId}", workerId);
-                    var commandResult = _workerManager.StartWorker(workerId);
+                    var commandResult = await _workerManager.StartWorkerAsync(workerId);
                     return commandResult;
                 });
 

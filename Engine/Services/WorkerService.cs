@@ -1,5 +1,6 @@
 ﻿using Common.Models;
 using Engine.Interfaces;
+using Engine.Utils;
 
 namespace Engine.Services;
 
@@ -9,7 +10,6 @@ public class WorkerService
     private readonly IStreamerRunner _streamerRunner;
 
     public Guid WorkerId => _streamerRunner.WorkerId;
-    public bool IsRunning => _streamerRunner.IsRunning;
 
     public WorkerService(MessageQueue messageQueue, IStreamerRunner streamerRunner)
     {
@@ -20,14 +20,18 @@ public class WorkerService
         _streamerRunner.ImageGenerated += OnImageGenerated;
     }
 
-    public void Start()
+    public async Task<CommandResult> StartAsync()
     {
-        _streamerRunner.Start();
+        var (state, message) = await _streamerRunner.StartAsync();
+        bool success = state == StreamerState.Running;
+        return new CommandResult(success, message);
     }
 
-    public void Stop()
+    public async Task<CommandResult> StopAsync()
     {
-        _streamerRunner.Stop();
+        var (state, message) = await _streamerRunner.StopAsync();
+        bool success = state == StreamerState.Idle;
+        return new CommandResult(success, message);
     }
 
     private void OnLogGenerated(object? sender, LogEntry log)
@@ -38,5 +42,10 @@ public class WorkerService
     private void OnImageGenerated(object? sender, ImageData image)
     {
         _messageQueue.EnqueueMessage(image);
+    }
+
+    public StreamerState GetState()
+    {
+        return _streamerRunner.GetState();
     }
 }

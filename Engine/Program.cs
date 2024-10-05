@@ -112,9 +112,9 @@ var workerCreate3 = new WorkerCreate(name: "Worker3", description: "Desc3", comm
 var worker1 = workerManager.AddWorker(workerCreate1);
 var worker2 = workerManager.AddWorker(workerCreate2);
 var worker3 = workerManager.AddWorker(workerCreate3);
-workerManager.StartWorker(worker1.WorkerId);
-workerManager.StartWorker(worker2.WorkerId);
-workerManager.StartWorker(worker3.WorkerId);
+await workerManager.StartWorkerAsync(worker1.WorkerId);
+await workerManager.StartWorkerAsync(worker2.WorkerId);
+await workerManager.StartWorkerAsync(worker3.WorkerId);
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
