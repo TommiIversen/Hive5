@@ -5,49 +5,47 @@ namespace Engine.DAL.Repositories;
 
 using Microsoft.EntityFrameworkCore;
 
+public class WorkerRepository
+{
+    private readonly ApplicationDbContext _context;
 
-    public class WorkerRepository
+    public WorkerRepository(ApplicationDbContext context)
     {
-        private readonly ApplicationDbContext _context;
+        _context = context;
+    }
 
-        public WorkerRepository(ApplicationDbContext context)
+    public async Task<WorkerEntity?> GetWorkerByIdAsync(string workerId)
+    {
+        Console.WriteLine($"Data in cache:  {_context.Workers.Local.Count}");
+        return await Task.FromResult(await _context.Workers.FindAsync(workerId));
+    }
+
+
+    public async Task<List<WorkerEntity>> GetAllWorkersAsync()
+    {
+        return await _context.Workers.ToListAsync();
+    }
+
+    public async Task AddWorkerAsync(WorkerEntity worker)
+    {
+        await _context.Workers.AddAsync(worker);
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task UpdateWorkerAsync(WorkerEntity worker)
+    {
+        worker.UpdatedAt = DateTime.UtcNow; // Opdater tidstempel ved enhver ændring
+        _context.Workers.Update(worker);
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task DeleteWorkerAsync(string workerId)
+    {
+        var worker = await GetWorkerByIdAsync(workerId);
+        if (worker != null)
         {
-            _context = context;
-        }
-
-        public async Task<WorkerEntity?> GetWorkerByIdAsync(string workerId)
-        {
-            Console.WriteLine($"Data in cache:  { _context.Workers.Local.Count }");
-            return await Task.FromResult(await _context.Workers.FindAsync(workerId));
-        }
-
-
-        public async Task<List<WorkerEntity>> GetAllWorkersAsync()
-        {
-            return await _context.Workers.ToListAsync();
-        }
-
-        public async Task AddWorkerAsync(WorkerEntity worker)
-        {
-            await _context.Workers.AddAsync(worker);
+            _context.Workers.Remove(worker);
             await _context.SaveChangesAsync();
-        }
-
-        public async Task UpdateWorkerAsync(WorkerEntity worker)
-        {
-            worker.UpdatedAt = DateTime.UtcNow; // Opdater tidstempel ved enhver ændring
-            _context.Workers.Update(worker);
-            await _context.SaveChangesAsync();
-        }
-
-        public async Task DeleteWorkerAsync(string workerId)
-        {
-            var worker = await GetWorkerByIdAsync(workerId);
-            if (worker != null)
-            {
-                _context.Workers.Remove(worker);
-                await _context.SaveChangesAsync();
-            }
         }
     }
-    
+}
