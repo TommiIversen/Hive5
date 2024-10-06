@@ -212,7 +212,7 @@ else
         }
     }
 
-    private async Task<string> StopWorker(Guid engineId, Guid workerId)
+    private async Task<string> StopWorker(Guid engineId, string workerId)
     {
         var result = await WorkerService.StopWorkerAsync(engineId, workerId);
         Console.WriteLine($"RESULT: {result.Message}");
@@ -220,7 +220,7 @@ else
         return result.Message;
     }
 
-    private async Task<string> StartWorker(Guid engineId, Guid workerId)
+    private async Task<string> StartWorker(Guid engineId, string workerId)
     {
         var result = await WorkerService.StartWorkerAsync(engineId, workerId);
         Console.WriteLine($"RESULT: {result.Message}");
@@ -229,7 +229,7 @@ else
     }
     
     
-    private async Task<string> RemoveWorker(Guid engineId, Guid workerId)
+    private async Task<string> RemoveWorker(Guid engineId, string workerId)
     {
         var result = await WorkerService.RemoveWorkerAsync(engineId, workerId);
         Console.WriteLine($"RESULT: {result.Message}");

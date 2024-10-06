@@ -11,7 +11,7 @@ public enum WorkerEventType
 
 public class WorkerOut : BaseMessage
 {
-    public required Guid WorkerId { get; set; }
+    public required string WorkerId { get; set; }
     public string Name { get; set; }
     public string Description { get; set; }
     public string Command { get; set; }

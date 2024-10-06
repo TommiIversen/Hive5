@@ -67,7 +67,7 @@ public class EngineManager
         return true;
     }
 
-    public WorkerViewModel? GetWorker(Guid engineId, Guid workerId)
+    public WorkerViewModel? GetWorker(Guid engineId, string workerId)
     {
         if (!_engines.TryGetValue(engineId, out var engineInfo)) return null;
         engineInfo.Workers.TryGetValue(workerId, out var worker);
@@ -84,7 +84,7 @@ public class EngineManager
         return _engines.TryRemove(engineId, out _);
     }
 
-    public void RemoveWorker(Guid engineId, Guid workerId)
+    public void RemoveWorker(Guid engineId, string workerId)
     {
         if (_engines.TryGetValue(engineId, out var engine))
         {

@@ -5,7 +5,7 @@ namespace StreamHub.Models;
 
 public class WorkerViewModel
 {
-    public required Guid WorkerId { get; set; }
+    public required string WorkerId { get; set; }
     
     public WorkerOut Worker { get; set; }
     public ConcurrentQueue<LogEntry> LogMessages { get; set; } = new();

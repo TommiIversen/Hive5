@@ -10,12 +10,15 @@ public class WorkerService
     private readonly MessageQueue _messageQueue;
     private readonly IStreamerRunner _streamerRunner;
 
-    public Guid WorkerId => _streamerRunner.WorkerId;
+    public string WorkerId { set; get; }
 
-    public WorkerService(MessageQueue messageQueue, IStreamerRunner streamerRunner)
+    public WorkerService(MessageQueue messageQueue, IStreamerRunner streamerRunner, string workerCreateWorkerId)
     {
         _messageQueue = messageQueue;
         _streamerRunner = streamerRunner;
+        _streamerRunner.WorkerId = workerCreateWorkerId;
+        WorkerId = workerCreateWorkerId;
+        
 
         _streamerRunner.LogGenerated += OnLogGenerated;
         _streamerRunner.ImageGenerated += OnImageGenerated;
@@ -144,4 +147,6 @@ public class WorkerService
         };
         _messageQueue.EnqueueMessage(workerEvent);
     }
+    
+
 }

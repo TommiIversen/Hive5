@@ -5,8 +5,8 @@ namespace Engine.Interfaces;
 
 public interface IStreamerRunner
 {
-    Guid WorkerId { get; }
-    bool IsRunning { get; }
+    string WorkerId { get; set; }
+
 
     Task<(StreamerState, string)> StartAsync();
     Task<(StreamerState, string)> StopAsync();

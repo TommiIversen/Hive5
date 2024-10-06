@@ -18,7 +18,7 @@ public class WorkerService
         _cancellationService = cancellationService;
     }
 
-    private async Task<CommandResult> HandleWorkerOperationAsync(Guid engineId, Guid workerId, string operation,
+    private async Task<CommandResult> HandleWorkerOperationAsync(Guid engineId, string workerId, string operation,
         int timeoutMilliseconds = 5000)
     {
         var worker = _engineManager.GetWorker(engineId, workerId);
@@ -72,17 +72,17 @@ public class WorkerService
     }
 
 
-    public async Task<CommandResult> StopWorkerAsync(Guid engineId, Guid workerId, int timeoutMilliseconds = 5000)
+    public async Task<CommandResult> StopWorkerAsync(Guid engineId, string workerId, int timeoutMilliseconds = 5000)
     {
         return await HandleWorkerOperationAsync(engineId, workerId, "StopWorker", timeoutMilliseconds);
     }
 
-    public async Task<CommandResult> StartWorkerAsync(Guid engineId, Guid workerId, int timeoutMilliseconds = 5000)
+    public async Task<CommandResult> StartWorkerAsync(Guid engineId, string workerId, int timeoutMilliseconds = 5000)
     {
         return await HandleWorkerOperationAsync(engineId, workerId, "StartWorker", timeoutMilliseconds);
     }
 
-    public async Task<CommandResult> RemoveWorkerAsync(Guid engineId, Guid workerId, int timeoutMilliseconds = 5000)
+    public async Task<CommandResult> RemoveWorkerAsync(Guid engineId, string workerId, int timeoutMilliseconds = 5000)
     {
         return await HandleWorkerOperationAsync(engineId, workerId, "RemoveWorker", timeoutMilliseconds);
     }

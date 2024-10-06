@@ -39,12 +39,12 @@ else
 
 @code {
 
-    private void StartWorker(Guid workerId)
+    private void StartWorker(string workerId)
     {
         _ = WorkerManager.StartWorkerAsync(workerId);
     }
 
-    private void StopWorker(Guid workerId)
+    private void StopWorker(string workerId)
     {
         _ = WorkerManager.StopWorkerAsync(workerId);
     }

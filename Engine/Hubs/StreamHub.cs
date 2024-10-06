@@ -51,7 +51,7 @@ public class StreamHub
                     .Build();
 
                 // Handle StopWorker command asynchronously
-                hubConnection.On("StopWorker", async (Guid workerId) =>
+                hubConnection.On("StopWorker", async (string workerId) =>
                 {
                     logger.LogInformation("hubConnection.On: Got StopWorker: {WorkerId}", workerId);
                     var commandResult = await _workerManager.StopWorkerAsync(workerId);
@@ -59,7 +59,7 @@ public class StreamHub
                 });
 
 
-                hubConnection.On("StartWorker", async (Guid workerId) =>
+                hubConnection.On("StartWorker", async (string workerId) =>
                 {
                     logger.LogInformation("hubConnection.On: Got StartWorker: {WorkerId}", workerId);
                     var commandResult = await _workerManager.StartWorkerAsync(workerId);
@@ -67,7 +67,7 @@ public class StreamHub
                 });
                 
                 // Handle RemoveWorker command asynchronously
-                hubConnection.On("RemoveWorker", async (Guid workerId) =>
+                hubConnection.On("RemoveWorker", async (string workerId) =>
                 {
                     logger.LogInformation("hubConnection.On: Got RemoveWorker: {WorkerId}", workerId);
                     var commandResult = await _workerManager.RemoveWorkerAsync(workerId);

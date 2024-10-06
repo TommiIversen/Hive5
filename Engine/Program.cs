@@ -1,5 +1,6 @@
 using Common.Models;
 using Engine.Components;
+using Engine.DAL.Repositories;
 using Engine.Database;
 using Engine.Hubs;
 using Engine.Services;
@@ -43,15 +44,16 @@ builder.Host.UseSerilog(Log.Logger);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
+builder.Services.AddSingleton<RepositoryFactory>();
+
 
 // Hent maskinens navn og brug det til databasefilen, og gem den i basePath
 var machineName = Environment.MachineName;
 var dbFileName = Path.Combine(basePath, $"{machineName}.db"); // Brug basePath til databasefilen
 
 // Registrer DbContext med maskinens navn som databasefilnavn
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlite($"Data Source={dbFileName}")); // SQLite-database med base path
-
+builder.Services.AddDbContextFactory<ApplicationDbContext>(options =>
+    options.UseSqlite($"Data Source={dbFileName}"));
 
 // Registrer MessageQueue som singleton og angiv max størrelse
 int maxQueueSize = 10;
@@ -105,9 +107,9 @@ var workerManager = app.Services.GetRequiredService<WorkerManager>();
 
 Log.Information("Creating workers...");
 
-var workerCreate1 = new WorkerCreate(name: "Worker1", description: "Desc", command: "gstreamer");
-var workerCreate2 = new WorkerCreate(name: "Worker2", description: "Desc2", command: "gstreamer2");
-var workerCreate3 = new WorkerCreate(name: "Worker3", description: "Desc3", command: "gstreamer3");
+var workerCreate1 = new WorkerCreate(workerId: "w1",  name: "Worker1", description: "Desc", command: "gstreamer");
+var workerCreate2 = new WorkerCreate(workerId: "w2", name: "Worker2", description: "Desc2", command: "gstreamer2");
+var workerCreate3 = new WorkerCreate(workerId: "w3",name: "Worker3", description: "Desc3", command: "gstreamer3");
 
 var worker1 = workerManager.AddWorker(workerCreate1);
 var worker2 = workerManager.AddWorker(workerCreate2);

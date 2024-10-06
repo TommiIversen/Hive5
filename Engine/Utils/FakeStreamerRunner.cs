@@ -10,7 +10,7 @@ public partial class FakeStreamerRunner : IStreamerRunner
     private readonly Timer _imageTimer;
     private int _logCounter = 0;
     private int _imageCounter = 0;
-    public Guid WorkerId { get; } = Guid.NewGuid();
+    public string WorkerId { get; set; }
     public bool IsRunning { get; }
 
     private readonly ImageGenerator _generator = new();
