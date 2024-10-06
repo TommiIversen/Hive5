@@ -86,7 +86,13 @@ public class WorkerManager
         Log.Information($"Starting worker: {workerId}");
         var worker = GetWorkerService(workerId);
 
-        if (worker != null) return await worker.StartAsync();
+        if (worker != null)
+        {
+            var result = await worker.StartAsync();
+            await SendWorkerEvent(workerId, WorkerEventType.Updated);
+            return result;
+        }
+
         Log.Warning($"Worker with ID {workerId} not found.");
         return new CommandResult(false, "Worker not found");
     }
@@ -97,7 +103,13 @@ public class WorkerManager
         Log.Information($"Stopping worker: {workerId}");
         var worker = GetWorkerService(workerId);
 
-        if (worker != null) return await worker.StopAsync();
+        if (worker != null)
+        {
+            var result = await worker.StopAsync();
+            await SendWorkerEvent(workerId, WorkerEventType.Updated);
+            return result;
+        }
+
         Log.Warning($"Worker with ID {workerId} not found.");
         return new CommandResult(false, "Worker not found");
     }

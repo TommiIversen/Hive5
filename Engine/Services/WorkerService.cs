@@ -18,7 +18,6 @@ public class WorkerService
         _streamerRunner = streamerRunner;
         _streamerRunner.WorkerId = workerCreateWorkerId;
         WorkerId = workerCreateWorkerId;
-        
 
         _streamerRunner.LogGenerated += OnLogGenerated;
         _streamerRunner.ImageGenerated += OnImageGenerated;
@@ -61,13 +60,6 @@ public class WorkerService
         // Forsøg at starte arbejdstageren, når den er 'Idle'
         var (state, message) = await _streamerRunner.StartAsync();
         bool success = state == StreamerState.Running;
-
-        // Trigger `SendWorkerEvent` ved succesfuld tilstandsændring
-        if (success)
-        {
-            SendWorkerEvent(WorkerEventType.Updated);
-        }
-
         return new CommandResult(success, message);
     }
 
@@ -109,13 +101,6 @@ public class WorkerService
         // Forsøg at stoppe arbejdstageren, når den er 'Running'
         var (state, message) = await _streamerRunner.StopAsync();
         bool success = state == StreamerState.Idle;
-
-        // Trigger `SendWorkerEvent` ved succesfuld tilstandsændring
-        if (success)
-        {
-            SendWorkerEvent(WorkerEventType.Updated);
-        }
-
         return new CommandResult(success, message);
     }
 
@@ -134,19 +119,4 @@ public class WorkerService
     {
         return _streamerRunner.GetState();
     }
-
-    private void SendWorkerEvent(WorkerEventType eventType)
-    {
-        // Opret og send en `WorkerEvent` til køen
-        var workerEvent = new WorkerEvent
-        {
-            WorkerId = WorkerId,
-            EventType = eventType,
-            State = _streamerRunner.GetState(),
-            Timestamp = DateTime.UtcNow
-        };
-        _messageQueue.EnqueueMessage(workerEvent);
-    }
-    
-
 }

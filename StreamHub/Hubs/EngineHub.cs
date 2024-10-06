@@ -32,7 +32,7 @@ public class EngineHub(
 
     public void ReceiveWorkerEvent(WorkerEvent workerEvent)
     {
-        Console.WriteLine($"ReceiveWorkerEvent: {workerEvent.EventType} - {workerEvent.WorkerId}");
+        Console.WriteLine($"ReceiveWorkerEvent: {workerEvent.EventType} - {workerEvent.WorkerId} - {workerEvent.Name}");
 
         if (workerEvent.EventType == WorkerEventType.Deleted)
         {

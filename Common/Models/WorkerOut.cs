@@ -2,6 +2,14 @@
 
 namespace Common.Models;
 
+
+public enum WorkerEventType
+{
+    Created,
+    Updated,
+    Deleted
+}
+
 public class WorkerOut : BaseMessage
 {
     public required string WorkerId { get; set; }
@@ -10,4 +18,9 @@ public class WorkerOut : BaseMessage
     public string Command { get; set; }
     public bool Enabled { get; set; }
     public StreamerState State { get; set; }
+}
+
+public class WorkerEvent : WorkerOut
+{
+    public required WorkerEventType EventType { get; set; }
 }
