@@ -5,7 +5,16 @@ namespace Engine.DAL.Repositories;
 
 using Microsoft.EntityFrameworkCore;
 
-public class WorkerRepository
+public interface IWorkerRepository
+{
+    Task<WorkerEntity?> GetWorkerByIdAsync(string workerId);
+    Task<List<WorkerEntity>> GetAllWorkersAsync();
+    Task AddWorkerAsync(WorkerEntity worker);
+    Task UpdateWorkerAsync(WorkerEntity worker);
+    Task DeleteWorkerAsync(string workerId);
+}
+
+public class WorkerRepository : IWorkerRepository
 {
     private readonly ApplicationDbContext _context;
 

@@ -12,7 +12,7 @@ public class RepositoryFactory
         _contextFactory = contextFactory;
     }
 
-    public WorkerRepository CreateWorkerRepository()
+    public IWorkerRepository CreateWorkerRepository()
     {
         var dbContext = _contextFactory.CreateDbContext();
         return new WorkerRepository(dbContext);

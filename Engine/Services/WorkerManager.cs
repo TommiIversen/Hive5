@@ -25,7 +25,7 @@ public class WorkerManager
     public WorkerService AddWorker(WorkerCreate workerCreate)
     {
         Log.Information($"Adding worker... {workerCreate.Name}");
-        var workerRepository = _repositoryFactory.CreateWorkerRepository();
+        IWorkerRepository workerRepository = _repositoryFactory.CreateWorkerRepository();
 
         // Tjek, om WorkerId allerede findes i databasen
         var existingWorker = workerRepository.GetWorkerByIdAsync(workerCreate.WorkerId).Result;
