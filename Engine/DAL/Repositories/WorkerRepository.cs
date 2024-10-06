@@ -17,8 +17,10 @@ using Microsoft.EntityFrameworkCore;
 
         public async Task<WorkerEntity?> GetWorkerByIdAsync(string workerId)
         {
-            return await _context.Workers.FirstOrDefaultAsync(w => w.WorkerId == workerId);
+            Console.WriteLine($"Data in cache:  { _context.Workers.Local.Count }");
+            return await Task.FromResult(await _context.Workers.FindAsync(workerId));
         }
+
 
         public async Task<List<WorkerEntity>> GetAllWorkersAsync()
         {
