@@ -68,8 +68,16 @@ public class EngineHub(
             // For debugging msg sequence + delay in the system
             //TimeSpan delay = DateTime.UtcNow - logMessage.Timestamp;
             //Console.WriteLine($"Time delay: {delay.TotalMilliseconds} Milliseconds - {logMessage.Timestamp} - {DateTime.UtcNow} - {logMessage.LogSequenceNumber}");
-            engine.AddWorkerLog(logMessage.WorkerId, logMessage);
-            await hubContext.Clients.Group($"worker-{logMessage.WorkerId}").SendAsync("ReceiveLog", logMessage);
+            var wasAdded = engine.AddWorkerLog(logMessage.WorkerId, logMessage);
+
+            if (wasAdded)
+            {
+                await hubContext.Clients.Group($"worker-{logMessage.WorkerId}").SendAsync("ReceiveLog", logMessage);
+            }
+            else
+            {
+                Console.WriteLine($"ReceiveLog: Worker {logMessage.WorkerId} not found");
+            }
         }
         else
         {
@@ -81,9 +89,17 @@ public class EngineHub(
     public async Task ReceiveImage(ImageData imageData)
     {
         var worker = engineManager.GetWorker(imageData.EngineId, imageData.WorkerId);
-        if (worker != null) worker.LastImage = $"data:image/jpeg;base64,{Convert.ToBase64String(imageData.ImageBytes)}";
-        await hubContext.Clients.Group("frontendClients")
-            .SendAsync("ReceiveImage", imageData, cancellationService.Token);
+
+        if (worker != null)
+        {
+            worker.LastImage = $"data:image/jpeg;base64,{Convert.ToBase64String(imageData.ImageBytes)}";
+            await hubContext.Clients.Group("frontendClients")
+                .SendAsync("ReceiveImage", imageData, cancellationService.Token);
+        }
+        else
+        {
+            Console.WriteLine($"ReceiveImage: Worker {imageData.WorkerId} not found");
+        }
     }
 
 

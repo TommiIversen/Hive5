@@ -9,12 +9,15 @@ public class EngineViewModel
     public Metric? LastMetric { get; set; }
     public Dictionary<string, WorkerViewModel> Workers { get; set; } = new();
     
-    public void AddWorkerLog(string workerId, LogEntry message)
+    public bool AddWorkerLog(string workerId, LogEntry message)
     {
-        if (!Workers.ContainsKey(workerId))
+        if (Workers.ContainsKey(workerId))
         {
-            Workers[workerId] = new WorkerViewModel { WorkerId = workerId };
+            //Workers[workerId] = new WorkerViewModel { WorkerId = workerId };
+            Workers[workerId].AddLogMessage(message);
+            return true;
         }
-        Workers[workerId].AddLogMessage(message);
+
+        return false;
     }
 }

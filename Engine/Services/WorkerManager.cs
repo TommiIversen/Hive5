@@ -27,7 +27,7 @@ public class WorkerManager
     public IReadOnlyDictionary<string, WorkerService> Workers => _workers;
 
     
-    public WorkerService AddWorkenew(WorkerCreate workerCreate)
+    public WorkerService AddWorker(WorkerCreate workerCreate)
     {
         Log.Information($"Adding worker... {workerCreate.Name}");
         var workerRepository = _repositoryFactory.CreateWorkerRepository();
@@ -84,32 +84,11 @@ public class WorkerManager
         return workerService;
     }
     
-    public WorkerService AddWorker(WorkerCreate workerCreate)
-    {
-        Log.Information($"Adding worker... {workerCreate.Name}");
-        IStreamerRunner streamerRunner = new FakeStreamerRunner();
-
-        var worker = new WorkerService(_messageQueue, streamerRunner, workerCreate.WorkerId);
-
-        var workerOut = new WorkerOut
-        {
-            WorkerId = workerCreate.WorkerId,
-            Name = workerCreate.Name,
-            Description = workerCreate.Description,
-            Command = workerCreate.Command,
-            Enabled = true,
-            State = StreamerState.Idle
-        };
-        _workers[worker.WorkerId] = worker;
-        _workersBaseInfo[worker.WorkerId] = workerOut;
-        return worker;
-    }
-    
 
     public async Task<CommandResult> StartWorkerAsync(string workerId)
     {
         Log.Information($"Starting worker: {workerId}");
-        var worker = GetWorker(workerId);
+        var worker = GetWorkerService(workerId);
 
         if (worker != null) return await worker.StartAsync();
         Log.Warning($"Worker with ID {workerId} not found.");
@@ -120,7 +99,7 @@ public class WorkerManager
     public async Task<CommandResult> StopWorkerAsync(string workerId)
     {
         Log.Information($"Stopping worker: {workerId}");
-        var worker = GetWorker(workerId);
+        var worker = GetWorkerService(workerId);
 
         if (worker != null) return await worker.StopAsync();
         Log.Warning($"Worker with ID {workerId} not found.");
@@ -128,7 +107,7 @@ public class WorkerManager
     }
 
 
-    public List<WorkerOut> GetAllWorkers(Guid engineId)
+    public List<WorkerOut> GetAllWorkersold(Guid engineId)
     {
         // FIX - inject ikke enginID her
         Log.Information($"Getting all workers...");
@@ -138,11 +117,26 @@ public class WorkerManager
 
         return _workersBaseInfo.Values.ToList();
     }
+    
+    public async Task<List<WorkerEvent>> GetAllWorkers(Guid engineId)
+    {
+        Log.Information($"Getting all workers from database...");
+
+        var workerRepository = _repositoryFactory.CreateWorkerRepository();
+        var workerEntities = await workerRepository.GetAllWorkersAsync();
+
+        // Map WorkerEntity til WorkerEvent direkte
+        var workerEvents = workerEntities
+            .Select(workerEntity => workerEntity.ToWorkerEvent(engineId))
+            .ToList();
+
+        return workerEvents;
+    }
 
     public async Task<CommandResult> RemoveWorkerAsync(string workerId)
     {
         Log.Information($"Removing worker: {workerId}");
-        var worker = GetWorker(workerId);
+        var worker = GetWorkerService(workerId);
 
         if (worker == null)
         {
@@ -177,7 +171,7 @@ public class WorkerManager
         if (_workersBaseInfo.TryGetValue(workerId, out var workerOut))
         {
             // Opdater `IsRunning` status baseret på `WorkerService`
-            var workerService = GetWorker(workerId);
+            var workerService = GetWorkerService(workerId);
             if (workerService != null)
             {
                 workerOut.State = workerService.GetState();
@@ -192,8 +186,7 @@ public class WorkerManager
         }
     }
 
-    // Hjælpefunktion til at få en worker uden brug af `out`
-    private WorkerService? GetWorker(string workerId)
+    private WorkerService? GetWorkerService(string workerId)
     {
         return _workers.TryGetValue(workerId, out var worker) ? worker : null;
     }

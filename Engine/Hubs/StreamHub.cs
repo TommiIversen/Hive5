@@ -136,11 +136,12 @@ public class StreamHub
             EngineId = EngineId
         };
         await hubConnection.InvokeAsync("EngineConnected", engineModel);
-        var workers = _workerManager.GetAllWorkers(EngineId);
+        var workers = await _workerManager.GetAllWorkers(EngineId);
 
-        foreach (var workerEventCreated in workers.Select(worker => worker.ToWorkerEvent()))
+        // TODO, send sync event - send as a list
+        foreach (var worker in workers)
         {
-            await hubConnection.InvokeAsync("ReceiveWorkerEvent", workerEventCreated);
+            await hubConnection.InvokeAsync("ReceiveWorkerEvent", worker);
         }
         await ProcessClientMessagesAsync(hubConnection, streamhubUrl, _cancellationTokenSource.Token);
     }
