@@ -1,7 +1,8 @@
-﻿using Engine.DAL.Entities;
+﻿using Common.Models;
+using Engine.DAL.Entities;
 using Engine.Utils;
 
-namespace Common.Models;
+namespace Engine.Models;
 
 public static class WorkerOutExtensions
 {
@@ -25,7 +26,7 @@ public static class WorkerOutExtensions
     
     
     public static WorkerEvent ToWorkerEvent(this WorkerEntity workerEntity, Guid engineId, 
-        WorkerEventType eventType = WorkerEventType.Updated)
+        StreamerState state, WorkerEventType eventType = WorkerEventType.Updated)
     {
         return new WorkerEvent
         {
@@ -34,10 +35,28 @@ public static class WorkerOutExtensions
             Description = workerEntity.Description,
             Command = workerEntity.Command,
             Enabled = workerEntity.IsEnabled,
-            State = StreamerState.Idle, // Som standard Idle; kan opdateres, hvis nødvendigt
+            State = state,
             EngineId = engineId,
             Timestamp = DateTime.UtcNow,
-            SequenceNumber = 0, // Dette kan justeres for en specifik rækkefølge
+            SequenceNumber = 0,
+            EventType = eventType
+        };
+    }
+    
+    
+    public static WorkerEvent ToWorkerEvent(this WorkerEntity workerEntity, 
+        StreamerState state, WorkerEventType eventType = WorkerEventType.Updated)
+    {
+        return new WorkerEvent
+        {
+            WorkerId = workerEntity.WorkerId,
+            Name = workerEntity.Name,
+            Description = workerEntity.Description,
+            Command = workerEntity.Command,
+            Enabled = workerEntity.IsEnabled,
+            State = state,
+            Timestamp = DateTime.UtcNow,
+            SequenceNumber = 0,
             EventType = eventType
         };
     }

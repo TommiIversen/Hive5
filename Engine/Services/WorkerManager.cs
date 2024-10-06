@@ -2,6 +2,7 @@
 using Engine.DAL.Entities;
 using Engine.DAL.Repositories;
 using Engine.Interfaces;
+using Engine.Models;
 using Engine.Utils;
 using Serilog;
 
@@ -11,12 +12,8 @@ public class WorkerManager
 {
     private readonly MessageQueue _messageQueue;
     private readonly Dictionary<string, WorkerService> _workers = new();
-
-    // gem her til vi får en database
-    private readonly Dictionary<string, WorkerOut> _workersBaseInfo = new();
-    
-    // Repository Factory
     private readonly RepositoryFactory _repositoryFactory;
+    public IReadOnlyDictionary<string, WorkerService> Workers => _workers;
 
     public WorkerManager(MessageQueue messageQueue, RepositoryFactory repositoryFactory)
     {
@@ -24,9 +21,7 @@ public class WorkerManager
         _repositoryFactory = repositoryFactory;
     }
 
-    public IReadOnlyDictionary<string, WorkerService> Workers => _workers;
 
-    
     public WorkerService AddWorker(WorkerCreate workerCreate)
     {
         Log.Information($"Adding worker... {workerCreate.Name}");
@@ -67,13 +62,14 @@ public class WorkerManager
 
         return worker;
     }
-    
+
     private WorkerService GetOrCreateWorkerService(WorkerCreate workerCreate, IStreamerRunner streamerRunner)
     {
         // Hvis arbejderen allerede findes i databasen og i _workers, returner den eksisterende service
         if (_workers.ContainsKey(workerCreate.WorkerId))
         {
-            Log.Information($"Worker with ID {workerCreate.WorkerId} already exists in memory. Returning existing service.");
+            Log.Information(
+                $"Worker with ID {workerCreate.WorkerId} already exists in memory. Returning existing service.");
             return _workers[workerCreate.WorkerId];
         }
 
@@ -83,7 +79,7 @@ public class WorkerManager
 
         return workerService;
     }
-    
+
 
     public async Task<CommandResult> StartWorkerAsync(string workerId)
     {
@@ -107,17 +103,6 @@ public class WorkerManager
     }
 
 
-    public List<WorkerOut> GetAllWorkersold(Guid engineId)
-    {
-        // FIX - inject ikke enginID her
-        Log.Information($"Getting all workers...");
-
-        foreach (var worker in _workersBaseInfo.Values)
-            worker.EngineId = engineId;
-
-        return _workersBaseInfo.Values.ToList();
-    }
-    
     public async Task<List<WorkerEvent>> GetAllWorkers(Guid engineId)
     {
         Log.Information($"Getting all workers from database...");
@@ -125,12 +110,27 @@ public class WorkerManager
         var workerRepository = _repositoryFactory.CreateWorkerRepository();
         var workerEntities = await workerRepository.GetAllWorkersAsync();
 
-        // Map WorkerEntity til WorkerEvent direkte
+        // Map WorkerEntity til WorkerEvent direkte med opdateret state fra WorkerService
         var workerEvents = workerEntities
-            .Select(workerEntity => workerEntity.ToWorkerEvent(engineId))
+            .Select(workerEntity =>
+            {
+                var state = GetWorkerState(workerEntity.WorkerId); // Hent den aktuelle state
+                return workerEntity.ToWorkerEvent(engineId, state);
+            })
             .ToList();
 
         return workerEvents;
+    }
+
+    private StreamerState GetWorkerState(string workerId)
+    {
+        var workerService = GetWorkerService(workerId);
+        if (workerService != null)
+        {
+            return workerService.GetState();
+        }
+
+        return StreamerState.Idle;
     }
 
     public async Task<CommandResult> RemoveWorkerAsync(string workerId)
@@ -157,32 +157,51 @@ public class WorkerManager
             }
         }
 
-        // Fjern arbejdstageren, når den er stoppet eller allerede er 'Idle'
-        SendWorkerEvent(workerId, WorkerEventType.Deleted);
+        // Fjern woker fra databasen først
+        var workerRepository = _repositoryFactory.CreateWorkerRepository();
+        await workerRepository.DeleteWorkerAsync(workerId);
+
 
         _workers.Remove(workerId);
-        _workersBaseInfo.Remove(workerId);
         Log.Information($"Worker {workerId} successfully removed.");
+
+        SendWorkerDeletedEvent(workerId);
+
+
         return new CommandResult(true, "Worker removed successfully");
     }
 
-    private void SendWorkerEvent(string workerId, WorkerEventType eventType)
+    private void SendWorkerDeletedEvent(string workerId)
     {
-        if (_workersBaseInfo.TryGetValue(workerId, out var workerOut))
+        Log.Information($"Sending delete event for worker: {workerId}");
+        var workerEvent = new WorkerEvent
         {
-            // Opdater `IsRunning` status baseret på `WorkerService`
-            var workerService = GetWorkerService(workerId);
-            if (workerService != null)
-            {
-                workerOut.State = workerService.GetState();
-            }
+            WorkerId = workerId,
+            EventType = WorkerEventType.Deleted,
+            Timestamp = DateTime.UtcNow
+        };
+        _messageQueue.EnqueueMessage(workerEvent);
+    }
 
-            var workerEvent = workerOut.ToWorkerEvent(eventType);
-            _messageQueue.EnqueueMessage(workerEvent);
+    private async Task SendWorkerEvent(string workerId, WorkerEventType eventType)
+    {
+        Console.WriteLine($"SendWorkerEvent: Sending worker event: {eventType} - {workerId}");
+        var workerService = GetWorkerService(workerId);
+
+
+        if (workerService != null)
+        {
+            var workerRepository = _repositoryFactory.CreateWorkerRepository();
+            var workerEntity = await workerRepository.GetWorkerByIdAsync(workerId);
+            if (workerEntity != null)
+            {
+                var workerEvent = workerEntity.ToWorkerEvent(workerService.GetState(), eventType);
+                _messageQueue.EnqueueMessage(workerEvent);
+            }
         }
         else
         {
-            Log.Warning($"Worker not found for WorkerId: {workerId}");
+            Log.Warning($"SendWorkerEvent: Worker not found for WorkerId: {workerId}");
         }
     }
 
