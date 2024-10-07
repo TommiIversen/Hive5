@@ -30,7 +30,7 @@ public class EngineHub(
         }
     }
 
-    public void ReceiveWorkerEvent(WorkerEvent workerEvent)
+    public async void ReceiveWorkerEvent(WorkerEvent workerEvent)
     {
         Console.WriteLine($"ReceiveWorkerEvent: {workerEvent.EventType} - {workerEvent.WorkerId} - {workerEvent.Name}");
 
@@ -43,6 +43,8 @@ public class EngineHub(
         {
             engineManager.AddOrUpdateWorker(workerEvent);
         }
+        await hubContext.Clients.Group("frontendClients")
+            .SendAsync("WorkerEvent", workerEvent, cancellationService.Token);
     }
 
 

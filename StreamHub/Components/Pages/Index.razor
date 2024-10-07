@@ -186,6 +186,12 @@ else
 
         SignalRService.HubConnection.On<Metric>("UpdateMetric", async _ => { await InvokeAsync(StateHasChanged); });
         SignalRService.HubConnection.On("EngineChange", async () => { await InvokeAsync(StateHasChanged); });
+        SignalRService.HubConnection.On<WorkerEvent>("WorkerEvent", async (workerEvent) =>
+        {
+            Console.WriteLine($"Razor got WorkerEvent: {workerEvent.EventType}");
+            await InvokeAsync(StateHasChanged);
+        });
+        
     }
 
     private async Task RemoveEngine(Guid engineId)
