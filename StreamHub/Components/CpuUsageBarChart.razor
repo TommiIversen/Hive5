@@ -26,7 +26,6 @@
         {
             if (metric.EngineId.ToString() == EngineId)
             {
-                Console.WriteLine($"Updating Bar CPU chart for engine {EngineId}");
                 await UpdateChart(metric.PerCoreCpuUsage);
             }
         });

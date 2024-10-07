@@ -57,7 +57,16 @@ else if (_showLog)
     {
         // Ensure that we are subscribed to logs at init
         await SubscribeToLogs();
+        
+        SignalRService.HubConnection.On<LogEntry>("ReceiveLog", async logLine =>
+        {
+            if (Workerid == logLine.WorkerId)
+            {
+                await InvokeAsync(StateHasChanged);
+            }
+        });
     }
+    
 
     // Toggle Show/Hide Log
     private async Task ToggleShowLog()
@@ -136,7 +145,7 @@ else if (_showLog)
     private async void DownloadLogs()
     {
         var engineId = LogMessages.FirstOrDefault()?.EngineId.ToString() ?? "Unknown Engine";
-        var workerId = LogMessages.FirstOrDefault()?.WorkerId.ToString() ?? "Unknown Worker";
+        var workerId = LogMessages.FirstOrDefault()?.WorkerId ?? "Unknown Worker";
 
         // Create the log content (header + log entries)
         var logContent = new System.Text.StringBuilder();

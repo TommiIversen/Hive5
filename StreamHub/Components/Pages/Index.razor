@@ -116,15 +116,11 @@ else
                                     </td>
 
                                     <td class="col-4">
-
-                                        <WorkerLog LogMessages="worker.LogMessages" WorkerId="@worker.WorkerId.ToString()"/>
+                                        <WorkerLog LogMessages="worker.LogMessages" WorkerId="@worker.WorkerId"/>
                                     </td>
+                                    
                                     <td class="col-4">
-
-                                        @if (!string.IsNullOrEmpty(worker.LastImage))
-                                        {
-                                            <img src="@worker.LastImage" alt="Worker Image" width="200"/>
-                                        }
+                                        <ImageComponent WorkerId="@worker.WorkerId" InitialImageData="@worker.LastImage" />
                                     </td>
                                 </tr>
                             }
@@ -189,11 +185,6 @@ else
         };
 
         SignalRService.HubConnection.On<Metric>("UpdateMetric", async _ => { await InvokeAsync(StateHasChanged); });
-
-        SignalRService.HubConnection.On<LogEntry>("ReceiveLog", async _ => { await InvokeAsync(StateHasChanged); });
-
-        SignalRService.HubConnection.On<ImageData>("ReceiveImage", async _ => { await InvokeAsync(StateHasChanged); });
-
         SignalRService.HubConnection.On("EngineChange", async () => { await InvokeAsync(StateHasChanged); });
     }
 
@@ -227,7 +218,6 @@ else
         return result.Message;
     }
     
-    
     private async Task<string> RemoveWorker(Guid engineId, string workerId)
     {
         var result = await WorkerService.RemoveWorkerAsync(engineId, workerId);
@@ -235,6 +225,4 @@ else
         await InvokeAsync(StateHasChanged);
         return result.Message;
     }
-
-
 }
