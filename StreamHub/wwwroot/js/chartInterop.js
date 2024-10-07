@@ -7,19 +7,19 @@
                 labels: initialData.labels, // UNIX timestamps
                 datasets: [
                     {
-                        label: 'CPU Usage (%)',
+                        label: 'CPU (%)',
                         data: initialData.cpuData,
                         borderColor: 'rgba(75, 192, 192, 1)',
                         fill: false
                     },
                     {
-                        label: 'Network RX (%)',
+                        label: 'NetRX (%)',
                         data: initialData.rxData,
                         borderColor: 'rgba(153, 102, 255, 1)',
                         fill: false
                     },
                     {
-                        label: 'Network TX (%)',
+                        label: 'Net TX (%)',
                         data: initialData.txData,
                         borderColor: 'rgba(255, 159, 64, 1)',
                         fill: false

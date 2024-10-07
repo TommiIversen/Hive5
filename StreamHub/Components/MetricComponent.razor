@@ -1,0 +1,97 @@
+﻿@using Common.Models
+
+<div class="p1 mb-4">
+    <button @onclick="ToggleMetrics" class="flex items-center justify-between w-full p-2 border rounded-lg bg-gray-300 transition duration-200  ease-in-out hover:bg-gray-200">
+        <div class="flex items-center">
+            <svg class="mr-2 transform transition-transform duration-300 @(_isExpanded ? "rotate-180" : "")" style="width: 1rem; height: 1rem;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 6 15 12 9 18"></polyline>
+            </svg>
+            <span>Metrics</span>
+        </div>
+        <span>@(_isExpanded ? "Collapse" : "Expand")</span>
+    </button>
+
+    @if (_isExpanded && Metric != null)
+    {
+        <ul class="p-2 space-y1 text-gray-800 bg-gray100 rounded-lg">
+            <li class="flex justify-between">
+                <span class="font-semibold">CPU Usage (%):</span>
+                <span>@Metric.CPUUsage.ToString("F2")</span>
+            </li>
+            <li class="flex justify-between">
+                <span class="font-semibold">Memory Usage (GB):</span>
+                <span>@((Metric.MemoryUsage / 1024).ToString("F2"))</span>
+            </li>
+            <li class="flex justify-between">
+                <span class="font-semibold">Current Process CPU Usage (%):</span>
+                <span>@Metric.CurrentProcessCpuUsage.ToString("F2")</span>
+            </li>
+            <li class="flex justify-between">
+                <span class="font-semibold">Total Memory (GB):</span>
+                <span>@((Metric.TotalMemory / 1024).ToString("F2"))</span>
+            </li>
+            <li class="flex justify-between">
+                <span class="font-semibold">Available Memory (GB):</span>
+                <span>@((Metric.AvailableMemory / 1024).ToString("F2"))</span>
+            </li>
+            <li class="flex justify-between">
+                <span class="font-semibold">Used Memory (GB):</span>
+                <span>@(((Metric.TotalMemory - Metric.AvailableMemory) / 1024).ToString("F2"))</span>
+            </li>
+            <li class="flex justify-between">
+                <span class="font-semibold">Used Memory (%):</span>
+                <span>@((int) ((Metric.TotalMemory - Metric.AvailableMemory) / Metric.TotalMemory * 100))</span>
+            </li>
+            <li class="flex justify-between">
+                <span class="font-semibold">Current Process Memory Usage (MB):</span>
+                <span>@Metric.CurrentProcessMemoryUsage.ToString("F2")</span>
+            </li>
+            <li class="flex justify-between">
+                <span class="font-semibold">Rx Mbps:</span>
+                <span>@Metric.RxMbps.ToString("F2")</span>
+            </li>
+            <li class="flex justify-between">
+                <span class="font-semibold">Tx Mbps:</span>
+                <span>@Metric.TxMbps.ToString("F2")</span>
+            </li>
+            <li class="flex justify-between">
+                <span class="font-semibold">Rx Usage (%):</span>
+                <span>@Metric.RxUsagePercent.ToString("F2")</span>
+            </li>
+            <li class="flex justify-between">
+                <span class="font-semibold">Tx Usage (%):</span>
+                <span>@Metric.TxUsagePercent.ToString("F2")</span>
+            </li>
+            <li class="flex justify-between">
+                <span class="font-semibold">Network Interface Name:</span>
+                <span>@TruncateText(Metric.NetworkInterfaceName, 25)</span>
+            </li>
+            <li class="flex justify-between">
+                <span class="font-semibold">Link Speed (Gbps):</span>
+                <span>@Metric.LinkSpeedGbps.ToString("F2")</span>
+            </li>
+        </ul>
+    }
+</div>
+
+@code {
+    [Parameter] public Metric? Metric { get; set; }
+
+    private bool _isExpanded = false;
+
+    private void ToggleMetrics()
+    {
+        _isExpanded = !_isExpanded;
+    }
+
+    private string TruncateText(string text, int maxLength)
+    {
+        if (text.Length <= maxLength)
+        {
+            return text;
+        }
+
+        return text[..maxLength] + "...";
+    }
+
+}

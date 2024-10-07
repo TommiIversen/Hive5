@@ -22,7 +22,11 @@
                     }
                 },
                 responsive: true,
-                maintainAspectRatio: true
+                maintainAspectRatio: true, plugins: {
+                    legend: {
+                        display: false // Slår visning af legened fra
+                    }
+                }
             }
         });
         return chart;

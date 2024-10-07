@@ -5,9 +5,6 @@
 @inject IJSRuntime JsRuntime
 @inject BlazorSignalRService SignalRService
 @implements IDisposable
-
-<h3>Line Chart for Engine @Engine.BaseInfo.EngineName</h3>
-
 <canvas id="@GetCanvasId()" width="400" height="200"></canvas>
 
 @code {
