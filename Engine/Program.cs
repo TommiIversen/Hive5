@@ -8,15 +8,11 @@ using Engine.Services;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 
-// Definér base path, hvor data skal gemmes
 var basePath = @"C:\temp\hive";
-
-// Opret mappen, hvis den ikke eksisterer
 if (!Directory.Exists(basePath))
 {
     Directory.CreateDirectory(basePath);
 }
-
 
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Debug()
@@ -29,10 +25,7 @@ Log.Logger = new LoggerConfiguration()
         retainedFileCountLimit: 30) // Behold kun de sidste 30 dage
     .CreateLogger();
 
-
 Log.Information("Blazor server applikation starter op...");
-
-
 var builder = WebApplication.CreateBuilder(args);
 
 // Initialiser SQLite, så det kan bruges korrekt
@@ -75,19 +68,6 @@ builder.Services.Configure<StreamHubOptions>(options =>
     options.MaxQueueSize = 20;
 });
 
-// Registrer StreamHub med injektion af loggerFactory og MessageQueue
-
-
-
-// builder.Services.AddSingleton<StreamHub>(provider => new StreamHub(
-//     provider.GetRequiredService<MessageQueue>(),
-//     provider.GetRequiredService<ILogger<StreamHub>>(),
-//     provider.GetRequiredService<ILoggerFactory>(),
-//     streamHubUrls,
-//     20,
-//     provider.GetRequiredService<WorkerManager>() // Injicér WorkerManager via provider
-// ));
-
 builder.Services.AddSingleton<MetricsService>();
 
 var app = builder.Build();
@@ -100,8 +80,6 @@ using (var scope = app.Services.CreateScope())
 
     // Anvend migrationer og opret databasen, hvis den ikke findes
     dbContext.Database.Migrate();
-
-    // Seed data ved første init
     DbInitializer.Seed(dbContext);
 }
 
@@ -114,11 +92,9 @@ metricsService.Start();
 var workerManager = app.Services.GetRequiredService<WorkerManager>();
 
 Log.Information("Creating workers...");
-
 var workerCreate1 = new WorkerCreate(workerId: "w1",  name: "Worker1", description: "Desc", command: "gstreamer");
 var workerCreate2 = new WorkerCreate(workerId: "w2", name: "Worker2", description: "Desc2", command: "gstreamer2");
 var workerCreate3 = new WorkerCreate(workerId: "w3",name: "Worker3", description: "Desc3", command: "gstreamer3");
-
 var worker1 = workerManager.AddWorker(workerCreate1);
 var worker2 = workerManager.AddWorker(workerCreate2);
 var worker3 = workerManager.AddWorker(workerCreate3);
@@ -139,7 +115,4 @@ app.UseAntiforgery();
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
-
 app.Run();
-
-
