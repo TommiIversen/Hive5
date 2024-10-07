@@ -3,6 +3,7 @@ using Engine.Components;
 using Engine.DAL.Repositories;
 using Engine.Database;
 using Engine.Hubs;
+using Engine.Models;
 using Engine.Services;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
@@ -56,29 +57,36 @@ builder.Services.AddDbContextFactory<ApplicationDbContext>(options =>
     options.UseSqlite($"Data Source={dbFileName}"));
 
 // Registrer MessageQueue som singleton og angiv max størrelse
+
 int maxQueueSize = 10;
 builder.Services.AddSingleton<MessageQueue>(provider => new MessageQueue(maxQueueSize));
-
 builder.Services.AddSingleton<WorkerManager>();
+builder.Services.AddScoped<IEngineRepository, EngineRepository>();
+builder.Services.AddSingleton<IEngineService, EngineService>();
+builder.Services.AddSingleton<StreamHub>();
 
-
-// URLs for StreamHub connections
-var streamHubUrls = new List<string>
+builder.Services.Configure<StreamHubOptions>(options =>
 {
-    "http://127.0.0.1:9000/streamhub",
-    "http://127.0.0.1:8999/streamhub"
-};
+    options.HubUrls = new List<string>
+    {
+        "http://127.0.0.1:9000/streamhub",
+        "http://127.0.0.1:8999/streamhub"
+    };
+    options.MaxQueueSize = 20;
+});
 
 // Registrer StreamHub med injektion af loggerFactory og MessageQueue
-builder.Services.AddSingleton<StreamHub>(provider => new StreamHub(
-    provider.GetRequiredService<MessageQueue>(),
-    provider.GetRequiredService<ILogger<StreamHub>>(),
-    provider.GetRequiredService<ILoggerFactory>(),
-    streamHubUrls,
-    20,
-    provider.GetRequiredService<WorkerManager>() // Injicér WorkerManager via provider
-));
 
+
+
+// builder.Services.AddSingleton<StreamHub>(provider => new StreamHub(
+//     provider.GetRequiredService<MessageQueue>(),
+//     provider.GetRequiredService<ILogger<StreamHub>>(),
+//     provider.GetRequiredService<ILoggerFactory>(),
+//     streamHubUrls,
+//     20,
+//     provider.GetRequiredService<WorkerManager>() // Injicér WorkerManager via provider
+// ));
 
 builder.Services.AddSingleton<MetricsService>();
 

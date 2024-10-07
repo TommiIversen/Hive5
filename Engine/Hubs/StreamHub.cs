@@ -1,8 +1,11 @@
 ﻿using System.Collections.Concurrent;
 using Common.Models;
+using Engine.DAL.Entities;
+using Engine.Models;
 using Engine.Services;
 using Microsoft.AspNetCore.Http.Connections;
 using Microsoft.AspNetCore.SignalR.Client;
+using Microsoft.Extensions.Options;
 
 namespace Engine.Hubs;
 
@@ -14,27 +17,37 @@ public class StreamHub
     private readonly MessageQueue _globalMessageQueue;
     private readonly CancellationTokenSource _cancellationTokenSource = new();
 
-    private Guid EngineId { get; } = Guid.NewGuid();
+    //private Guid EngineId { get; } = Guid.NewGuid();
     private readonly ILogger<StreamHub> _logger;
     private const bool DebugFlag = false;
     private readonly WorkerManager _workerManager;
     private readonly ILoggerFactory _loggerFactory;
 
+    private readonly IEngineService _engineService;
+    private EngineEntities? _engineInfo;
+    
+    private readonly List<string> _hubUrls;
+    private readonly int _maxQueueSize;
 
     public StreamHub(
         MessageQueue globalMessageQueue,
         ILogger<StreamHub> logger,
         ILoggerFactory loggerFactory,
-        IEnumerable<string> hubUrls,
-        int maxQueueSize,
-        WorkerManager workerManager)
+        WorkerManager workerManager,
+        IEngineService engineService,
+        IOptions<StreamHubOptions> options)
     {
         _logger = logger;
         _globalMessageQueue = globalMessageQueue;
         _loggerFactory = loggerFactory;
         _workerManager = workerManager;
+        _engineService = engineService;
+        _hubUrls = options.Value.HubUrls;
+        _maxQueueSize = options.Value.MaxQueueSize;
 
-        foreach (var url in hubUrls)
+        Task.Run(async () => { _engineInfo = await _engineService.GetEngineAsync(); });
+        
+        foreach (var url in _hubUrls)
         {
             try
             {
@@ -89,7 +102,7 @@ public class StreamHub
                 };
 
                 _hubConnectionMessageQueue[hubConnection] =
-                    new MultiQueue(loggerFactory.CreateLogger<MultiQueue>(), maxQueueSize);
+                    new MultiQueue(loggerFactory.CreateLogger<MultiQueue>(), _maxQueueSize);
                 _ = Task.Run(async () => await TryReconnect(hubConnection, url, _cancellationTokenSource.Token));
             }
             catch (Exception ex)
@@ -130,13 +143,21 @@ public class StreamHub
         var syncTimestamp = DateTime.UtcNow; // Gem tidspunktet for synkroniseringen
         _hubConnectionSyncTimestamps[hubConnection] = syncTimestamp; // Opdater dictionary med timestamp for denne forbindelse
         
-        Console.WriteLine($"------Sending engine Init messages to streamHub on: {streamhubUrl}");
+        Console.WriteLine($"----------Sending engine Init messages to streamHub on: {streamhubUrl}");
+
         var engineModel = new EngineBaseInfo
         {
-            EngineId = EngineId
+            EngineId = _engineInfo.EngineId,
+            EngineName = _engineInfo.Name,
+            EngineDescription = _engineInfo.Description,
+            Version = _engineInfo.Version,
+            InstallDate = _engineInfo.InstallDate
         };
+        
+        Console.WriteLine($"{engineModel.EngineName} - {engineModel.Version}");
+        
         await hubConnection.InvokeAsync("EngineConnected", engineModel);
-        var workers = await _workerManager.GetAllWorkers(EngineId);
+        var workers = await _workerManager.GetAllWorkers(_engineInfo.EngineId);
 
         // TODO, send sync event - send as a list
         foreach (var worker in workers)
@@ -180,7 +201,7 @@ public class StreamHub
     private async Task ProcessClientMessagesAsync(HubConnection hubConnection, string url,
         CancellationToken cancellationToken)
     {
-        Console.WriteLine($"Start ProcessClientMessagesAsync ------Processing hub queue to {EngineId}");
+        Console.WriteLine($"Start ProcessClientMessagesAsync ------Processing hub queue to {_engineInfo.EngineId}");
         var queue = _hubConnectionMessageQueue[hubConnection];
         var sequenceNumber = 0;
 
@@ -216,7 +237,7 @@ public class StreamHub
 
     private void EnrichMessage(BaseMessage baseMessage, int sequenceNumber)
     {
-        baseMessage.EngineId = EngineId;
+        baseMessage.EngineId = _engineInfo.EngineId;
         baseMessage.SequenceNumber = sequenceNumber;
     }
 }
