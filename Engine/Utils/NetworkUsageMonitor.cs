@@ -28,7 +28,14 @@ public class NetworkUsageMonitor
 
         foreach (var netInterface in interfaces)
         {
+            
+            // Filtrer kun netværkskort, der er forbundet og ikke interne virtuelle interfaces som WSL
             if (netInterface.OperationalStatus != OperationalStatus.Up) continue;
+            if (netInterface.NetworkInterfaceType is NetworkInterfaceType.Loopback or NetworkInterfaceType.Tunnel) continue;
+
+            // Udeluk specifikke interface navne eller beskrivelser, der indeholder "WSL" eller andre mønstre
+            if (netInterface.Name.Contains("WSL") || netInterface.Description.Contains("WSL") || netInterface.Name.Contains("vEthernet")) continue;
+
 
             var statistics = netInterface.GetIPv4Statistics();
             var bytesReceived = statistics.BytesReceived;
