@@ -3,18 +3,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Engine.DAL.Repositories;
 
-public class RepositoryFactory
+public class RepositoryFactory(IDbContextFactory<ApplicationDbContext> contextFactory)
 {
-    private readonly IDbContextFactory<ApplicationDbContext> _contextFactory;
-
-    public RepositoryFactory(IDbContextFactory<ApplicationDbContext> contextFactory)
-    {
-        _contextFactory = contextFactory;
-    }
-
     public IWorkerRepository CreateWorkerRepository()
     {
-        var dbContext = _contextFactory.CreateDbContext();
+        var dbContext = contextFactory.CreateDbContext();
         return new WorkerRepository(dbContext);
     }
 }

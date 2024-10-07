@@ -70,7 +70,7 @@ else
                             <!-- Viser CPU-brug for hver kerne, hvis det er tilgængeligt -->
                         @if (engine.LastMetric?.PerCoreCpuUsage != null && engine.LastMetric.PerCoreCpuUsage.Count > 0)
                         {
-                            <LineChart EngineId="@engine.BaseInfo.EngineId.ToString()" LastMetric="@engine.LastMetric"/>
+                            <LineChart Engine="@engine" />
                             <strong>Per Core CPU Usage (%):</strong>
                             <CpuUsageBarChart EngineId="@engine.BaseInfo.EngineId.ToString()" LastMetric="@engine.LastMetric"/>
                         }
@@ -81,7 +81,6 @@ else
                     </div>
                 </td>
                 <td class="col-8">
-
                     @if (engine.Workers.Any())
                     {
                         <table class="w-100">

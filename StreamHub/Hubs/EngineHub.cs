@@ -51,7 +51,7 @@ public class EngineHub(
     {
         if (engineManager.TryGetEngine(metric.EngineId, out var engine))
         {
-            engine.LastMetric = metric;
+            engine.AddMetric(metric);
             await hubContext.Clients.All.SendAsync("UpdateMetric", metric, cancellationService.Token);
         }
         else

@@ -1,4 +1,5 @@
-﻿using Common.Models;
+﻿using System.Collections.Concurrent;
+using Common.Models;
 
 namespace StreamHub.Models;
 
@@ -8,6 +9,9 @@ public class EngineViewModel
     public string? ConnectionId { get; set; }
     public Metric? LastMetric { get; set; }
     public Dictionary<string, WorkerViewModel> Workers { get; set; } = new();
+    
+    public ConcurrentQueue<MetricSimpleViewModel> MetricsQueue { get; set; } = new();
+
     
     public bool AddWorkerLog(string workerId, LogEntry message)
     {
@@ -19,5 +23,16 @@ public class EngineViewModel
         }
 
         return false;
+    }
+    
+    public void AddMetric(Metric metric)
+    {
+        var simplifiedMetric = new MetricSimpleViewModel(metric);
+        MetricsQueue.Enqueue(simplifiedMetric);
+        if (MetricsQueue.Count > 20)
+        {
+            MetricsQueue.TryDequeue(out _);
+        }
+        LastMetric = metric;
     }
 }

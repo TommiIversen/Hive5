@@ -1,18 +1,17 @@
 ﻿@using Common.Models
 @using Microsoft.AspNetCore.SignalR.Client
+@using StreamHub.Models
 @using StreamHub.Services
 @inject IJSRuntime JsRuntime
 @inject BlazorSignalRService SignalRService
 @implements IDisposable
 
-
-<h3>Line Chart for Engine @EngineId</h3>
+<h3>Line Chart for Engine @Engine.BaseInfo.EngineName</h3>
 
 <canvas id="@GetCanvasId()" width="400" height="200"></canvas>
 
 @code {
-    [Parameter] public string? EngineId { get; set; }
-    [Parameter] public Metric? LastMetric { get; set; }  // Modtag LastMetric som parameter
+    [Parameter] public EngineViewModel Engine { get; set; } // Modtag hele EngineViewModel som parameter
 
     private IJSObjectReference? _chart;
 
@@ -23,31 +22,20 @@
     
     protected override async Task OnInitializedAsync()
     {
-        Console.WriteLine($"Initializing Historic Line chart for engine {EngineId}");
+        Console.WriteLine($"Initializing Historic Line chart for engine {Engine.BaseInfo.EngineName}");
         SignalRService.HubConnection.On<Metric>("UpdateMetric", async (metric) =>
         {
-            if (metric.EngineId.ToString() == EngineId)
+            if (metric.EngineId == Engine.BaseInfo.EngineId)
             {
-                if (LastMetric != null)
-                {
-                    var metricData = new MetricData
-                    {
-                        Timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
-                        CPUUsage = LastMetric.CPUUsage,
-                        RxUsagePercent = LastMetric.RxUsagePercent,
-                        TxUsagePercent = LastMetric.TxUsagePercent,
-                        RxMbps = LastMetric.RxMbps,
-                        TxMbps = LastMetric.TxMbps
-                    };
+                    var metricData = new MetricSimpleViewModel(metric);
                     await UpdateChartData(metricData);
-                }
             }
         });
     }
 
     public void Dispose()
     {
-        Console.WriteLine($"Disposing Historic Line chart for engine {EngineId}");
+        Console.WriteLine($"Disposing Historic Line chart for engine {Engine.BaseInfo.EngineName}");
         SignalRService.HubConnection.Remove("UpdateMetric");
     }
     
@@ -55,26 +43,10 @@
     {
         if (firstRender)
         {
-            Console.WriteLine($"First render for engine {EngineId}");
+            Console.WriteLine($"First render for engine {Engine.BaseInfo.EngineName}");
 
-            var initialMetrics = new List<MetricData>();
-
-            // Generer simuleret startdata i omvendt rækkefølge
-            for (int i = 29; i >= 0; i--)
-            {
-                initialMetrics.Add(new MetricData
-                {
-                    Timestamp = DateTimeOffset.UtcNow.AddSeconds(i * -10).ToUnixTimeMilliseconds(),
-                    CPUUsage = Random.Shared.NextDouble() * 5,
-                    RxUsagePercent = Random.Shared.NextDouble() * 13,
-                    TxUsagePercent = Random.Shared.NextDouble() * 4,
-                    RxMbps = Random.Shared.NextDouble() * 50, // Simuleret Mbps værdi
-                    TxMbps = Random.Shared.NextDouble() * 20  // Simuleret Mbps værdi
-                });
-            }
-
-            // Alternativ løsning: Sortér listen efter Timestamp for at sikre korrekt rækkefølge
-            // initialMetrics = initialMetrics.OrderBy(m => m.Timestamp).ToList();
+            // Initialiser grafen med data fra MetricsQueue
+            var initialMetrics = Engine.MetricsQueue.ToList(); // Konverter til liste for at sikre korrekt rækkefølge
 
             var initialData = new
             {
@@ -85,13 +57,11 @@
                 metricData = initialMetrics.ToArray() // Inkluder hele MetricData for tooltips
             };
 
-            // Initier grafen med startdata
             _chart = await JsRuntime.InvokeAsync<IJSObjectReference>("chartInterop.createLineChart", GetCanvasId(), initialData);
         }
     }
-
-
-    private async Task UpdateChartData(MetricData newMetricData)
+    
+    private async Task UpdateChartData(MetricSimpleViewModel newMetricData)
     {
         if (_chart != null) // Sørg for, at grafen er initialiseret
         {
@@ -99,19 +69,6 @@
             await JsRuntime.InvokeVoidAsync("chartInterop.updateLineChart", _chart, serializedData);
         }
     }
-
     
-    private string GetCanvasId() => $"cpuChart-{EngineId}";
-    
-    
-    public class MetricData
-    {
-        public long Timestamp { get; set; }
-        public double CPUUsage { get; set; }
-        public double RxUsagePercent { get; set; }
-        public double TxUsagePercent { get; set; }
-        public double RxMbps { get; set; }
-        public double TxMbps { get; set; }
-    }
-    
+    private string GetCanvasId() => $"cpuChart-{Engine.BaseInfo.EngineId}";
 }
