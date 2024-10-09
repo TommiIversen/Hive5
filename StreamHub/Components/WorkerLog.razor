@@ -31,8 +31,7 @@
             bool isOutOfSequence = previousSequenceNumber.HasValue && (currentSequenceNumber != previousSequenceNumber + 1);
 
             <li style="@(isOutOfSequence ? "background-color: red;" : "")">
-                <div>@logMessage.Message</div>
-                <div>@logMessage.LogSequenceNumber</div>
+                <div>@logMessage.LogSequenceNumber : @logMessage.Message</div>
             </li>
             previousSequenceNumber = currentSequenceNumber;
         }

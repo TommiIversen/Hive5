@@ -22,34 +22,44 @@ public class FakeStreamerRunner : IStreamerRunner
 
     public FakeStreamerRunner()
     {
-        _logTimer = new Timer(SendLog, null, Timeout.Infinite, 300);
+        _logTimer = new Timer(AutoLog, null, Timeout.Infinite, 300);
         _imageTimer = new Timer(SendImage, null, Timeout.Infinite, 1000);
     }
 
 
     public async Task<(StreamerState, string)> StartAsync()
     {
+        string msg = "";
+
         if (_state == StreamerState.Running || _state == StreamerState.Starting)
         {
-            return (_state, "Streamer is already running or starting.");
+            msg = "Streamer is already running or starting.";
+            SendLog(msg);
+            return (_state, msg);
         }
 
         if (_state == StreamerState.Stopping)
         {
-            return (_state, "Streamer is currently stopping. Please wait.");
+            msg = "Streamer is currently stopping. Please wait.";
+            SendLog(msg);
+            return (_state, msg);
         }
 
         _state = StreamerState.Starting;
-        Console.WriteLine("Starting streamer...");
+
+        msg = "Starting streamer...";
+        Console.WriteLine(msg);
 
         await Task.Delay(1000); // Simuleret forsinkelse på 1 sekund
+        _imageCounter = 0;
 
         _logTimer.Change(0, 300);
         _imageTimer.Change(0, 1000);
         _state = StreamerState.Running;
 
-        Console.WriteLine("Streamer started.");
-        return (_state, "Streamer started successfully.");
+        msg = "Streamer started successfully.";
+        SendLog(msg);
+        return (_state, msg);
     }
 
     public async Task<(StreamerState, string)> StopAsync()
@@ -75,33 +85,44 @@ public class FakeStreamerRunner : IStreamerRunner
         return (_state, "Streamer stopped successfully.");
     }
 
-    private void SendLog(object? state)
+
+    private void SendLog(string logMsg)
+    {
+        CreateAndSendLog(logMsg);
+    }
+
+    private void AutoLog(object? state)
     {
         if (_state != StreamerState.Running) return;
 
+        CreateAndSendLog("Fake log message");
+    }
+
+    private void CreateAndSendLog(string message)
+    {
         var log = new LogEntry
         {
             WorkerId = WorkerId,
             Timestamp = DateTime.UtcNow,
-            Message = $"{_logCounter} Fake log message",
-            LogSequenceNumber = _logCounter++
+            Message = message
         };
         LogGenerated?.Invoke(this, log);
     }
+
 
     private void SendImage(object? state)
     {
         if (_state != StreamerState.Running) return;
 
         // Check for pause hver 30. billede
-        if (_imageCounter % 30 == 0 && !_isPauseActive)
+        if (_imageCounter != 0 && _imageCounter % 30 == 0 && !_isPauseActive)
         {
             _isPauseActive = true;
             var imageData = new ImageData
             {
                 WorkerId = WorkerId,
                 Timestamp = DateTime.UtcNow,
-                ImageBytes = GenerateFakeImage("Pauseee")
+                ImageBytes = GenerateFakeImage("Crashed")
             };
             ImageGenerated?.Invoke(this, imageData);
             SendLog(null);

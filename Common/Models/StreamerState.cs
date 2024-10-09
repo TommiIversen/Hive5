@@ -5,5 +5,6 @@ public enum StreamerState
     Idle,
     Starting,
     Running,
-    Stopping
+    Stopping,
+    Restarting
 }
