@@ -10,6 +10,8 @@ public class FakeStreamerRunner : IStreamerRunner
     private readonly Timer _imageTimer;
     private int _logCounter = 0;
     private int _imageCounter = 0;
+    private bool _isPauseActive = false;
+
     public string WorkerId { get; set; }
 
     private readonly ImageGenerator _generator = new();
@@ -23,6 +25,7 @@ public class FakeStreamerRunner : IStreamerRunner
         _logTimer = new Timer(SendLog, null, Timeout.Infinite, 300);
         _imageTimer = new Timer(SendImage, null, Timeout.Infinite, 1000);
     }
+
 
     public async Task<(StreamerState, string)> StartAsync()
     {
@@ -90,20 +93,39 @@ public class FakeStreamerRunner : IStreamerRunner
     {
         if (_state != StreamerState.Running) return;
 
-        var imageData = new ImageData
+        // Check for pause hver 30. billede
+        if (_imageCounter % 30 == 0 && !_isPauseActive)
         {
-            WorkerId = WorkerId,
-            Timestamp = DateTime.UtcNow,
-            ImageBytes = GenerateFakeImage()
-        };
-        ImageGenerated?.Invoke(this, imageData);
+            _isPauseActive = true;
+            var imageData = new ImageData
+            {
+                WorkerId = WorkerId,
+                Timestamp = DateTime.UtcNow,
+                ImageBytes = GenerateFakeImage("Pauseee")
+            };
+            ImageGenerated?.Invoke(this, imageData);
+            SendLog(null);
+            Task.Delay(4000).ContinueWith(_ => { _isPauseActive = false; });
+            return; // Skip image generation under pause
+        }
+
+        if (!_isPauseActive)
+        {
+            var imageData = new ImageData
+            {
+                WorkerId = WorkerId,
+                Timestamp = DateTime.UtcNow,
+                ImageBytes = GenerateFakeImage(WorkerId)
+            };
+            ImageGenerated?.Invoke(this, imageData);
+        }
     }
 
-    private byte[] GenerateFakeImage()
+    private byte[] GenerateFakeImage(string text = "")
     {
         // Fake image data (placeholder)
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            return _generator.GenerateImageWithNumber(_imageCounter++);
+            return _generator.GenerateImageWithNumber(_imageCounter++, text);
         return new byte[] { 0, 0, 0 };
     }
 

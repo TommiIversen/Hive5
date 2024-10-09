@@ -28,10 +28,10 @@ public class ImageGenerator
             Alignment = StringAlignment.Center,
             LineAlignment = StringAlignment.Center
         };
-        _arrayPool = System.Buffers.ArrayPool<byte>.Shared; // Genbrug array pool
+        _arrayPool = ArrayPool<byte>.Shared; // Genbrug array pool
     }
 
-    public byte[] GenerateImageWithNumber(int number)
+        public byte[] GenerateImageWithNumber(int number, string extraText = "")
     {
         // Hvis vi ikke er på Windows, returner en fake bytearray
         if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
@@ -63,7 +63,16 @@ public class ImageGenerator
             }
 
             // Tegn tallet i midten af billedet
-            graphics.DrawString(number.ToString(), _font, _brush, new RectangleF(0, 0, Width, Height), _format);
+            graphics.DrawString(number.ToString(), _font, _brush, new RectangleF(0, 0, Width, Height / 2.0f), _format);
+
+            // Hvis der er ekstra tekst, tegn den under tallet
+            if (!string.IsNullOrEmpty(extraText))
+            {
+                var smallerFont = new Font("Arial", 20, FontStyle.Regular);
+                var textRectangle = new RectangleF(0, Height / 2.0f, Width, Height / 2.0f);
+                graphics.DrawString(extraText, smallerFont, _brush, textRectangle, _format);
+                smallerFont.Dispose();
+            }
         }
 
         // Brug en buffer fra poolen til at undgå gentagne allokeringer
