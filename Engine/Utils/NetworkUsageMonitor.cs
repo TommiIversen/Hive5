@@ -2,16 +2,36 @@
 
 using System.Net.NetworkInformation;
 
+public interface INetworkInterfaceProvider
+{
+    NetworkInterface[] GetAllNetworkInterfaces();
+}
+
+
+public class NetworkInterfaceProvider : INetworkInterfaceProvider
+{
+    public NetworkInterface[] GetAllNetworkInterfaces()
+    {
+        return NetworkInterface.GetAllNetworkInterfaces();
+    }
+}
+
 public class NetworkUsageMonitor
 {
+    private readonly INetworkInterfaceProvider _networkInterfaceProvider;
     private readonly Dictionary<string, long> _lastBytesReceived = new();
     private readonly Dictionary<string, long> _lastBytesSent = new();
     private DateTime _lastChecked = DateTime.UtcNow;
 
+    public NetworkUsageMonitor(INetworkInterfaceProvider networkInterfaceProvider)
+    {
+        _networkInterfaceProvider = networkInterfaceProvider;
+    }
+
     public class NetworkInterfaceUsage
     {
         public string InterfaceName { get; set; }
-        public double LinkSpeedGbps { get; set; } // I bits per sekund
+        public double LinkSpeedGbps { get; set; }
         public double RxMbps { get; set; }
         public double TxMbps { get; set; }
         public double RxUsagePercent { get; set; }
@@ -20,7 +40,7 @@ public class NetworkUsageMonitor
 
     public List<NetworkInterfaceUsage> GetNetworkUsage()
     {
-        var interfaces = NetworkInterface.GetAllNetworkInterfaces();
+        var interfaces = _networkInterfaceProvider.GetAllNetworkInterfaces();
         var currentTime = DateTime.UtcNow;
         var elapsedSeconds = (currentTime - _lastChecked).TotalSeconds;
 
@@ -28,19 +48,14 @@ public class NetworkUsageMonitor
 
         foreach (var netInterface in interfaces)
         {
-            
-            // Filtrer kun netværkskort, der er forbundet og ikke interne virtuelle interfaces som WSL
             if (netInterface.OperationalStatus != OperationalStatus.Up) continue;
             if (netInterface.NetworkInterfaceType is NetworkInterfaceType.Loopback or NetworkInterfaceType.Tunnel) continue;
-
-            // Udeluk specifikke interface navne eller beskrivelser, der indeholder "WSL" eller andre mønstre
             if (netInterface.Name.Contains("WSL") || netInterface.Description.Contains("WSL") || netInterface.Name.Contains("vEthernet")) continue;
-
 
             var statistics = netInterface.GetIPv4Statistics();
             var bytesReceived = statistics.BytesReceived;
             var bytesSent = statistics.BytesSent;
-            var interfaceSpeed = netInterface.Speed; // Forbindelseshastighed i bits per sekund
+            var interfaceSpeed = netInterface.Speed;
 
             double rxMbps = 0;
             double txMbps = 0;
@@ -52,36 +67,31 @@ public class NetworkUsageMonitor
                 var deltaBytesReceived = bytesReceived - _lastBytesReceived[netInterface.Id];
                 var deltaBytesSent = bytesSent - _lastBytesSent[netInterface.Id];
 
-                // Beregn Mbps
                 rxMbps = (deltaBytesReceived * 8) / (elapsedSeconds * 1_000_000);
                 txMbps = (deltaBytesSent * 8) / (elapsedSeconds * 1_000_000);
 
-                if (interfaceSpeed > 0) // Undgå division med nul
+                if (interfaceSpeed > 0)
                 {
-                    // Beregn brug i procent
                     rxUsagePercent = (rxMbps * 1_000_000) / interfaceSpeed * 100;
                     txUsagePercent = (txMbps * 1_000_000) / interfaceSpeed * 100;
                 }
             }
 
-            // Tilføj til listen over netværksbrugsdata
             networkUsageList.Add(new NetworkInterfaceUsage
             {
                 InterfaceName = netInterface.Name,
-                LinkSpeedGbps = interfaceSpeed / 1_000_000_000.0, // Konverter hastighed til Gbps
+                LinkSpeedGbps = interfaceSpeed / 1_000_000_000.0,
                 RxMbps = rxMbps,
                 TxMbps = txMbps,
                 RxUsagePercent = rxUsagePercent,
                 TxUsagePercent = txUsagePercent
             });
 
-            // Opdater de seneste målinger
             _lastBytesReceived[netInterface.Id] = bytesReceived;
             _lastBytesSent[netInterface.Id] = bytesSent;
         }
 
         _lastChecked = currentTime;
-
         return networkUsageList;
     }
 }

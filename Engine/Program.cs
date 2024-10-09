@@ -5,6 +5,7 @@ using Engine.Database;
 using Engine.Hubs;
 using Engine.Models;
 using Engine.Services;
+using Engine.Utils;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 
@@ -68,6 +69,8 @@ builder.Services.Configure<StreamHubOptions>(options =>
     options.MaxQueueSize = 20;
 });
 
+// Registrer den konkrete implementering af INetworkInterfaceProvider til brug i MetricsService
+builder.Services.AddSingleton<INetworkInterfaceProvider, NetworkInterfaceProvider>(); 
 builder.Services.AddSingleton<MetricsService>();
 
 var app = builder.Build();

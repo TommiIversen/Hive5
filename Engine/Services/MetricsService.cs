@@ -3,19 +3,13 @@ using Engine.Utils;
 
 namespace Engine.Services;
 
-public class MetricsService
+public class MetricsService(MessageQueue messageQueue, INetworkInterfaceProvider networkInterfaceProvider)
 {
-    private readonly MessageQueue _messageQueue;
     private readonly CancellationTokenSource _cancellationTokenSource = new();
     private readonly TimeSpan _interval = TimeSpan.FromSeconds(2);
     private readonly CpuUsageMonitor _cpuUsageMonitor = new();
     private readonly MemoryUsageMonitor _memoryUsageMonitor = new();
-    private readonly NetworkUsageMonitor _networkUsageMonitor = new();
-        
-    public MetricsService(MessageQueue messageQueue)
-    {
-        _messageQueue = messageQueue;
-    }
+    private readonly NetworkUsageMonitor _networkUsageMonitor = new(networkInterfaceProvider);
 
     public void Start()
     {
@@ -72,7 +66,7 @@ public class MetricsService
                 LinkSpeedGbps = linkSpeedGbps // Link hastighed i Gbps
             };
 
-            _messageQueue.EnqueueMessage(metric);
+            messageQueue.EnqueueMessage(metric);
 
             try
             {
