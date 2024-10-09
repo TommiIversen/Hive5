@@ -4,14 +4,13 @@ using Engine.Interfaces;
 
 namespace Engine.Utils;
 
-public partial class FakeStreamerRunner : IStreamerRunner
+public class FakeStreamerRunner : IStreamerRunner
 {
     private readonly Timer _logTimer;
     private readonly Timer _imageTimer;
     private int _logCounter = 0;
     private int _imageCounter = 0;
     public string WorkerId { get; set; }
-    public bool IsRunning { get; }
 
     private readonly ImageGenerator _generator = new();
     private StreamerState _state = StreamerState.Idle;
@@ -52,14 +51,12 @@ public partial class FakeStreamerRunner : IStreamerRunner
 
     public async Task<(StreamerState, string)> StopAsync()
     {
-        if (_state == StreamerState.Idle || _state == StreamerState.Stopping)
+        switch (_state)
         {
-            return (_state, "Streamer is not running or is already stopping.");
-        }
-
-        if (_state == StreamerState.Starting)
-        {
-            return (_state, "Streamer is starting. Please wait.");
+            case StreamerState.Idle or StreamerState.Stopping:
+                return (_state, "Streamer is not running or is already stopping.");
+            case StreamerState.Starting:
+                return (_state, "Streamer is starting. Please wait.");
         }
 
         _state = StreamerState.Stopping;
