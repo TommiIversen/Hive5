@@ -2,18 +2,9 @@
 @using Common.Models
 @using Microsoft.AspNetCore.SignalR.Client
 @using StreamHub.Services
-@inject NavigationManager NavigationManager
 @inject EngineManager EngineManager
 @inject WorkerService WorkerService
-@inject TrackingCircuitHandler TrackingHandler
 @inject BlazorSignalRService SignalRService
-
-
-<h3>StreamHub Dashboard</h3>
-<h3>Connected Users: @_connectedUsers</h3>
-
-<p>Forbindelsesstatus: @_connectionStatus</p>
-
 @if (!EngineManager.GetAllEngines().Any())
 {
     <p>Ingen engines forbundet.</p>
@@ -139,51 +130,35 @@ else
 }
 
 @code {
-    private string _connectionStatus = "Ikke forbundet2";
-    private int _connectedUsers;
 
-    private void UpdateConnectedUsers(object? sender, UserCountChangedEventArgs e)
-    {
-        // Brug eventdata til at opdatere brugerantallet
-        _connectedUsers = e.UserCount;
-        InvokeAsync(StateHasChanged); // Opdater UI'et
-    }
 
-    public void Dispose()
-    {
-        TrackingHandler.OnUserCountChanged -= UpdateConnectedUsers;
-    }
 
     protected override async Task OnInitializedAsync()
     {
-        // Subscribe til OnUserCountChanged eventet
-        TrackingHandler.OnUserCountChanged += UpdateConnectedUsers;
-        _connectedUsers = TrackingHandler.GetTotalConnectedUsers();
-        _connectionStatus = "Forbundet";
 
 
         await SignalRService.StartConnectionAsync();
 
-        SignalRService.HubConnection.Reconnecting += _ =>
-        {
-            _connectionStatus = "Genopretter forbindelse...";
-            InvokeAsync(StateHasChanged);
-            return Task.CompletedTask;
-        };
-
-        SignalRService.HubConnection.Reconnected += _ =>
-        {
-            _connectionStatus = "Forbundet";
-            InvokeAsync(StateHasChanged);
-            return Task.CompletedTask;
-        };
-
-        SignalRService.HubConnection.Closed += _ =>
-        {
-            _connectionStatus = "Ikke forbundet";
-            InvokeAsync(StateHasChanged);
-            return Task.CompletedTask;
-        };
+        // SignalRService.HubConnection.Reconnecting += _ =>
+        // {
+        //     _connectionStatus = "Genopretter forbindelse...";
+        //     InvokeAsync(StateHasChanged);
+        //     return Task.CompletedTask;
+        // };
+        //
+        // SignalRService.HubConnection.Reconnected += _ =>
+        // {
+        //     _connectionStatus = "Forbundet";
+        //     InvokeAsync(StateHasChanged);
+        //     return Task.CompletedTask;
+        // };
+        //
+        // SignalRService.HubConnection.Closed += _ =>
+        // {
+        //     _connectionStatus = "Ikke forbundet";
+        //     InvokeAsync(StateHasChanged);
+        //     return Task.CompletedTask;
+        // };
 
         SignalRService.HubConnection.On<Metric>("UpdateMetric", async _ => { await InvokeAsync(StateHasChanged); });
         SignalRService.HubConnection.On("EngineChange", async () => { await InvokeAsync(StateHasChanged); });

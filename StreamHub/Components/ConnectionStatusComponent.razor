@@ -1,0 +1,62 @@
+﻿@using StreamHub.Services
+<div class="flex space-x-4 items-center">
+    <h3 class="text-lg font-semibold">Connected Users: @_connectedUsers</h3>
+    <p class="text-md">@_connectionStatus</p>
+</div>
+
+@code {
+    [Inject] private TrackingCircuitHandler? TrackingHandler { get; set; }
+    [Inject] private BlazorSignalRService? SignalRService { get; set; }
+
+    private string _connectionStatus = "Ikke forbundet";
+    private int _connectedUsers;
+
+    private void UpdateConnectedUsers(object? sender, UserCountChangedEventArgs e)
+    {
+        _connectedUsers = e.UserCount;
+        InvokeAsync(StateHasChanged);
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Subscribe til OnUserCountChanged eventet
+        if (TrackingHandler != null)
+        {
+            TrackingHandler.OnUserCountChanged += UpdateConnectedUsers;
+            _connectedUsers = TrackingHandler.GetTotalConnectedUsers();
+        }
+
+        _connectionStatus = "Forbundet";
+
+        if (SignalRService != null)
+        {
+            await SignalRService.StartConnectionAsync();
+
+            SignalRService.HubConnection.Reconnecting += _ =>
+            {
+                _connectionStatus = "Genopretter forbindelse...";
+                InvokeAsync(StateHasChanged);
+                return Task.CompletedTask;
+            };
+
+            SignalRService.HubConnection.Reconnected += _ =>
+            {
+                _connectionStatus = "Forbundet";
+                InvokeAsync(StateHasChanged);
+                return Task.CompletedTask;
+            };
+
+            SignalRService.HubConnection.Closed += _ =>
+            {
+                _connectionStatus = "Ikke forbundet";
+                InvokeAsync(StateHasChanged);
+                return Task.CompletedTask;
+            };
+        }
+    }
+
+    public void Dispose()
+    {
+        if (TrackingHandler != null) TrackingHandler.OnUserCountChanged -= UpdateConnectedUsers;
+    }
+}
