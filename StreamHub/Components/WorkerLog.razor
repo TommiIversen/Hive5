@@ -7,19 +7,28 @@
 @inject IJSRuntime JsRuntime
 
 <!-- Show/Hide Button -->
-<button @onclick="ToggleShowLog">
+<button
+    @onclick="ToggleShowLog"
+    class="px-4 py-2 rounded 
+        @(_showLog ? "bg-blue-500 text-white hover:bg-blue-700" : "bg-gray-500 text-white hover:bg-gray-700")">
     @(_showLog ? "Hide Logs" : "Show Logs")
 </button>
 
 <!-- Pause/Unpause Button -->
-<button @onclick="TogglePauseRendering">
+<button
+    @onclick="TogglePauseRendering"
+    class="px-4 py-2 rounded 
+        @(_pauseRendering ? "bg-red-500 text-white hover:bg-red-700" : "bg-green-500 text-white hover:bg-green-700")">
     @(_pauseRendering ? "Resume Log Updates" : "Pause Log Updates")
 </button>
 
 <!-- Download Logs Button -->
-<button @onclick="DownloadLogs">
+<button
+    @onclick="DownloadLogs"
+    class="px-4 py-2 rounded bg-indigo-500 text-white hover:bg-indigo-700">
     Download Logs
 </button>
+
 
 @if (_showLog && LogMessages.Any())
 {

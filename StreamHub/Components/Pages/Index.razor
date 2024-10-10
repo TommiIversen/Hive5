@@ -15,7 +15,7 @@
 <p>Forbindelsesstatus: @_connectionStatus</p>
 
 @if (!EngineManager.GetAllEngines().Any())
-{   
+{
     <p>Ingen engines forbundet.</p>
 }
 else
@@ -34,26 +34,30 @@ else
             var isOffline = string.IsNullOrEmpty(engine.ConnectionId);
             var rowStyle = isOffline ? "background-color: #445566;" : ""; // Rød baggrund hvis offline
 
-            <button @onclick="() => RemoveEngine(engine.BaseInfo.EngineId)">
+            <!-- Remove Engine Button -->
+            <button 
+                @onclick="() => RemoveEngine(engine.BaseInfo.EngineId)" 
+                class="px-4 py-2 rounded bg-orange-500 text-white hover:bg-orange-700">
                 Remove Engine
             </button>
+
 
             <tr style="@rowStyle">
                 <td class="col-4 align-top">
 
-                <div>
+                    <div>
                         <div>BaseInfo</div>
                         <strong>@engine.ConnectionId</strong> <br/>
                         <strong>Engine Name:</strong> @engine.BaseInfo.EngineName <br/>
                         <strong>Engine Description</strong> @engine.BaseInfo.EngineDescription <br/>
                         <strong>Engine ID:</strong> @engine.BaseInfo.EngineId <br/>
                         <strong>Engine StartDate: </strong> @engine.BaseInfo.EngineStartDate <br/>
-                        <MetricComponent Metric="engine.LastMetric" />
+                        <MetricComponent Metric="engine.LastMetric"/>
 
-                            <!-- Viser CPU-brug for hver kerne, hvis det er tilgængeligt -->
+                        <!-- Viser CPU-brug for hver kerne, hvis det er tilgængeligt -->
                         @if (engine.LastMetric?.PerCoreCpuUsage != null && engine.LastMetric.PerCoreCpuUsage.Count > 0)
                         {
-                            <LineChart Engine="@engine" />
+                            <LineChartComponent Engine="@engine"/>
                             <strong>Per Core CPU Usage (%):</strong>
                             <CpuUsageBarChart EngineId="@engine.BaseInfo.EngineId.ToString()" LastMetric="@engine.LastMetric"/>
                         }
@@ -77,19 +81,33 @@ else
                                         <strong>Worker ID:</strong> @worker.WorkerId <br/>
                                         <strong>Worker IsRunning:</strong>@worker.Worker.State <br/>
                                         <div>
-                                            <button @onclick="() => StopWorker(engine.BaseInfo.EngineId, worker.WorkerId)"
-                                                    disabled="@worker.IsProcessing">
+                                            <!-- Stop Worker Button -->
+                                            <button
+                                                @onclick="() => StopWorker(engine.BaseInfo.EngineId, worker.WorkerId)"
+                                                class="px-4 py-2 rounded 
+        @(worker.IsProcessing ? "bg-gray-400 text-gray-700 cursor-not-allowed" : "bg-red-500 text-white hover:bg-red-700")"
+                                                disabled="@worker.IsProcessing">
                                                 Stop
                                             </button>
-                                            <button @onclick="() => StartWorker(engine.BaseInfo.EngineId, worker.WorkerId)"
-                                                    disabled="@worker.IsProcessing">
+
+                                            <!-- Start Worker Button -->
+                                            <button
+                                                @onclick="() => StartWorker(engine.BaseInfo.EngineId, worker.WorkerId)"
+                                                class="px-4 py-2 rounded 
+        @(worker.IsProcessing ? "bg-gray-400 text-gray-700 cursor-not-allowed" : "bg-green-500 text-white hover:bg-green-700")"
+                                                disabled="@worker.IsProcessing">
                                                 Start
                                             </button>
-                                            <button @onclick="() => RemoveWorker(engine.BaseInfo.EngineId, worker.WorkerId)"
-                                                    disabled="@worker.IsProcessing">
-                                            Remove
+
+                                            <!-- Remove Worker Button -->
+                                            <button
+                                                @onclick="() => RemoveWorker(engine.BaseInfo.EngineId, worker.WorkerId)"
+                                                class="px-4 py-2 rounded 
+        @(worker.IsProcessing ? "bg-gray-400 text-gray-700 cursor-not-allowed" : "bg-yellow-500 text-white hover:bg-yellow-700")"
+                                                disabled="@worker.IsProcessing">
+                                                Remove
                                             </button>
-                                            
+
                                         </div>
                                         <!-- Show result of the operation -->
                                         @if (!string.IsNullOrEmpty(worker.OperationResult))
@@ -101,9 +119,9 @@ else
                                     <td class="col-4">
                                         <WorkerLog LogMessages="worker.LogMessages" WorkerId="@worker.WorkerId"/>
                                     </td>
-                                    
+
                                     <td class="col-4">
-                                        <ImageComponent WorkerId="@worker.WorkerId" InitialImageData="@worker.LastImage" />
+                                        <ImageComponent WorkerId="@worker.WorkerId" InitialImageData="@worker.LastImage"/>
                                     </td>
                                 </tr>
                             }
@@ -174,7 +192,6 @@ else
             Console.WriteLine($"Razor got WorkerEvent: {workerEvent.EventType}");
             await InvokeAsync(StateHasChanged);
         });
-        
     }
 
     private async Task RemoveEngine(Guid engineId)
@@ -206,7 +223,7 @@ else
         await InvokeAsync(StateHasChanged);
         return result.Message;
     }
-    
+
     private async Task<string> RemoveWorker(Guid engineId, string workerId)
     {
         var result = await WorkerService.RemoveWorkerAsync(engineId, workerId);
@@ -214,4 +231,5 @@ else
         await InvokeAsync(StateHasChanged);
         return result.Message;
     }
+
 }
