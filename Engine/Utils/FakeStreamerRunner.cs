@@ -19,6 +19,8 @@ public class FakeStreamerRunner : IStreamerRunner
 
     public event EventHandler<LogEntry>? LogGenerated;
     public event EventHandler<ImageData>? ImageGenerated;
+    public Func<StreamerState, Task>? StateChangedAsync { get; set; }
+
 
     public FakeStreamerRunner()
     {
@@ -46,6 +48,8 @@ public class FakeStreamerRunner : IStreamerRunner
         }
 
         _state = StreamerState.Starting;
+        await OnStateChangedAsync(_state); // Trigger state change
+
 
         msg = "Starting streamer...";
         Console.WriteLine(msg);
@@ -55,7 +59,9 @@ public class FakeStreamerRunner : IStreamerRunner
 
         _logTimer.Change(0, 300);
         _imageTimer.Change(0, 1000);
+        
         _state = StreamerState.Running;
+        await OnStateChangedAsync(_state); 
 
         msg = "Streamer started successfully.";
         SendLog(msg);
@@ -71,15 +77,19 @@ public class FakeStreamerRunner : IStreamerRunner
             case StreamerState.Starting:
                 return (_state, "Streamer is starting. Please wait.");
         }
-
+        
         _state = StreamerState.Stopping;
+        await OnStateChangedAsync(_state); // Trigger state change
+        
         Console.WriteLine("Stopping streamer...");
 
         await Task.Delay(1000); // Simuleret forsinkelse på 1 sekund
 
         _logTimer.Change(Timeout.Infinite, Timeout.Infinite);
         _imageTimer.Change(Timeout.Infinite, Timeout.Infinite);
+        
         _state = StreamerState.Idle;
+        await OnStateChangedAsync(_state); // Trigger state change
 
         Console.WriteLine("Streamer stopped.");
         return (_state, "Streamer stopped successfully.");
@@ -125,7 +135,7 @@ public class FakeStreamerRunner : IStreamerRunner
                 ImageBytes = GenerateFakeImage("Crashed")
             };
             ImageGenerated?.Invoke(this, imageData);
-            SendLog(null);
+            SendLog(" - Streamer paused for 4 seconds");
             Task.Delay(4000).ContinueWith(_ => { _isPauseActive = false; });
             return; // Skip image generation under pause
         }
@@ -153,5 +163,13 @@ public class FakeStreamerRunner : IStreamerRunner
     public StreamerState GetState()
     {
         return _state;
+    }
+    
+    private async Task OnStateChangedAsync(StreamerState newState)
+    {
+        if (StateChangedAsync != null)
+        {
+            await StateChangedAsync.Invoke(newState);
+        }
     }
 }

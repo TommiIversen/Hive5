@@ -8,24 +8,16 @@ using Serilog;
 
 namespace Engine.Services;
 
-public class WorkerManager
+public class WorkerManager(MessageQueue messageQueue, RepositoryFactory repositoryFactory)
 {
-    private readonly MessageQueue _messageQueue;
     private readonly Dictionary<string, WorkerService> _workers = new();
-    private readonly RepositoryFactory _repositoryFactory;
     public IReadOnlyDictionary<string, WorkerService> Workers => _workers;
-
-    public WorkerManager(MessageQueue messageQueue, RepositoryFactory repositoryFactory)
-    {
-        _messageQueue = messageQueue;
-        _repositoryFactory = repositoryFactory;
-    }
 
 
     public WorkerService AddWorker(WorkerCreate workerCreate)
     {
         Log.Information($"Adding worker... {workerCreate.Name}");
-        IWorkerRepository workerRepository = _repositoryFactory.CreateWorkerRepository();
+        IWorkerRepository workerRepository = repositoryFactory.CreateWorkerRepository();
 
         // Tjek, om WorkerId allerede findes i databasen
         var existingWorker = workerRepository.GetWorkerByIdAsync(workerCreate.WorkerId).Result;
@@ -74,7 +66,7 @@ public class WorkerManager
         }
 
         // Ellers opret en ny service for arbejderen
-        var workerService = new WorkerService(_messageQueue, streamerRunner, workerCreate.WorkerId);
+        var workerService = new WorkerService(this, messageQueue, streamerRunner, workerCreate.WorkerId);
         _workers[workerCreate.WorkerId] = workerService;
 
         return workerService;
@@ -89,7 +81,7 @@ public class WorkerManager
         if (worker != null)
         {
             var result = await worker.StartAsync();
-            await SendWorkerEvent(workerId, WorkerEventType.Updated);
+            //await SendWorkerEvent(workerId, WorkerEventType.Updated);
             return result;
         }
 
@@ -106,7 +98,7 @@ public class WorkerManager
         if (worker != null)
         {
             var result = await worker.StopAsync();
-            await SendWorkerEvent(workerId, WorkerEventType.Updated);
+            //await SendWorkerEvent(workerId, WorkerEventType.Updated);
             return result;
         }
 
@@ -119,7 +111,7 @@ public class WorkerManager
     {
         Log.Information($"Getting all workers from database...");
 
-        var workerRepository = _repositoryFactory.CreateWorkerRepository();
+        var workerRepository = repositoryFactory.CreateWorkerRepository();
         var workerEntities = await workerRepository.GetAllWorkersAsync();
 
         // Map WorkerEntity til WorkerEvent direkte med opdateret state fra WorkerService
@@ -170,7 +162,7 @@ public class WorkerManager
         }
 
         // Fjern woker fra databasen først
-        var workerRepository = _repositoryFactory.CreateWorkerRepository();
+        var workerRepository = repositoryFactory.CreateWorkerRepository();
         await workerRepository.DeleteWorkerAsync(workerId);
 
 
@@ -192,7 +184,7 @@ public class WorkerManager
             EventType = WorkerEventType.Deleted,
             Timestamp = DateTime.UtcNow
         };
-        _messageQueue.EnqueueMessage(workerEvent);
+        messageQueue.EnqueueMessage(workerEvent);
     }
 
     private async Task SendWorkerEvent(string workerId, WorkerEventType eventType)
@@ -203,12 +195,12 @@ public class WorkerManager
 
         if (workerService != null)
         {
-            var workerRepository = _repositoryFactory.CreateWorkerRepository();
+            var workerRepository = repositoryFactory.CreateWorkerRepository();
             var workerEntity = await workerRepository.GetWorkerByIdAsync(workerId);
             if (workerEntity != null)
             {
                 var workerEvent = workerEntity.ToWorkerEvent(workerService.GetState(), eventType);
-                _messageQueue.EnqueueMessage(workerEvent);
+                messageQueue.EnqueueMessage(workerEvent);
             }
         }
         else
@@ -217,6 +209,29 @@ public class WorkerManager
         }
     }
 
+    
+    
+    public async Task HandleStateChange(WorkerService workerService, StreamerState newState, WorkerEventType eventType = WorkerEventType.Updated, string reason = "")
+    {
+        var logMessage = $"Worker {workerService.WorkerId} state changed to {newState}: {reason}";
+        Log.Information(logMessage);
+
+        var workerRepository = repositoryFactory.CreateWorkerRepository();
+        var workerEntity = await workerRepository.GetWorkerByIdAsync(workerService.WorkerId);
+
+        if (workerEntity != null)
+        {
+            var workerEvent = workerEntity.ToWorkerEvent(newState, eventType);
+            //workerEvent.Reason = reason; // Tilføj årsag hvis relevant
+            messageQueue.EnqueueMessage(workerEvent);
+        }
+        else
+        {
+            Log.Warning($"Worker with ID {workerService.WorkerId} not found in database.");
+        }
+    }
+    
+    
     private WorkerService? GetWorkerService(string workerId)
     {
         return _workers.TryGetValue(workerId, out var worker) ? worker : null;

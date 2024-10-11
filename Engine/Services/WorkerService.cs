@@ -7,6 +7,7 @@ namespace Engine.Services;
 
 public class WorkerService
 {
+    private readonly WorkerManager _workerManager;
     private readonly MessageQueue _messageQueue;
     private readonly IStreamerRunner _streamerRunner;
 
@@ -18,8 +19,9 @@ public class WorkerService
 
     private int _logCounter = 0;
 
-    public WorkerService(MessageQueue messageQueue, IStreamerRunner streamerRunner, string workerCreateWorkerId)
+    public WorkerService(WorkerManager workerManager, MessageQueue messageQueue, IStreamerRunner streamerRunner, string workerCreateWorkerId)
     {
+        _workerManager = workerManager;
         _messageQueue = messageQueue;
         _streamerRunner = streamerRunner;
         _streamerRunner.WorkerId = workerCreateWorkerId;
@@ -28,6 +30,13 @@ public class WorkerService
         // Forbind runnerens events til WorkerService handlers
         _streamerRunner.LogGenerated += OnLogGenerated;
         _streamerRunner.ImageGenerated += OnImageGenerated;
+        // Abonner på asynkrone state changes
+        _streamerRunner.StateChangedAsync = async (newState) =>
+        {
+            // Asynkron logik her
+            await HandleStateChangeAsync(newState);
+        };
+
 
         // Initialiser watchdog med callbacks
         _watchdog = new RunnerWatchdog(workerCreateWorkerId, ShouldRestart, RestartWorker, TimeSpan.FromSeconds(6),
@@ -38,6 +47,11 @@ public class WorkerService
         _streamerRunner.LogGenerated += _watchdog.OnRunnerLogGenerated;
 
         _desiredState = StreamerState.Idle;
+    }
+    
+    private async Task HandleStateChangeAsync(StreamerState newState)
+    {
+        await _workerManager.HandleStateChange(this, newState, WorkerEventType.Updated, "State changed in runner");
     }
 
 
@@ -78,7 +92,7 @@ public class WorkerService
 
         var (state, message) = await _streamerRunner.StartAsync();
         bool success = state == StreamerState.Running;
-
+        
         // Start watchdog hvis streameren er startet korrekt
         await _watchdog.StartAsync();
         return new CommandResult(success, message);
@@ -123,6 +137,7 @@ public class WorkerService
         // Stop watchdog før streameren stoppes
         await _watchdog.StopAsync();
         var (state, message) = await _streamerRunner.StopAsync();
+
         bool success = state == StreamerState.Idle;
 
         return new CommandResult(success, message);
@@ -158,7 +173,6 @@ public class WorkerService
     {
         string logMessage  = $"Restarting worker {WorkerId} due to: {reason}";
         Log.Information(logMessage );
-
         Log.Information($"Restarting worker {WorkerId} due to: {reason}");
 
         // Sæt desired state til Restarting
@@ -187,6 +201,13 @@ public class WorkerService
         string logMessage  = $"State changed: {message}";
         Console.WriteLine(logMessage );
         CreateAndSendLog(logMessage );
+        
+        // for nu fake stop
+        //_workerManager.HandleStateChange(WorkerId, StreamerState.Restarting, message);
+
+        // _workerManager.HandleStateChange(WorkerId, _streamerRunner.GetState(), message);
+
+        
         // Håndter stateændringer her, fx log til message-queue eller UI
     }
 

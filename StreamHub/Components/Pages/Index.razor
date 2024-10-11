@@ -1,5 +1,6 @@
 ﻿@page "/"
 @using Common.Models
+@using Engine.Utils
 @using Microsoft.AspNetCore.SignalR.Client
 @using StreamHub.Services
 @inject EngineManager EngineManager
@@ -74,20 +75,13 @@ else
                                         <div>
                                             <!-- Stop Worker Button -->
                                             <button
-                                                @onclick="() => StopWorker(engine.BaseInfo.EngineId, worker.WorkerId)"
+                                                @onclick="() => ToggleWorker(engine.BaseInfo.EngineId, worker.WorkerId, worker.Worker.State)"
                                                 class="px-4 py-2 rounded 
-        @(worker.IsProcessing ? "bg-gray-400 text-gray-700 cursor-not-allowed" : "bg-red-500 text-white hover:bg-red-700")"
+                                                @(worker.IsProcessing ? "bg-gray-400 text-gray-700 cursor-not-allowed"
+                                                : (worker.Worker.State == StreamerState.Running ? "bg-red-500 text-white hover:bg-red-700"
+                                                : "bg-green-500 text-white hover:bg-green-700"))"
                                                 disabled="@worker.IsProcessing">
-                                                Stop
-                                            </button>
-
-                                            <!-- Start Worker Button -->
-                                            <button
-                                                @onclick="() => StartWorker(engine.BaseInfo.EngineId, worker.WorkerId)"
-                                                class="px-4 py-2 rounded 
-                                                @(worker.IsProcessing ? "bg-gray-400 text-gray-700 cursor-not-allowed" : "bg-green-500 text-white hover:bg-green-700")"
-                                                disabled="@worker.IsProcessing">
-                                                Start
+                                                @(worker.Worker.State == StreamerState.Running ? "Stop" : "Start")
                                             </button>
 
                                             <!-- Remove Worker Button -->
@@ -203,7 +197,23 @@ else
         Console.WriteLine($"RESULT: {result.Message}");
         await InvokeAsync(StateHasChanged);
         return result.Message;
-
     }
 
+    private async Task ToggleWorker(Guid engineId, string workerId, StreamerState state)
+    {
+        string resultMessage;
+
+        if (state == StreamerState.Running)
+        {
+            resultMessage = await StopWorker(engineId, workerId);
+        }
+        else
+        {
+            resultMessage = await StartWorker(engineId, workerId);
+        }
+
+        Console.WriteLine($"Toggle Result: {resultMessage}");
+        await InvokeAsync(StateHasChanged);
+    }
+    
 }
