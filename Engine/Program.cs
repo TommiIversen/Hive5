@@ -81,9 +81,27 @@ using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
-    // Anvend migrationer og opret databasen, hvis den ikke findes
-    dbContext.Database.Migrate();
-    DbInitializer.Seed(dbContext);
+    // Ryd eventuelt eksisterende låse før migrering
+    try
+    {
+        dbContext.Database.ExecuteSqlRaw("DELETE FROM __EFMigrationsLock");
+    }
+    catch (Exception ex)
+    {
+        Log.Warning(ex, "Kunne ikke rydde migrationslåsen.");
+    }
+    
+    try
+    {
+        // Anvend migrationer og opret databasen, hvis den ikke findes
+        dbContext.Database.Migrate();
+        DbInitializer.Seed(dbContext);
+    }
+    catch (Exception ex)
+    {
+        Log.Error(ex, "Migration failed.");
+        throw;
+    }
 }
 
 // Retrieve the StreamHub instance and initialize it

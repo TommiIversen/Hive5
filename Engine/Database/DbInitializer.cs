@@ -1,5 +1,6 @@
 ﻿using Engine.DAL.Entities;
 
+
 namespace Engine.Database;
 
 public static class DbInitializer
