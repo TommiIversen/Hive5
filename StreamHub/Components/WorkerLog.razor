@@ -3,7 +3,6 @@
 @using Microsoft.AspNetCore.SignalR.Client
 @using StreamHub.Services
 @inject BlazorSignalRService SignalRService
-@using Microsoft.JSInterop
 @inject IJSRuntime JsRuntime
 
 <!-- Show/Hide Button -->
@@ -53,7 +52,8 @@ else if (_showLog)
 
 @code {
     [Parameter] public ConcurrentQueue<LogEntry> LogMessages { get; set; } = new();
-    [Parameter] public string Workerid { get; set; } = "";
+    [Parameter] public string WorkerId { get; init; }
+    [Parameter] public string EngineId { get; init; }
 
     private bool _isSubscribed = false; // For backend subscription state
     private bool _showLog = true; // Controls show/hide log visibility
@@ -68,7 +68,7 @@ else if (_showLog)
         
         SignalRService.HubConnection.On<LogEntry>("ReceiveLog", async logLine =>
         {
-            if (Workerid == logLine.WorkerId)
+            if (WorkerId == logLine.WorkerId)
             {
                 await InvokeAsync(StateHasChanged);
             }
@@ -121,7 +121,7 @@ else if (_showLog)
     {
         if (!_isSubscribed)
         {
-            await SignalRService.HubConnection.SendAsync("SubscribeToLogs", Workerid);
+            await SignalRService.HubConnection.SendAsync("SubscribeToLogs", WorkerId, EngineId);
             _isSubscribed = true;
         }
     }
@@ -131,7 +131,7 @@ else if (_showLog)
     {
         if (_isSubscribed)
         {
-            await SignalRService.HubConnection.SendAsync("UnsubscribeFromLogs", Workerid);
+            await SignalRService.HubConnection.SendAsync("UnsubscribeFromLogs", WorkerId, EngineId);
             _isSubscribed = false;
         }
     }

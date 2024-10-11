@@ -74,7 +74,7 @@ public class EngineHub(
 
             if (wasAdded)
             {
-                await hubContext.Clients.Group($"worker-{logMessage.WorkerId}").SendAsync("ReceiveLog", logMessage);
+                await hubContext.Clients.Group($"worker-{logMessage.EngineId}-{logMessage.WorkerId}").SendAsync("ReceiveLog", logMessage);
             }
             else
             {
@@ -111,17 +111,17 @@ public class EngineHub(
     }
 
     // Invoke SignalR fra blazor frontend
-    public async Task SubscribeToLogs(string workerId)
+    public async Task SubscribeToLogs(string workerId, string engineId)
     {
         Console.WriteLine($"Subscribing to logs for worker {workerId}");
-        await Groups.AddToGroupAsync(Context.ConnectionId, $"worker-{workerId}");
+        await Groups.AddToGroupAsync(Context.ConnectionId, $"worker-{engineId}-{workerId}");
     }
 
     // Invoke SignalR fra blazor frontend
-    public async Task UnsubscribeFromLogs(string workerId)
+    public async Task UnsubscribeFromLogs(string workerId, string engineId)
     {
         Console.WriteLine($"Unsubscribing from logs for worker {workerId}");
-        await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"worker-{workerId}");
+        await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"worker-{engineId}-{workerId}");
     }
 
     public override async Task OnConnectedAsync()
