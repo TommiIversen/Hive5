@@ -10,11 +10,11 @@
 }
 else
 {
-    <table class="table">
+<table class="w-full">
         <thead>
         <tr>
-            <th class="col-4">Engine Info</th>
-            <th class="col-8">Workers</th>
+            <th class="w-1/4">Engine Info</th>
+            <th class="w-3/4">Workers</th>
         </tr>
         </thead>
         <tbody>
@@ -30,11 +30,9 @@ else
                 class="px-4 py-2 rounded bg-orange-500 text-white hover:bg-orange-700">
                 Remove Engine
             </button>
-
-
+            
             <tr style="@rowStyle">
-                <td class="col-4 align-top">
-
+                <td class="w-1/4 align-top">
                     <div>
                         <div>BaseInfo</div>
                         <strong>@engine.ConnectionId</strong> <br/>
@@ -57,10 +55,10 @@ else
                         }
                     </div>
                 </td>
-                <td class="col-8">
+                <td class="w-3/4">
                     @if (engine.Workers.Any())
                     {
-                        <table class="w-100">     @foreach (var worker in engine.Workers.Values)
+                        <table class="w-full"> @foreach (var worker in engine.Workers.Values)
                             {
                             <WorkerComponent EngineId="engine.BaseInfo.EngineId" Worker="worker"/>
                             }

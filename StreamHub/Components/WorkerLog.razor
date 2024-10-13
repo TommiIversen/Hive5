@@ -27,23 +27,25 @@
     class="px-4 py-2 rounded bg-indigo-500 text-white hover:bg-indigo-700">
     Download Logs
 </button>
-
-
+<div class="w-60">
+    
+</div>
 @if (_showLog && LogMessages.Any())
 {
-    int? previousSequenceNumber = null; // Holder styr på det sidste sekvensnummer
-    <ul>
-        @foreach (var logMessage in LogMessages)
-        {
-            var currentSequenceNumber = logMessage.LogSequenceNumber;
-            bool isOutOfSequence = previousSequenceNumber.HasValue && (currentSequenceNumber != previousSequenceNumber + 1);
-
-            <li style="@(isOutOfSequence ? "background-color: red;" : "")">
-                <div>@logMessage.LogSequenceNumber : @logMessage.Message</div>
-            </li>
-            previousSequenceNumber = currentSequenceNumber;
-        }
-    </ul>
+    <div style="height: 200px; overflow-y: auto; resize: vertical;" class="w-100">
+        <Virtualize Items="LogMessages.TakeLast(100).Reverse().ToList()" Context="logMessage" ItemSize="10">
+            <div class="log-entry">
+                <div>
+                    @if (IsOutOfSequence(logMessage))
+                    {
+                        <span class="text-warning">&#9888;</span>
+                        <!-- Warning icon -->
+                    }
+                    @logMessage.LogSequenceNumber: @logMessage.Timestamp : @logMessage.Message
+                </div>
+            </div>
+        </Virtualize>
+    </div>
 }
 else if (_showLog)
 {
@@ -52,20 +54,41 @@ else if (_showLog)
 
 @code {
     [Parameter] public ConcurrentQueue<LogEntry> LogMessages { get; set; } = new();
-    [Parameter] public string WorkerId { get; init; }
-    [Parameter] public string EngineId { get; init; }
+    [Parameter] public required string WorkerId { get; init; }
+    [Parameter] public required string EngineId { get; init; }
 
-    private bool _isSubscribed = false; // For backend subscription state
-    private bool _showLog = true; // Controls show/hide log visibility
-    private bool _pauseRendering = false; // Controls pause/unpause rendering state
-    private bool _forceRender = true; // Force re-render for UI changes (buttons)
+    private bool _isSubscribed = false;
+    private bool _showLog = true;
+    private bool _pauseRendering = false;
+    private bool _forceRender = true;
 
-    // When the component initializes, automatically subscribe to logs
+    private int? _previousSequenceNumber = null;
+
+    private bool IsOutOfSequence(LogEntry logMessage)
+    {
+        // Hvis der ikke er et forrige sekvensnummer (første logline), skal vi ikke markere det som "out of sequence"
+        if (_previousSequenceNumber == null)
+        {
+            _previousSequenceNumber = logMessage.LogSequenceNumber; // Opdater til det første nummer
+            return false;
+        }
+
+        // Tjekker om det nuværende sekvensnummer er 1 mindre end det forrige (i omvendt rækkefølge)
+        if (logMessage.LogSequenceNumber != _previousSequenceNumber - 1)
+        {
+            _previousSequenceNumber = logMessage.LogSequenceNumber; // Opdater for næste tjek
+            return true; // Ude af rækkefølge
+        }
+
+        _previousSequenceNumber = logMessage.LogSequenceNumber; // Opdater for næste tjek
+        return false; // Sekvensen er i orden
+    }
+
+
     protected override async Task OnInitializedAsync()
     {
-        // Ensure that we are subscribed to logs at init
         await SubscribeToLogs();
-        
+
         SignalRService.HubConnection.On<LogEntry>("ReceiveLog", async logLine =>
         {
             if (WorkerId == logLine.WorkerId)
@@ -74,49 +97,41 @@ else if (_showLog)
             }
         });
     }
-    
 
-    // Toggle Show/Hide Log
     private async Task ToggleShowLog()
     {
         _showLog = !_showLog;
 
-        if (_showLog)
+        if (_showLog && !_pauseRendering)
         {
-            // Ensure logs are visible again, even if paused
-            if (!_pauseRendering)
-            {
-                await SubscribeToLogs();
-            }
+            await SubscribeToLogs();
         }
         else
         {
             await UnsubscribeFromLogs();
         }
 
-        _forceRender = true; // Allow re-rendering for UI changes
-        await InvokeAsync(StateHasChanged); // Always allow rendering when toggling log visibility
+        _forceRender = true;
+        await InvokeAsync(StateHasChanged);
     }
 
-    // Toggle Pause/Unpause Log Rendering
     private async Task TogglePauseRendering()
     {
         _pauseRendering = !_pauseRendering;
 
         if (!_pauseRendering && _showLog)
         {
-            await SubscribeToLogs(); // Resume subscribing when unpausing and log is shown
+            await SubscribeToLogs();
         }
         else
         {
-            await UnsubscribeFromLogs(); // Unsubscribe when pausing or hiding log
+            await UnsubscribeFromLogs();
         }
 
-        _forceRender = true; // Allow re-rendering for UI changes
-        await InvokeAsync(StateHasChanged); // Force UI update when pausing/unpausing
+        _forceRender = true;
+        await InvokeAsync(StateHasChanged);
     }
 
-    // Subscribe to logs
     private async Task SubscribeToLogs()
     {
         if (!_isSubscribed)
@@ -126,7 +141,6 @@ else if (_showLog)
         }
     }
 
-    // Unsubscribe from logs
     private async Task UnsubscribeFromLogs()
     {
         if (_isSubscribed)
@@ -136,26 +150,22 @@ else if (_showLog)
         }
     }
 
-    // Ensure rendering is paused for logs only, but buttons and UI should update
     protected override bool ShouldRender()
     {
         if (_forceRender)
         {
-            _forceRender = false; // Reset the force render flag
-            return true; // Allow rendering for UI changes
+            _forceRender = false;
+            return true;
         }
 
-        // Only prevent re-rendering of log data when paused, but allow re-rendering of UI (buttons)
-        return !_pauseRendering || !_showLog; // Render if not paused or if log is being shown
+        return !_pauseRendering || !_showLog;
     }
 
-    // Download logs as a text or CSV file
     private async void DownloadLogs()
     {
         var engineId = LogMessages.FirstOrDefault()?.EngineId.ToString() ?? "Unknown Engine";
         var workerId = LogMessages.FirstOrDefault()?.WorkerId ?? "Unknown Worker";
 
-        // Create the log content (header + log entries)
         var logContent = new System.Text.StringBuilder();
         logContent.AppendLine($"EngineId: {engineId}, WorkerId: {workerId}");
         logContent.AppendLine("Timestamp,Message");
@@ -165,12 +175,10 @@ else if (_showLog)
             logContent.AppendLine($"{logEntry.Timestamp},{logEntry.Message}");
         }
 
-        // Trigger file download in the browser
         var logFileName = $"logs_{DateTime.UtcNow:yyyyMMdd_HHmmss}.txt";
         await TriggerFileDownload(logFileName, logContent.ToString());
     }
 
-    // Trigger file download using Blazor JavaScript interop
     private async Task TriggerFileDownload(string fileName, string content)
     {
         var bytes = System.Text.Encoding.UTF8.GetBytes(content);

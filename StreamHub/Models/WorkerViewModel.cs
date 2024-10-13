@@ -22,7 +22,7 @@ public class WorkerViewModel
     public void AddLogMessage(LogEntry message)
     {
         LogMessages.Enqueue(message);
-        if (LogMessages.Count > 10)
+        if (LogMessages.Count > 50)
         {
             LogMessages.TryDequeue(out _); // Remove the oldest message
         }
