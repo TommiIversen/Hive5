@@ -126,7 +126,7 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
         return workerEvents;
     }
 
-    private StreamerState GetWorkerState(string workerId)
+    private WorkerState GetWorkerState(string workerId)
     {
         var workerService = GetWorkerService(workerId);
         if (workerService != null)
@@ -134,7 +134,7 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
             return workerService.GetState();
         }
 
-        return StreamerState.Idle;
+        return WorkerState.Idle;
     }
 
     public async Task<CommandResult> RemoveWorkerAsync(string workerId)
@@ -149,7 +149,7 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
         }
 
         // Forsøg at stoppe arbejdstageren, hvis den ikke allerede er 'Idle'
-        if (worker.GetState() != StreamerState.Idle)
+        if (worker.GetState() != WorkerState.Idle)
         {
             Log.Information($"Worker {workerId} is not idle. Attempting to stop before removal...");
             var stopResult = await worker.StopAsync(); // Delegér stop-logikken til `WorkerService`
@@ -211,7 +211,7 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
 
     
     
-    public async Task HandleStateChange(WorkerService workerService, StreamerState newState, WorkerEventType eventType = WorkerEventType.Updated, string reason = "")
+    public async Task HandleStateChange(WorkerService workerService, WorkerState newState, WorkerEventType eventType = WorkerEventType.Updated, string reason = "")
     {
         var logMessage = $"Worker {workerService.WorkerId} state changed to {newState}: {reason}";
         Log.Information(logMessage);

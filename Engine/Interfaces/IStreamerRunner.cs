@@ -7,13 +7,13 @@ public interface IStreamerRunner
 {
     string WorkerId { get; set; }
     
-    Task<(StreamerState, string)> StartAsync();
-    Task<(StreamerState, string)> StopAsync();
+    Task<(WorkerState, string)> StartAsync();
+    Task<(WorkerState, string)> StopAsync();
 
     event EventHandler<LogEntry> LogGenerated;
     event EventHandler<ImageData> ImageGenerated;
-    Func<StreamerState, Task>? StateChangedAsync { get; set; } // Async event for state changes
+    Func<WorkerState, Task>? StateChangedAsync { get; set; } // Async event for state changes
 
 
-    StreamerState GetState();
+    WorkerState GetState();
 }

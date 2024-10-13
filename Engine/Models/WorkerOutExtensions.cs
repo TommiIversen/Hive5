@@ -26,7 +26,7 @@ public static class WorkerOutExtensions
     
     
     public static WorkerEvent ToWorkerEvent(this WorkerEntity workerEntity, Guid engineId, 
-        StreamerState state, WorkerEventType eventType = WorkerEventType.Updated)
+        WorkerState state, WorkerEventType eventType = WorkerEventType.Updated)
     {
         return new WorkerEvent
         {
@@ -45,7 +45,7 @@ public static class WorkerOutExtensions
     
     
     public static WorkerEvent ToWorkerEvent(this WorkerEntity workerEntity, 
-        StreamerState state, WorkerEventType eventType = WorkerEventType.Updated)
+        WorkerState state, WorkerEventType eventType = WorkerEventType.Updated)
     {
         return new WorkerEvent
         {

@@ -17,7 +17,7 @@ public class WorkerOut : BaseMessage
     public string Description { get; set; }
     public string Command { get; set; }
     public bool Enabled { get; set; }
-    public StreamerState State { get; set; }
+    public WorkerState State { get; set; }
 }
 
 public class WorkerEvent : WorkerOut

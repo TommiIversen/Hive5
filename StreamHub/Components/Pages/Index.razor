@@ -78,10 +78,10 @@ else
                                                 @onclick="() => ToggleWorker(engine.BaseInfo.EngineId, worker.WorkerId, worker.Worker.State)"
                                                 class="px-4 py-2 rounded 
                                                 @(worker.IsProcessing ? "bg-gray-400 text-gray-700 cursor-not-allowed"
-                                                : (worker.Worker.State == StreamerState.Running ? "bg-red-500 text-white hover:bg-red-700"
+                                                : (worker.Worker.State == WorkerState.Running ? "bg-red-500 text-white hover:bg-red-700"
                                                 : "bg-green-500 text-white hover:bg-green-700"))"
                                                 disabled="@worker.IsProcessing">
-                                                @(worker.Worker.State == StreamerState.Running ? "Stop" : "Start")
+                                                @(worker.Worker.State == WorkerState.Running ? "Stop" : "Start")
                                             </button>
 
                                             <!-- Remove Worker Button -->
@@ -199,11 +199,11 @@ else
         return result.Message;
     }
 
-    private async Task ToggleWorker(Guid engineId, string workerId, StreamerState state)
+    private async Task ToggleWorker(Guid engineId, string workerId, WorkerState state)
     {
         string resultMessage;
 
-        if (state == StreamerState.Running)
+        if (state == WorkerState.Running)
         {
             resultMessage = await StopWorker(engineId, workerId);
         }

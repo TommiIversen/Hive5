@@ -12,7 +12,7 @@ public class WorkerService
     private readonly IStreamerRunner _streamerRunner;
 
     private readonly RunnerWatchdog _watchdog;
-    private StreamerState _desiredState;
+    private WorkerState _desiredState;
     private DateTime _lastImageUpdate;
 
     public string WorkerId { set; get; }
@@ -46,10 +46,10 @@ public class WorkerService
         // Forbind runnerens logevent til watchdog'ens loghåndtering
         _streamerRunner.LogGenerated += _watchdog.OnRunnerLogGenerated;
 
-        _desiredState = StreamerState.Idle;
+        _desiredState = WorkerState.Idle;
     }
     
-    private async Task HandleStateChangeAsync(StreamerState newState)
+    private async Task HandleStateChangeAsync(WorkerState newState)
     {
         await _workerManager.HandleStateChange(this, newState, WorkerEventType.Updated, "State changed in runner");
     }
@@ -58,15 +58,15 @@ public class WorkerService
     public async Task<CommandResult> StartAsync()
     {
         Log.Information($"Starting worker {WorkerId}");
-        _desiredState = StreamerState.Running;
+        _desiredState = WorkerState.Running;
 
         int maxRetries = 3;
         int retryCount = 0;
 
         // Håndtering af tilstand 'Starting', 'Stopping' eller 'Restarting'
-        while ((_streamerRunner.GetState() == StreamerState.Starting ||
-                _streamerRunner.GetState() == StreamerState.Stopping ||
-                _streamerRunner.GetState() == StreamerState.Restarting) && retryCount < maxRetries)
+        while ((_streamerRunner.GetState() == WorkerState.Starting ||
+                _streamerRunner.GetState() == WorkerState.Stopping ||
+                _streamerRunner.GetState() == WorkerState.Restarting) && retryCount < maxRetries)
         {
             Log.Information(
                 $"Worker {WorkerId} is in a transitional state ({_streamerRunner.GetState()}). Waiting... (Attempt {retryCount + 1}/{maxRetries})");
@@ -74,9 +74,9 @@ public class WorkerService
             retryCount++;
         }
 
-        if (_streamerRunner.GetState() == StreamerState.Starting ||
-            _streamerRunner.GetState() == StreamerState.Stopping ||
-            _streamerRunner.GetState() == StreamerState.Restarting)
+        if (_streamerRunner.GetState() == WorkerState.Starting ||
+            _streamerRunner.GetState() == WorkerState.Stopping ||
+            _streamerRunner.GetState() == WorkerState.Restarting)
         {
             Log.Warning(
                 $"Worker {WorkerId} is still in a transitional state ({_streamerRunner.GetState()}) after {maxRetries} attempts.");
@@ -84,14 +84,14 @@ public class WorkerService
                 $"Worker is still in a transitional state after {maxRetries} attempts. Please try again later.");
         }
 
-        if (_streamerRunner.GetState() == StreamerState.Running)
+        if (_streamerRunner.GetState() == WorkerState.Running)
         {
             Log.Information($"Worker {WorkerId} is already running.");
             return new CommandResult(true, "Worker is already running");
         }
 
         var (state, message) = await _streamerRunner.StartAsync();
-        bool success = state == StreamerState.Running;
+        bool success = state == WorkerState.Running;
         
         // Start watchdog hvis streameren er startet korrekt
         await _watchdog.StartAsync();
@@ -102,15 +102,15 @@ public class WorkerService
     public async Task<CommandResult> StopAsync()
     {
         Log.Information($"Stopping worker {WorkerId}");
-        _desiredState = StreamerState.Idle;
+        _desiredState = WorkerState.Idle;
 
         int maxRetries = 3;
         int retryCount = 0;
 
         // Håndtering af tilstand 'Starting', 'Stopping' eller 'Restarting'
-        while ((_streamerRunner.GetState() == StreamerState.Starting ||
-                _streamerRunner.GetState() == StreamerState.Stopping ||
-                _streamerRunner.GetState() == StreamerState.Restarting) && retryCount < maxRetries)
+        while ((_streamerRunner.GetState() == WorkerState.Starting ||
+                _streamerRunner.GetState() == WorkerState.Stopping ||
+                _streamerRunner.GetState() == WorkerState.Restarting) && retryCount < maxRetries)
         {
             Log.Information(
                 $"Worker {WorkerId} is in a transitional state ({_streamerRunner.GetState()}). Waiting... (Attempt {retryCount + 1}/{maxRetries})");
@@ -118,9 +118,9 @@ public class WorkerService
             retryCount++;
         }
 
-        if (_streamerRunner.GetState() == StreamerState.Starting ||
-            _streamerRunner.GetState() == StreamerState.Stopping ||
-            _streamerRunner.GetState() == StreamerState.Restarting)
+        if (_streamerRunner.GetState() == WorkerState.Starting ||
+            _streamerRunner.GetState() == WorkerState.Stopping ||
+            _streamerRunner.GetState() == WorkerState.Restarting)
         {
             Log.Warning(
                 $"Worker {WorkerId} is still in a transitional state ({_streamerRunner.GetState()}) after {maxRetries} attempts.");
@@ -128,7 +128,7 @@ public class WorkerService
                 $"Worker is still in a transitional state after {maxRetries} attempts. Please try again later.");
         }
 
-        if (_streamerRunner.GetState() == StreamerState.Idle)
+        if (_streamerRunner.GetState() == WorkerState.Idle)
         {
             Log.Information($"Worker {WorkerId} is already idle.");
             return new CommandResult(true, "Worker is already idle");
@@ -138,7 +138,7 @@ public class WorkerService
         await _watchdog.StopAsync();
         var (state, message) = await _streamerRunner.StopAsync();
 
-        bool success = state == StreamerState.Idle;
+        bool success = state == WorkerState.Idle;
 
         return new CommandResult(success, message);
     }
@@ -147,13 +147,13 @@ public class WorkerService
     private (bool, string) ShouldRestart()
     {
         // Hvis vi er i gang med en planlagt eller brugerinitieret stopproces, eller hvis vi er i gang med en genstart, skal watchdog ikke genstarte
-        if (_desiredState == StreamerState.Idle || _streamerRunner.GetState() == StreamerState.Restarting)
+        if (_desiredState == WorkerState.Idle || _streamerRunner.GetState() == WorkerState.Restarting)
         {
             return (false, "Worker is expected to be idle or is already restarting.");
         }
 
         // Brug den faktiske state fra _streamerRunner til at afgøre, om en genstart er nødvendig
-        var isRunning = _streamerRunner.GetState() == StreamerState.Running;
+        var isRunning = _streamerRunner.GetState() == WorkerState.Running;
         var timeSinceLastImage = (DateTime.UtcNow - _lastImageUpdate).TotalSeconds;
 
         if (!isRunning)
@@ -176,7 +176,7 @@ public class WorkerService
         Log.Information($"Restarting worker {WorkerId} due to: {reason}");
 
         // Sæt desired state til Restarting
-        _desiredState = StreamerState.Restarting;
+        _desiredState = WorkerState.Restarting;
 
         // Stop workeren først
         var stopResult = await StopAsync();
@@ -192,7 +192,7 @@ public class WorkerService
         {
             Log.Warning($"Failed to start worker {WorkerId} during restart. Reason: {startResult.Message}");
             // Hvis vi fejler i at starte, sæt desired state til Idle
-            _desiredState = StreamerState.Idle;
+            _desiredState = WorkerState.Idle;
         }
     }
 
@@ -224,7 +224,7 @@ public class WorkerService
         _lastImageUpdate = image.Timestamp;
     }
 
-    public StreamerState GetState()
+    public WorkerState GetState()
     {
         return _streamerRunner.GetState();
     }

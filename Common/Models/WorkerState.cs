@@ -1,6 +1,6 @@
 ﻿namespace Engine.Utils;
 
-public enum StreamerState
+public enum WorkerState
 {
     Idle,
     Starting,

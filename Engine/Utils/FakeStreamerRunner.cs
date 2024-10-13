@@ -15,11 +15,11 @@ public class FakeStreamerRunner : IStreamerRunner
     public string WorkerId { get; set; }
 
     private readonly ImageGenerator _generator = new();
-    private StreamerState _state = StreamerState.Idle;
+    private WorkerState _state = WorkerState.Idle;
 
     public event EventHandler<LogEntry>? LogGenerated;
     public event EventHandler<ImageData>? ImageGenerated;
-    public Func<StreamerState, Task>? StateChangedAsync { get; set; }
+    public Func<WorkerState, Task>? StateChangedAsync { get; set; }
 
 
     public FakeStreamerRunner()
@@ -29,25 +29,25 @@ public class FakeStreamerRunner : IStreamerRunner
     }
 
 
-    public async Task<(StreamerState, string)> StartAsync()
+    public async Task<(WorkerState, string)> StartAsync()
     {
         string msg = "";
 
-        if (_state == StreamerState.Running || _state == StreamerState.Starting)
+        if (_state == WorkerState.Running || _state == WorkerState.Starting)
         {
             msg = "Streamer is already running or starting.";
             SendLog(msg);
             return (_state, msg);
         }
 
-        if (_state == StreamerState.Stopping)
+        if (_state == WorkerState.Stopping)
         {
             msg = "Streamer is currently stopping. Please wait.";
             SendLog(msg);
             return (_state, msg);
         }
 
-        _state = StreamerState.Starting;
+        _state = WorkerState.Starting;
         await OnStateChangedAsync(_state); // Trigger state change
 
 
@@ -60,7 +60,7 @@ public class FakeStreamerRunner : IStreamerRunner
         _logTimer.Change(0, 300);
         _imageTimer.Change(0, 1000);
         
-        _state = StreamerState.Running;
+        _state = WorkerState.Running;
         await OnStateChangedAsync(_state); 
 
         msg = "Streamer started successfully.";
@@ -68,17 +68,17 @@ public class FakeStreamerRunner : IStreamerRunner
         return (_state, msg);
     }
 
-    public async Task<(StreamerState, string)> StopAsync()
+    public async Task<(WorkerState, string)> StopAsync()
     {
         switch (_state)
         {
-            case StreamerState.Idle or StreamerState.Stopping:
+            case WorkerState.Idle or WorkerState.Stopping:
                 return (_state, "Streamer is not running or is already stopping.");
-            case StreamerState.Starting:
+            case WorkerState.Starting:
                 return (_state, "Streamer is starting. Please wait.");
         }
         
-        _state = StreamerState.Stopping;
+        _state = WorkerState.Stopping;
         await OnStateChangedAsync(_state); // Trigger state change
         
         Console.WriteLine("Stopping streamer...");
@@ -88,7 +88,7 @@ public class FakeStreamerRunner : IStreamerRunner
         _logTimer.Change(Timeout.Infinite, Timeout.Infinite);
         _imageTimer.Change(Timeout.Infinite, Timeout.Infinite);
         
-        _state = StreamerState.Idle;
+        _state = WorkerState.Idle;
         await OnStateChangedAsync(_state); // Trigger state change
 
         Console.WriteLine("Streamer stopped.");
@@ -103,7 +103,7 @@ public class FakeStreamerRunner : IStreamerRunner
 
     private void AutoLog(object? state)
     {
-        if (_state != StreamerState.Running) return;
+        if (_state != WorkerState.Running) return;
 
         CreateAndSendLog("Fake log message");
     }
@@ -122,7 +122,7 @@ public class FakeStreamerRunner : IStreamerRunner
 
     private void SendImage(object? state)
     {
-        if (_state != StreamerState.Running) return;
+        if (_state != WorkerState.Running) return;
 
         // Check for pause hver 30. billede
         if (_imageCounter != 0 && _imageCounter % 30 == 0 && !_isPauseActive)
@@ -160,12 +160,12 @@ public class FakeStreamerRunner : IStreamerRunner
         return new byte[] { 0, 0, 0 };
     }
 
-    public StreamerState GetState()
+    public WorkerState GetState()
     {
         return _state;
     }
     
-    private async Task OnStateChangedAsync(StreamerState newState)
+    private async Task OnStateChangedAsync(WorkerState newState)
     {
         if (StateChangedAsync != null)
         {
