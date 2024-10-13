@@ -73,9 +73,8 @@ else
                                         <strong>Worker ID:</strong> @worker.WorkerId <br/>
                                         <strong>Worker IsRunning:</strong>@worker.Worker.State <br/>
                                         <div>
-                                            <!-- Stop Worker Button -->
                                             <button
-                                                @onclick="() => ToggleWorker(engine.BaseInfo.EngineId, worker.WorkerId, worker.Worker.State)"
+                                                @onclick="() => ToggleStartStopWorker(engine.BaseInfo.EngineId, worker.WorkerId, worker.Worker.State)"
                                                 class="px-4 py-2 rounded 
                                                 @(worker.IsProcessing ? "bg-gray-400 text-gray-700 cursor-not-allowed"
                                                 : (worker.Worker.State == WorkerState.Running ? "bg-red-500 text-white hover:bg-red-700"
@@ -175,20 +174,14 @@ else
         }
     }
 
-    private async Task<string> StopWorker(Guid engineId, string workerId)
+    private async Task ToggleStartStopWorker(Guid engineId, string workerId, WorkerState state)
     {
-        var result = await WorkerService.StopWorkerAsync(engineId, workerId);
-        Console.WriteLine($"RESULT: {result.Message}");
-        await InvokeAsync(StateHasChanged);
-        return result.Message;
-    }
+        var resultMessage = state == WorkerState.Running
+            ? await WorkerService.StopWorkerAsync(engineId, workerId)
+            : await WorkerService.StartWorkerAsync(engineId, workerId);
 
-    private async Task<string> StartWorker(Guid engineId, string workerId)
-    {
-        var result = await WorkerService.StartWorkerAsync(engineId, workerId);
-        Console.WriteLine($"RESULT: {result.Message}");
+        Console.WriteLine($"Toggle Result: {resultMessage.Message}");
         await InvokeAsync(StateHasChanged);
-        return result.Message;
     }
 
     private async Task<string> RemoveWorker(Guid engineId, string workerId)
@@ -199,21 +192,6 @@ else
         return result.Message;
     }
 
-    private async Task ToggleWorker(Guid engineId, string workerId, WorkerState state)
-    {
-        string resultMessage;
 
-        if (state == WorkerState.Running)
-        {
-            resultMessage = await StopWorker(engineId, workerId);
-        }
-        else
-        {
-            resultMessage = await StartWorker(engineId, workerId);
-        }
-
-        Console.WriteLine($"Toggle Result: {resultMessage}");
-        await InvokeAsync(StateHasChanged);
-    }
     
 }
