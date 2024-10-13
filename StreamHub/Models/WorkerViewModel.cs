@@ -7,7 +7,7 @@ public class WorkerViewModel
 {
     public required string WorkerId { get; set; }
     
-    public WorkerOut Worker { get; set; }
+    public WorkerOut? Worker { get; set; }
     public ConcurrentQueue<LogEntry> LogMessages { get; set; } = new();
     public string? LastImage { get; set; }
     

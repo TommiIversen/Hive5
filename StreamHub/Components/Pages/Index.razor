@@ -1,10 +1,8 @@
 ﻿@page "/"
 @using Common.Models
-@using Engine.Utils
 @using Microsoft.AspNetCore.SignalR.Client
 @using StreamHub.Services
 @inject EngineManager EngineManager
-@inject WorkerService WorkerService
 @inject BlazorSignalRService SignalRService
 @if (!EngineManager.GetAllEngines().Any())
 {
@@ -62,52 +60,9 @@ else
                 <td class="col-8">
                     @if (engine.Workers.Any())
                     {
-                        <table class="w-100">
-                            @foreach (var worker in engine.Workers.Values)
+                        <table class="w-100">     @foreach (var worker in engine.Workers.Values)
                             {
-                                <tr>
-                                    <td class="col-4">
-
-                                        <strong>Worker Name:</strong> @worker.Worker.Name <br/>
-                                        <strong>Worker Description:</strong> @worker.Worker.Description <br/>
-                                        <strong>Worker ID:</strong> @worker.WorkerId <br/>
-                                        <strong>Worker IsRunning:</strong>@worker.Worker.State <br/>
-                                        <div>
-                                            <button
-                                                @onclick="() => ToggleStartStopWorker(engine.BaseInfo.EngineId, worker.WorkerId, worker.Worker.State)"
-                                                class="px-4 py-2 rounded 
-                                                @(worker.IsProcessing ? "bg-gray-400 text-gray-700 cursor-not-allowed"
-                                                : (worker.Worker.State == WorkerState.Running ? "bg-red-500 text-white hover:bg-red-700"
-                                                : "bg-green-500 text-white hover:bg-green-700"))"
-                                                disabled="@worker.IsProcessing">
-                                                @(worker.Worker.State == WorkerState.Running ? "Stop" : "Start")
-                                            </button>
-
-                                            <!-- Remove Worker Button -->
-                                            <button
-                                                @onclick="() => RemoveWorker(engine.BaseInfo.EngineId, worker.WorkerId)"
-                                                class="px-4 py-2 rounded 
-                                                @(worker.IsProcessing ? "bg-gray-400 text-gray-700 cursor-not-allowed" : "bg-yellow-500 text-white hover:bg-yellow-700")"
-                                                disabled="@worker.IsProcessing">
-                                                Remove
-                                            </button>
-
-                                        </div>
-                                        <!-- Show result of the operation -->
-                                        @if (!string.IsNullOrEmpty(worker.OperationResult))
-                                        {
-                                            <div>@worker.OperationResult</div>
-                                        }
-                                    </td>
-
-                                    <td class="col-4">
-                                        <WorkerLog LogMessages="worker.LogMessages" WorkerId="@worker.WorkerId" EngineId="@engine.BaseInfo.EngineId.ToString()"/>
-                                    </td>
-
-                                    <td class="col-4">
-                                        <ImageComponent WorkerId="@worker.WorkerId" InitialImageData="@worker.LastImage"/>
-                                    </td>
-                                </tr>
+                            <WorkerComponent EngineId="engine.BaseInfo.EngineId" Worker="worker"/>
                             }
                         </table>
                     }
@@ -124,40 +79,11 @@ else
 
 @code {
 
-
-
     protected override async Task OnInitializedAsync()
     {
         await SignalRService.StartConnectionAsync();
-
-        // SignalRService.HubConnection.Reconnecting += _ =>
-        // {
-        //     _connectionStatus = "Genopretter forbindelse...";
-        //     InvokeAsync(StateHasChanged);
-        //     return Task.CompletedTask;
-        // };
-        //
-        // SignalRService.HubConnection.Reconnected += _ =>
-        // {
-        //     _connectionStatus = "Forbundet";
-        //     InvokeAsync(StateHasChanged);
-        //     return Task.CompletedTask;
-        // };
-        //
-        // SignalRService.HubConnection.Closed += _ =>
-        // {
-        //     _connectionStatus = "Ikke forbundet";
-        //     InvokeAsync(StateHasChanged);
-        //     return Task.CompletedTask;
-        // };
-
         SignalRService.HubConnection.On<Metric>("UpdateMetric", async _ => { await InvokeAsync(StateHasChanged); });
         SignalRService.HubConnection.On("EngineChange", async () => { await InvokeAsync(StateHasChanged); });
-        SignalRService.HubConnection.On<WorkerEvent>("WorkerEvent", async (workerEvent) =>
-        {
-            Console.WriteLine($"Razor got WorkerEvent: {workerEvent.EventType}");
-            await InvokeAsync(StateHasChanged);
-        });
     }
 
     private async Task RemoveEngine(Guid engineId)
@@ -173,25 +99,4 @@ else
             Console.WriteLine($"Failed to remove engine {engineId}. Engine not found.");
         }
     }
-
-    private async Task ToggleStartStopWorker(Guid engineId, string workerId, WorkerState state)
-    {
-        var resultMessage = state == WorkerState.Running
-            ? await WorkerService.StopWorkerAsync(engineId, workerId)
-            : await WorkerService.StartWorkerAsync(engineId, workerId);
-
-        Console.WriteLine($"Toggle Result: {resultMessage.Message}");
-        await InvokeAsync(StateHasChanged);
-    }
-
-    private async Task<string> RemoveWorker(Guid engineId, string workerId)
-    {
-        var result = await WorkerService.RemoveWorkerAsync(engineId, workerId);
-        Console.WriteLine($"RESULT: {result.Message}");
-        await InvokeAsync(StateHasChanged);
-        return result.Message;
-    }
-
-
-    
 }

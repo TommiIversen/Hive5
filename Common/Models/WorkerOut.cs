@@ -13,9 +13,9 @@ public enum WorkerEventType
 public class WorkerOut : BaseMessage
 {
     public required string WorkerId { get; set; }
-    public string Name { get; set; }
-    public string Description { get; set; }
-    public string Command { get; set; }
+    public required string Name { get; set; }
+    public required string Description { get; set; }
+    public required string Command { get; set; }
     public bool Enabled { get; set; }
     public WorkerState State { get; set; }
 }

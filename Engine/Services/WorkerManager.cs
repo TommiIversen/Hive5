@@ -180,12 +180,16 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
         Log.Information($"Sending delete event for worker: {workerId}");
         var workerEvent = new WorkerEvent
         {
+            Name = "WorkerDeleted",
+            Description = "Worker has been deleted",
+            Command = "WorkerDeleted",
             WorkerId = workerId,
             EventType = WorkerEventType.Deleted,
             Timestamp = DateTime.UtcNow
         };
         messageQueue.EnqueueMessage(workerEvent);
     }
+
 
     private async Task SendWorkerEvent(string workerId, WorkerEventType eventType)
     {

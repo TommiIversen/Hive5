@@ -1,0 +1,81 @@
+﻿@using Common.Models
+@using Engine.Utils
+@using Microsoft.AspNetCore.SignalR.Client
+@using StreamHub.Models
+@using StreamHub.Services
+@inject EngineManager EngineManager
+@inject WorkerService WorkerService
+@inject BlazorSignalRService SignalRService
+<tr>
+    <td class="col-4">
+        <strong>Worker Name:</strong> @Worker.Worker.Name <br/>
+        <strong>Worker Description:</strong> @Worker.Worker.Description <br/>
+        <strong>Worker ID:</strong> @Worker.WorkerId <br/>
+        <strong>Worker IsRunning:</strong>@Worker.Worker.State <br/>
+        <div>
+            <button @onclick="() => ToggleStartStopWorker(EngineId, Worker.WorkerId, Worker.Worker.State)"
+                    class="px-4 py-2 rounded @(GetButtonCss())"
+                    disabled="@Worker.IsProcessing">
+                @(Worker.Worker.State == WorkerState.Running ? "Stop" : "Start")
+            </button>
+
+            <button @onclick="() => RemoveWorker(EngineId, Worker.WorkerId)"
+                    class="px-4 py-2 rounded @(Worker.IsProcessing ? "bg-gray-400 text-gray-700 cursor-not-allowed" : "bg-yellow-500 text-white hover:bg-yellow-700")"
+                    disabled="@Worker.IsProcessing">
+                Remove
+            </button>
+        </div>
+
+        @if (!string.IsNullOrEmpty(Worker.OperationResult))
+        {
+            <div>@Worker.OperationResult</div>
+        }
+    </td>
+
+    <td class="col-4">
+        <WorkerLog LogMessages="Worker.LogMessages" WorkerId="@Worker.WorkerId" EngineId="@EngineId.ToString()" />
+    </td>
+
+    <td class="col-4">
+        <WorkerImageComponent WorkerId="@Worker.WorkerId" InitialImageData="@Worker.LastImage" />
+    </td>
+</tr>
+
+@code {
+    [Parameter] public Guid EngineId { get; set; }
+    [Parameter] public required WorkerViewModel Worker { get; set; }
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        SignalRService.HubConnection.On<WorkerEvent>("WorkerEvent", async (workerEvent) =>
+        {
+            Console.WriteLine($"Razor got WorkerEvent: {workerEvent.EventType}");
+            await InvokeAsync(StateHasChanged);
+        });
+    }
+
+    private string GetButtonCss()
+    {
+        return Worker.IsProcessing ? "bg-gray-400 text-gray-700 cursor-not-allowed"
+            : Worker.Worker.State == WorkerState.Running ? "bg-red-500 text-white hover:bg-red-700"
+            : "bg-green-500 text-white hover:bg-green-700";
+    }
+
+    private async Task ToggleStartStopWorker(Guid engineId, string workerId, WorkerState state)
+    {
+        var resultMessage = state == WorkerState.Running
+            ? await WorkerService.StopWorkerAsync(engineId, workerId)
+            : await WorkerService.StartWorkerAsync(engineId, workerId);
+
+        Console.WriteLine($"Toggle Result: {resultMessage.Message}");
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task RemoveWorker(Guid engineId, string workerId)
+    {
+        var resultMessage = await WorkerService.RemoveWorkerAsync(engineId, workerId);
+        Console.WriteLine($"Remove Result: {resultMessage.Message}");
+        await InvokeAsync(StateHasChanged);
+    }
+}

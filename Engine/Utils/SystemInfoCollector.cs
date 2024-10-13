@@ -12,7 +12,7 @@ public class SystemInfoCollector
     {
         return new SystemInfoModel
         {
-            OSName = RuntimeInformation.OSDescription,
+            OsName = RuntimeInformation.OSDescription,
             OSVersion = Environment.OSVersion.ToString(),
             Architecture = RuntimeInformation.OSArchitecture.ToString(),
             Uptime = GetSystemUptime(),
