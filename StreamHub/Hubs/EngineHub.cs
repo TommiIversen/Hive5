@@ -17,6 +17,7 @@ public class EngineHub(
         var engine = engineManager.GetOrAddEngine(engineInfo);
         engine.ConnectionId = Context.ConnectionId;
         await Clients.Caller.SendAsync("EngineAcknowledged", engineInfo.EngineId);
+        await hubContext.Clients.Group("frontendClients").SendAsync("EngineChange", cancellationService.Token);
     }
 
     // SignalR message fra Engine som reportere sine workers

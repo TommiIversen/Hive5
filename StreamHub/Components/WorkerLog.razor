@@ -66,14 +66,14 @@ else if (_showLog)
 
     private bool IsOutOfSequence(LogEntry logMessage)
     {
-        // Hvis der ikke er et forrige sekvensnummer (første logline), skal vi ikke markere det som "out of sequence"
+        // Hvis _previousSequenceNumber er null, betyder det, at vi endnu ikke har et forrige sekvensnummer
         if (_previousSequenceNumber == null)
         {
             _previousSequenceNumber = logMessage.LogSequenceNumber; // Opdater til det første nummer
-            return false;
+            return false; // Første logbesked betragtes som værende i rækkefølge
         }
 
-        // Tjekker om det nuværende sekvensnummer er 1 mindre end det forrige (i omvendt rækkefølge)
+        // Tjek om den nuværende sekvensnummer er 1 mindre end det forrige (i omvendt rækkefølge)
         if (logMessage.LogSequenceNumber != _previousSequenceNumber - 1)
         {
             _previousSequenceNumber = logMessage.LogSequenceNumber; // Opdater for næste tjek
@@ -83,6 +83,7 @@ else if (_showLog)
         _previousSequenceNumber = logMessage.LogSequenceNumber; // Opdater for næste tjek
         return false; // Sekvensen er i orden
     }
+
 
 
     protected override async Task OnInitializedAsync()
@@ -152,6 +153,9 @@ else if (_showLog)
 
     protected override bool ShouldRender()
     {
+        _previousSequenceNumber = null;
+
+        
         if (_forceRender)
         {
             _forceRender = false;
