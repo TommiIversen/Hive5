@@ -10,7 +10,7 @@
 }
 else
 {
-<table class="w-full">
+    <table class="w-full">
         <thead>
         <tr>
             <th class="w-1/4">Engine Info</th>
@@ -25,12 +25,12 @@ else
             var rowStyle = isOffline ? "background-color: #445566;" : ""; // Rød baggrund hvis offline
 
             <!-- Remove Engine Button -->
-            <button 
-                @onclick="() => RemoveEngine(engine.BaseInfo.EngineId)" 
+            <button
+                @onclick="() => RemoveEngine(engine.BaseInfo.EngineId)"
                 class="px-4 py-2 rounded bg-orange-500 text-white hover:bg-orange-700">
                 Remove Engine
             </button>
-            
+
             <tr style="@rowStyle">
                 <td class="w-1/4 align-top">
                     <div>
@@ -58,9 +58,10 @@ else
                 <td class="w-3/4">
                     @if (engine.Workers.Any())
                     {
-                        <table class="w-full"> @foreach (var worker in engine.Workers.Values)
+                        <table class="w-full">
+                            @foreach (var worker in engine.Workers.Values)
                             {
-                            <WorkerComponent EngineId="engine.BaseInfo.EngineId" Worker="worker"/>
+                                <WorkerComponent EngineId="engine.BaseInfo.EngineId" Worker="worker"/>
                             }
                         </table>
                     }
@@ -97,4 +98,5 @@ else
             Console.WriteLine($"Failed to remove engine {engineId}. Engine not found.");
         }
     }
+
 }
