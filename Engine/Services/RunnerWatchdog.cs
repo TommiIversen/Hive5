@@ -91,7 +91,6 @@ public class RunnerWatchdog
                 await Task.Delay(_checkInterval, cancellationToken);
 
                 var (needRestart, message) = _checkRestartCallback();
-                Console.WriteLine($"Watchdog check: {_workerId} {needRestart}, {message}");
                 if (needRestart)
                 {
                     AddLog($"Watchdog detected a need for restart: {message}");

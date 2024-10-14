@@ -83,6 +83,40 @@ public class EngineManager
     {
         return _engines.TryRemove(engineId, out _);
     }
+    
+    public void SynchronizeWorkers(List<WorkerEvent> workers, Guid engineId)
+    {
+        Console.WriteLine($"-----------SynchronizeWorkers workers: {workers.Count}");
+
+        // Få engine fra EngineManager
+        if (!_engines.TryGetValue(engineId, out var engine))
+        {
+            Console.WriteLine($"Engine {engineId} not found, cannot synchronize workers.");
+            return;
+        }
+
+        // Liste over eksisterende workers i hukommelsen for denne engine
+        var existingWorkers = engine.Workers.Keys.ToList();
+
+        // Opdater eksisterende workers og tilføj nye
+        foreach (var worker in workers)
+        {
+            AddOrUpdateWorker(worker);
+            Console.WriteLine($"Added/Updated Worker: {worker.Name} {worker.IsEnabled}");
+
+            // Fjern denne workerId fra listen over eksisterende workers
+            existingWorkers.Remove(worker.WorkerId);
+        }
+
+        // Fjern workers, som er i hukommelsen, men ikke længere findes på den modtagne liste
+        foreach (var workerId in existingWorkers)
+        {
+            Console.WriteLine($"Removing outdated Worker: {workerId}");
+            RemoveWorker(engineId, workerId);
+        }
+
+        Console.WriteLine("Workers synchronized successfully.");
+    }
 
     public void RemoveWorker(Guid engineId, string workerId)
     {

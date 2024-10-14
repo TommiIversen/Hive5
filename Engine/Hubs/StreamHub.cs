@@ -160,10 +160,12 @@ public class StreamHub
         var workers = await _workerManager.GetAllWorkers(_engineInfo.EngineId);
 
         // TODO, send sync event - send as a list
-        foreach (var worker in workers)
-        {
-            await hubConnection.InvokeAsync("ReceiveWorkerEvent", worker);
-        }
+        // foreach (var worker in workers)
+        // {
+        //     await hubConnection.InvokeAsync("ReceiveWorkerEvent", worker);
+        // }
+
+        await hubConnection.InvokeAsync("SynchronizeWorkers", workers, _engineInfo.EngineId);
         await ProcessClientMessagesAsync(hubConnection, streamhubUrl, _cancellationTokenSource.Token);
     }
 

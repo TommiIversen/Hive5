@@ -12,6 +12,7 @@
         <strong>Worker Description:</strong> @Worker.Worker.Description <br/>
         <strong>Worker ID:</strong> @Worker.WorkerId <br/>
         <strong>Worker IsRunning:</strong>@Worker.Worker.State <br/>
+        <strong>Worker Enabled:</strong>@Worker.Worker.IsEnabled <br/>
         <div>
             <button @onclick="() => ToggleStartStopWorker(EngineId, Worker.WorkerId, Worker.Worker.State)"
                     class="px-4 py-2 rounded @(GetButtonCss())"
@@ -50,7 +51,6 @@
     {
         SignalRService.HubConnection.On<WorkerEvent>("WorkerEvent", async (workerEvent) =>
         {
-            Console.WriteLine($"Razor got WorkerEvent: {workerEvent.EventType}");
             await InvokeAsync(StateHasChanged);
         });
     }

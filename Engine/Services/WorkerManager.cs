@@ -13,6 +13,42 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
     private readonly Dictionary<string, WorkerService> _workers = new();
     public IReadOnlyDictionary<string, WorkerService> Workers => _workers;
 
+    
+    public async Task InitializeWorkersAsync()
+    {
+        Log.Information("Initializing workers from database...");
+    
+        var workerRepository = repositoryFactory.CreateWorkerRepository();
+        var allWorkers = await workerRepository.GetAllWorkersAsync();
+
+        // Filtrer workers, der er IsEnabled
+        var enabledWorkers = allWorkers.ToList();
+
+        foreach (var workerEntity in enabledWorkers)
+        {
+            // Tjek om arbejderen allerede findes i in-memory _workers
+            if (_workers.ContainsKey(workerEntity.WorkerId))
+            {
+                Log.Information($"Worker with ID {workerEntity.WorkerId} already exists in memory.");
+                continue;
+            }
+
+            // Hvis arbejderen ikke findes i _workers, opret en ny service for arbejderen
+            IStreamerRunner streamerRunner = new FakeStreamerRunner();
+            var workerService = new WorkerService(this, messageQueue, streamerRunner, workerEntity.WorkerId);
+            _workers[workerEntity.WorkerId] = workerService;
+
+            // Start arbejderen if enabled
+            if (workerEntity.IsEnabled)
+            {
+                await StartWorkerAsync(workerService.WorkerId);
+            }
+        }
+
+        Log.Information("Workers initialized successfully.");
+    }
+
+
 
     public WorkerService AddWorker(WorkerCreate workerCreate)
     {
@@ -185,7 +221,8 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
             Command = "WorkerDeleted",
             WorkerId = workerId,
             EventType = WorkerEventType.Deleted,
-            Timestamp = DateTime.UtcNow
+            Timestamp = DateTime.UtcNow,
+            IsEnabled = false,
         };
         messageQueue.EnqueueMessage(workerEvent);
     }

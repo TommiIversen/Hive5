@@ -20,15 +20,11 @@ public class EngineHub(
         await hubContext.Clients.Group("frontendClients").SendAsync("EngineChange", cancellationService.Token);
     }
 
-    // SignalR message fra Engine som reportere sine workers
-    public void ReportWorkers(List<WorkerOut> workers)
+    // Synchronize workers ved startup
+    public void SynchronizeWorkers(List<WorkerEvent> workers, Guid engineId)
     {
-        Console.WriteLine($"-----------Reporting workers: {workers.Count}");
-        foreach (var worker in workers)
-        {
-            engineManager.AddOrUpdateWorker(worker);
-            Console.WriteLine($"Addddddd Worker: {worker.Name}");
-        }
+        Console.WriteLine($"-----------SynchronizeWorkers workers: {workers.Count}");
+        engineManager.SynchronizeWorkers(workers, engineId);
     }
 
     public async void ReceiveWorkerEvent(WorkerEvent workerEvent)
