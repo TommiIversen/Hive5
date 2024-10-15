@@ -80,21 +80,6 @@ public class StreamHub
                     return commandResult;
                 });
                 
-                // Handle EngineAcknowledged command asynchronously
-                hubConnection.On<string>("EngineAcknowledged", async (engineId) =>
-                {
-                    logger.LogInformation("hubConnection.On: Got EngineAcknowledged: {EngineId}", engineId);
-                    // Synkroniser workers efter at engine er blevet accepteret
-                    var workers = await _workerManager.GetAllWorkers(_engineInfo.EngineId);
-                    await hubConnection.InvokeAsync("SynchronizeWorkers", workers, _engineInfo.EngineId);
-                    await ProcessClientMessagesAsync(hubConnection, url, _cancellationTokenSource.Token);
-                });
-                
-                hubConnection.On<string>("EngineRejected", async (reason) =>
-                {
-                    _logger.LogWarning("Connection rejected: {Reason}", reason);
-                });
-
                 hubConnection.Reconnected += async (_) =>
                 {
                     logger.LogInformation("hubConnection:: Reconnected to streamhub {url} - {ConnectionId}", url,
@@ -105,6 +90,7 @@ public class StreamHub
                 hubConnection.Closed += async (error) =>
                 {
                     logger.LogWarning("Connection closed: {Error}", error?.Message);
+                    await Task.Delay(5000); // Vent før næste forsøg
                     await TryReconnect(hubConnection, url, _cancellationTokenSource.Token);
                 };
 
@@ -161,14 +147,10 @@ public class StreamHub
 
     private async Task SendEngineConnectedAsync(HubConnection hubConnection, string streamhubUrl)
     {
-        var syncTimestamp = DateTime.UtcNow; // Gem tidspunktet for synkroniseringen
-        _hubConnectionSyncTimestamps[hubConnection] = syncTimestamp; // Opdater dictionary med timestamp for denne forbindelse
+        var syncTimestamp = DateTime.UtcNow;
+        _hubConnectionSyncTimestamps[hubConnection] = syncTimestamp;
 
         Console.WriteLine($"----------Sending engine Init messages to streamHub on: {streamhubUrl}");
-        
-        // Hent opdateret engine-info
-        _engineInfo = await _engineService.GetEngineAsync();
-
 
         var engineModel = new EngineBaseInfo
         {
@@ -179,9 +161,22 @@ public class StreamHub
             InstallDate = _engineInfo.InstallDate
         };
 
-        Console.WriteLine($"{engineModel.EngineName} - {engineModel.Version}");
-        // Send EngineConnected-besked til StreamHub, hvorefter vi afventer bekræftelse (EngineAcknowledged)
-        await hubConnection.InvokeAsync("EngineConnected", engineModel);
+        // Brug bool resultatet for at afgøre, hvad der skal ske
+        bool connectionResult = await hubConnection.InvokeAsync<bool>("RegisterEngineConnection", engineModel);
+
+        if (connectionResult)
+        {
+            Console.WriteLine("Connection to StreamHub acknowledged, synchronizing workers...");
+            var workers = await _workerManager.GetAllWorkers(_engineInfo.EngineId);
+            await hubConnection.InvokeAsync("SynchronizeWorkers", workers, _engineInfo.EngineId);
+            await ProcessClientMessagesAsync(hubConnection, streamhubUrl, _cancellationTokenSource.Token);
+        }
+        else
+        {
+            Console.WriteLine("Connection to StreamHub rejected.");
+            // Eventuelt stoppe forbindelsen eller tage anden handling
+            await hubConnection.StopAsync();
+        }
     }
 
     // Global processing of messages from main queue to per-connection queue

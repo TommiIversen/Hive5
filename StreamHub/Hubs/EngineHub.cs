@@ -10,25 +10,15 @@ public class EngineHub(
     IHubContext<EngineHub> hubContext)
     : Hub
 {
-    // SignalR message fra klient microservice
-    // public async Task EngineConnected(EngineBaseInfo engineInfo)
-    // {
-    //     Console.WriteLine($"Engine connected: {engineInfo.EngineId}");
-    //     var engine = engineManager.GetOrAddEngine(engineInfo);
-    //     engine.ConnectionId = Context.ConnectionId;
-    //     await Clients.Caller.SendAsync("EngineAcknowledged", engineInfo.EngineId);
-    //     await hubContext.Clients.Group("frontendClients").SendAsync("EngineChange", cancellationService.Token);
-    // }
-    
-    public async Task EngineConnected(EngineBaseInfo engineInfo)
+
+    public async Task<bool> RegisterEngineConnection(EngineBaseInfo engineInfo)
     {
         // Tjek om engine allerede er forbundet
         if (engineManager.TryGetEngine(engineInfo.EngineId, out var existingEngine) && 
             !string.IsNullOrEmpty(existingEngine.ConnectionId))
         {
             Console.WriteLine($"Engine {engineInfo.EngineId} is already connected. Rejecting new connection.");
-            await Clients.Caller.SendAsync("EngineRejected", "Engine is already connected.");
-            return; // Afvis forbindelsen, da engine allerede er aktiv
+            return false; // Afvis forbindelsen, da engine allerede er aktiv
         }
 
         // Tilføj eller opdater engine og sæt forbindelses ID
@@ -36,9 +26,13 @@ public class EngineHub(
         engine.ConnectionId = Context.ConnectionId;
         Console.WriteLine($"Engine {engineInfo.EngineId} connected.");
 
+        // Tilføj engine til backendClients-gruppen efter godkendelse
+        await Groups.AddToGroupAsync(Context.ConnectionId, "backendClients");
+        
         // Bekræft forbindelsen til engine
-        await Clients.Caller.SendAsync("EngineAcknowledged", engineInfo.EngineId);
         await hubContext.Clients.Group("frontendClients").SendAsync("EngineChange", cancellationService.Token);
+
+        return true; // Forbindelsen er godkendt
     }
     
 
@@ -149,8 +143,7 @@ public class EngineHub(
         switch (clientType)
         {
             case "backend":
-                await Groups.AddToGroupAsync(Context.ConnectionId, "backendClients");
-                Console.WriteLine($"Backend client connected: {Context.ConnectionId}");
+                Console.WriteLine($"Backend client attempting to connect: {Context.ConnectionId}");
                 break;
             case "frontend":
                 await Groups.AddToGroupAsync(Context.ConnectionId, "frontendClients");
