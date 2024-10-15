@@ -12,7 +12,7 @@ public interface IEngineRepository
 
 public class EngineRepository(ApplicationDbContext context) : IEngineRepository
 {
-    public async Task<EngineEntities?> GetEngineAsync()
+    public async Task<EngineEntities> GetEngineAsync()
     {
         // Henter den eneste EngineEntity i databasen
         return await context.EngineEntities.FirstOrDefaultAsync();

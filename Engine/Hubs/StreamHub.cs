@@ -19,13 +19,10 @@ public class StreamHub
 
     //private Guid EngineId { get; } = Guid.NewGuid();
     private readonly ILogger<StreamHub> _logger;
-    private const bool DebugFlag = false;
     private readonly WorkerManager _workerManager;
-    private readonly ILoggerFactory _loggerFactory;
 
     private readonly IEngineService _engineService;
-    private EngineEntities? _engineInfo;
-    private bool _isRejected = false; // Variabel til at holde styr på om engine er afvist
+    private EngineEntities _engineInfo;
 
     public StreamHub(
         MessageQueue globalMessageQueue,
@@ -37,13 +34,12 @@ public class StreamHub
     {
         _logger = logger;
         _globalMessageQueue = globalMessageQueue;
-        _loggerFactory = loggerFactory;
         _workerManager = workerManager;
         _engineService = engineService;
         var hubUrls = options.Value.HubUrls;
         var maxQueueSize = options.Value.MaxQueueSize;
 
-        Task.Run(async () => { _engineInfo = await _engineService.GetEngineAsync(); });
+        _engineInfo = GetEngineInfo();
         
         foreach (var url in hubUrls)
         {
@@ -68,7 +64,6 @@ public class StreamHub
                     var commandResult = await _workerManager.StopWorkerAsync(workerId);
                     return commandResult;
                 });
-
 
                 hubConnection.On("StartWorker", async (string workerId) =>
                 {
@@ -98,8 +93,6 @@ public class StreamHub
                 hubConnection.On<string>("EngineRejected", async (reason) =>
                 {
                     _logger.LogWarning("Connection rejected: {Reason}", reason);
-                    _isRejected = true; // Markér at engine er blevet afvist
-                    await hubConnection.StopAsync(); // Stop forbindelsen ved afvisning
                 });
 
                 hubConnection.Reconnected += async (_) =>
@@ -108,7 +101,6 @@ public class StreamHub
                         hubConnection.ConnectionId);
                     await SendEngineConnectedAsync(hubConnection, url);
                 };
-
 
                 hubConnection.Closed += async (error) =>
                 {
@@ -128,17 +120,24 @@ public class StreamHub
 
         _ = Task.Run(async () => await RouteMessagesToClientQueuesAsync(_cancellationTokenSource.Token));
     }
+    
+    private EngineEntities GetEngineInfo()
+    {
+        try
+        {
+            return _engineService.GetEngineAsync().Result ?? throw new InvalidOperationException(); // Blokerer synkront indtil engine-info er hentet
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to retrieve engine info.");
+            throw; // Hvis det fejler, stop start af applikationen
+        }
+    }
 
     private async Task TryReconnect(HubConnection hubConnection, string url, CancellationToken token)
     {
         while (true)
         {
-            if (_isRejected) // Tjek om engine er blevet afvist
-            {
-                _logger.LogInformation("Engine connection to {url} has been rejected. No further reconnection attempts.", url);
-                break; // Stop forsøg på at genoprette forbindelse
-            }
-
             try
             {
                 await hubConnection.StartAsync(token);
@@ -166,6 +165,10 @@ public class StreamHub
         _hubConnectionSyncTimestamps[hubConnection] = syncTimestamp; // Opdater dictionary med timestamp for denne forbindelse
 
         Console.WriteLine($"----------Sending engine Init messages to streamHub on: {streamhubUrl}");
+        
+        // Hent opdateret engine-info
+        _engineInfo = await _engineService.GetEngineAsync();
+
 
         var engineModel = new EngineBaseInfo
         {
@@ -188,7 +191,6 @@ public class StreamHub
         while (!cancellationToken.IsCancellationRequested)
         {
             BaseMessage? baseMessage = await _globalMessageQueue.DequeueMessageAsync(cancellationToken);
-
             foreach (var hubConnection in _hubConnectionMessageQueue.Keys)
             {
                 if (baseMessage is ImageData imageMessage)
@@ -199,13 +201,6 @@ public class StreamHub
                 }
 
                 _hubConnectionMessageQueue[hubConnection].EnqueueMessage(baseMessage);
-
-                if (!DebugFlag) continue;
-                var queueReport = _hubConnectionMessageQueue[hubConnection].ReportQueueContents();
-                foreach (var entry in queueReport)
-                {
-                    _logger.LogDebug("{Key}: {Value}", entry.Key, entry.Value);
-                }
             }
         }
     }
