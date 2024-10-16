@@ -3,10 +3,17 @@
 @using StreamHub.Services
 @inject BlazorSignalRService SignalRService
 
-<div class="image-container">
+<div class="image-container" style="position: relative;">
     @if (!string.IsNullOrEmpty(_imageData))
     {
         <img src="@_imageData" alt="Worker Image" style="max-width: 260px; height: auto;" />
+        <div class="latency-overlay" style="position: absolute; top: 5px; left: 5px; color: white; background-color: rgba(0, 0, 0, 0.5); padding: 2px 4px; border-radius: 3px; font-size: 12px;">
+            Latency: @(_latencyMs) ms
+            @if (_imageLost)
+            {
+                <span style="color: red; margin-left: 5px;">⚠️</span>
+            }
+        </div>
     }
     else
     {
@@ -15,18 +22,32 @@
 </div>
 
 @code {
+    [Parameter] public Guid EngineId { get; set; }
     [Parameter] public string WorkerId { get; set; } = "";
     [Parameter] public string InitialImageData { get; set; } = "";
 
     private string? _imageData;
+    private long _latencyMs;
+    private int _previousImageSequenceNumber = -1;
+    private bool _imageLost = false;
 
     protected override async Task OnInitializedAsync()
     {
         _imageData = InitialImageData;
-        SignalRService.HubConnection.On<ImageData>("ReceiveImage", async imageData =>
+        SignalRService.HubConnection.On<ImageData>($"ReceiveImage-{EngineId}", async imageData =>
         {
             if (imageData.WorkerId == WorkerId)
             {
+                // Beregn latens baseret på forskellen mellem nuværende tid og billedets Timestamp
+                _latencyMs = (long)(DateTime.UtcNow - imageData.Timestamp).TotalMilliseconds;
+
+                // Tjek om vi har mistet et billede baseret på sekvensnummeret
+                _imageLost = _previousImageSequenceNumber != -1 && imageData.ImageSequenceNumber != _previousImageSequenceNumber + 1;
+                
+                // Opdater det tidligere sekvensnummer til det nuværende
+                _previousImageSequenceNumber = imageData.ImageSequenceNumber;
+
+                // Konverter billedet til base64 og opdater visningen
                 _imageData = $"data:image/jpeg;base64,{Convert.ToBase64String(imageData.ImageBytes)}";
                 await InvokeAsync(StateHasChanged);
             }

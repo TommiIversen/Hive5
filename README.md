@@ -1,4 +1,6 @@
 # Hive5
+Set data path via env: HIVE_BASE_PATH
+
 
 # List pakker
 dotnet list package

@@ -18,6 +18,7 @@ public class WorkerService
     public string WorkerId { set; get; }
 
     private int _logCounter = 0;
+    private int _imageCounter = 0;
 
     public WorkerService(WorkerManager workerManager, MessageQueue messageQueue, IStreamerRunner streamerRunner, string workerCreateWorkerId)
     {
@@ -201,16 +202,10 @@ public class WorkerService
         string logMessage  = $"State changed: {message}";
         Console.WriteLine(logMessage );
         CreateAndSendLog(logMessage );
-        
         // for nu fake stop
         //_workerManager.HandleStateChange(WorkerId, StreamerState.Restarting, message);
-
         // _workerManager.HandleStateChange(WorkerId, _streamerRunner.GetState(), message);
-
-        
-        // Håndter stateændringer her, fx log til message-queue eller UI
     }
-
 
     private void OnLogGenerated(object? sender, LogEntry log)
     {
@@ -220,6 +215,7 @@ public class WorkerService
 
     private void OnImageGenerated(object? sender, ImageData image)
     {
+        image.ImageSequenceNumber = Interlocked.Increment(ref _imageCounter);
         _messageQueue.EnqueueMessage(image);
         _lastImageUpdate = image.Timestamp;
     }

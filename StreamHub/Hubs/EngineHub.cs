@@ -109,7 +109,7 @@ public class EngineHub(
         {
             worker.LastImage = $"data:image/jpeg;base64,{Convert.ToBase64String(imageData.ImageBytes)}";
             await hubContext.Clients.Group("frontendClients")
-                .SendAsync("ReceiveImage", imageData, cancellationService.Token);
+                .SendAsync($"ReceiveImage-{imageData.EngineId}", imageData, cancellationService.Token);
         }
         else
         {
