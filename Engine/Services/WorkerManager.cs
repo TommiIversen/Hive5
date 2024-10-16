@@ -35,7 +35,7 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
 
             // Hvis arbejderen ikke findes i _workers, opret en ny service for arbejderen
             IStreamerRunner streamerRunner = new FakeStreamerRunner();
-            var workerService = new WorkerService(this, messageQueue, streamerRunner, workerEntity.WorkerId);
+            var workerService = new WorkerService(this, messageQueue, streamerRunner, workerEntity.WorkerId, repositoryFactory);
             _workers[workerEntity.WorkerId] = workerService;
 
             // Start arbejderen if enabled
@@ -102,7 +102,7 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
         }
 
         // Ellers opret en ny service for arbejderen
-        var workerService = new WorkerService(this, messageQueue, streamerRunner, workerCreate.WorkerId);
+        var workerService = new WorkerService(this, messageQueue, streamerRunner, workerCreate.WorkerId, repositoryFactory);
         _workers[workerCreate.WorkerId] = workerService;
 
         return workerService;
@@ -161,6 +161,8 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
 
         return workerEvents;
     }
+    
+
 
     private WorkerState GetWorkerState(string workerId)
     {
@@ -210,6 +212,29 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
 
         return new CommandResult(true, "Worker removed successfully");
     }
+    
+    
+    public async Task<CommandResult> ResetWatchdogEventCountAsync(string workerId)
+    {
+        var workerRepository = repositoryFactory.CreateWorkerRepository();
+        var workerEntity = await workerRepository.GetWorkerByIdAsync(workerId);
+
+        if (workerEntity != null)
+        {
+            // Nulstil tælleren
+            workerEntity.WatchdogEventCount = 0;
+            await workerRepository.UpdateWorkerAsync(workerEntity);
+            Log.Information($"Watchdog event count reset for worker {workerId}.");
+            await SendWorkerEvent(workerId, WorkerEventType.Updated);
+            return new CommandResult(true, "Watchdog event count reset successfully.");
+        }
+        else
+        {
+            Log.Warning($"Worker with ID {workerId} not found.");
+            return new CommandResult(false, "Worker not found.");
+        }
+    }
+
 
     private void SendWorkerDeletedEvent(string workerId)
     {
@@ -223,6 +248,7 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
             EventType = WorkerEventType.Deleted,
             Timestamp = DateTime.UtcNow,
             IsEnabled = false,
+            WatchdogEventCount = 0
         };
         messageQueue.EnqueueMessage(workerEvent);
     }

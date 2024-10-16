@@ -12,4 +12,7 @@ public class WorkerEntity
     public bool IsEnabled { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow; // Automatisk tidspunkt for oprettelse
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow; // Automatisk opdateringstidspunkt
+    
+    public int WatchdogEventCount { get; set; } = 0;
+
 }

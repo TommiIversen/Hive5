@@ -80,6 +80,15 @@ public class StreamHub
                     return commandResult;
                 });
                 
+                // Handle ResetWatchdogEventCount command asynchronously
+                hubConnection.On("ResetWatchdogEventCount", async (string workerId) =>
+                {
+                    logger.LogInformation("hubConnection.On: Got ResetWatchdogEventCount: {WorkerId}", workerId);
+                    var commandResult = await _workerManager.ResetWatchdogEventCountAsync(workerId);
+                    logger.LogInformation("Reset Watchdog Event Count Result for worker {WorkerId}: {Message}", workerId, commandResult.Message);
+                    return commandResult;
+                });
+                
                 hubConnection.Reconnected += async (_) =>
                 {
                     logger.LogInformation("hubConnection:: Reconnected to streamhub {url} - {ConnectionId}", url,

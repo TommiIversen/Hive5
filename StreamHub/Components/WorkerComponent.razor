@@ -8,11 +8,12 @@
 @inject BlazorSignalRService SignalRService
 <tr>
     <td class="col-4">
-        <strong>Worker Name:</strong> @Worker.Worker.Name <br/>
-        <strong>Worker Description:</strong> @Worker.Worker.Description <br/>
-        <strong>Worker ID:</strong> @Worker.WorkerId <br/>
-        <strong>Worker IsRunning:</strong>@Worker.Worker.State <br/>
-        <strong>Worker Enabled:</strong>@Worker.Worker.IsEnabled <br/>
+        <strong>Name:</strong> @Worker.Worker.Name <br/>
+        <strong>Description:</strong> @Worker.Worker.Description <br/>
+        <strong>ID:</strong> @Worker.WorkerId <br/>
+        <strong>IsRunning:</strong>@Worker.Worker.State <br/>
+        <strong>IsEnabled:</strong>@Worker.Worker.IsEnabled <br/>
+        <strong>WatchdogEventCount:</strong>@Worker.Worker.WatchdogEventCount <br/>
         <div>
             <button @onclick="() => ToggleStartStopWorker(EngineId, Worker.WorkerId, Worker.Worker.State)"
                     class="px-4 py-2 rounded @(GetButtonCss())"
@@ -24,6 +25,11 @@
                     class="px-4 py-2 rounded @(Worker.IsProcessing ? "bg-gray-400 text-gray-700 cursor-not-allowed" : "bg-yellow-500 text-white hover:bg-yellow-700")"
                     disabled="@Worker.IsProcessing">
                 Remove
+            </button>
+            <button @onclick="() => ResetWatchdogCountAsync(EngineId, Worker.WorkerId)"
+                    class="px-4 py-2 rounded bg-blue-500 text-white hover:bg-blue-700"
+                    disabled="@Worker.IsProcessing">
+                Reset Watchdog Count
             </button>
         </div>
 
@@ -76,6 +82,13 @@
     {
         var resultMessage = await WorkerService.RemoveWorkerAsync(engineId, workerId);
         Console.WriteLine($"Remove Result: {resultMessage.Message}");
+        await InvokeAsync(StateHasChanged);
+    }
+    
+    private async Task ResetWatchdogCountAsync(Guid engineId, string workerId)
+    {
+        var resultMessage = await WorkerService.ResetWatchdogEventCountAsync(engineId, workerId);
+        Console.WriteLine($"Reset Watchdog Count Result: {resultMessage.Message}");
         await InvokeAsync(StateHasChanged);
     }
 }

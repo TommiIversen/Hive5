@@ -6,23 +6,6 @@ namespace Engine.Models;
 
 public static class WorkerOutExtensions
 {
-    public static WorkerEvent ToWorkerEvent(this WorkerOut workerOut,
-        WorkerEventType eventType = WorkerEventType.Updated)
-    {
-        return new WorkerEvent
-        {
-            WorkerId = workerOut.WorkerId,
-            Name = workerOut.Name,
-            Description = workerOut.Description,
-            Command = workerOut.Command,
-            IsEnabled = workerOut.IsEnabled,
-            State = workerOut.State,
-            EngineId = workerOut.EngineId,
-            Timestamp = DateTime.UtcNow,
-            SequenceNumber = workerOut.SequenceNumber,
-            EventType = eventType
-        };
-    }
     
     
     public static WorkerEvent ToWorkerEvent(this WorkerEntity workerEntity, Guid engineId, 
@@ -39,7 +22,8 @@ public static class WorkerOutExtensions
             EngineId = engineId,
             Timestamp = DateTime.UtcNow,
             SequenceNumber = 0,
-            EventType = eventType
+            EventType = eventType,
+            WatchdogEventCount = workerEntity.WatchdogEventCount
         };
     }
     
@@ -57,7 +41,8 @@ public static class WorkerOutExtensions
             State = state,
             Timestamp = DateTime.UtcNow,
             SequenceNumber = 0,
-            EventType = eventType
+            EventType = eventType,
+            WatchdogEventCount = workerEntity.WatchdogEventCount
         };
     }
 }

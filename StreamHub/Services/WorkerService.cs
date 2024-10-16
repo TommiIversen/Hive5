@@ -86,4 +86,9 @@ public class WorkerService
     {
         return await HandleWorkerOperationAsync(engineId, workerId, "RemoveWorker", timeoutMilliseconds);
     }
+    
+    public async Task<CommandResult> ResetWatchdogEventCountAsync(Guid engineId, string workerId, int timeoutMilliseconds = 5000)
+    {
+        return await HandleWorkerOperationAsync(engineId, workerId, "ResetWatchdogEventCount", timeoutMilliseconds);
+    }
 }

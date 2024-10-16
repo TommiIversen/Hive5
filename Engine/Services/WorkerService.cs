@@ -1,4 +1,5 @@
 ﻿using Common.Models;
+using Engine.DAL.Repositories;
 using Engine.Interfaces;
 using Engine.Utils;
 using Serilog;
@@ -6,10 +7,13 @@ using Serilog;
 namespace Engine.Services;
 
 public class WorkerService
+
 {
     private readonly WorkerManager _workerManager;
     private readonly MessageQueue _messageQueue;
     private readonly IStreamerRunner _streamerRunner;
+    private readonly RepositoryFactory _repositoryFactory; // Nyt felt til RepositoryFactory
+
 
     private readonly RunnerWatchdog _watchdog;
     private WorkerState _desiredState;
@@ -20,12 +24,15 @@ public class WorkerService
     private int _logCounter = 0;
     private int _imageCounter = 0;
 
-    public WorkerService(WorkerManager workerManager, MessageQueue messageQueue, IStreamerRunner streamerRunner, string workerCreateWorkerId)
+    public WorkerService(WorkerManager workerManager, MessageQueue messageQueue, IStreamerRunner streamerRunner,
+        string workerCreateWorkerId, RepositoryFactory repositoryFactory)
     {
         _workerManager = workerManager;
         _messageQueue = messageQueue;
         _streamerRunner = streamerRunner;
         _streamerRunner.WorkerId = workerCreateWorkerId;
+        _repositoryFactory = repositoryFactory; // Gem den som et felt i klassen
+
         WorkerId = workerCreateWorkerId;
 
         // Forbind runnerens events til WorkerService handlers
@@ -38,7 +45,6 @@ public class WorkerService
             await HandleStateChangeAsync(newState);
         };
 
-
         // Initialiser watchdog med callbacks
         _watchdog = new RunnerWatchdog(workerCreateWorkerId, ShouldRestart, RestartWorker, TimeSpan.FromSeconds(6),
             TimeSpan.FromSeconds(1));
@@ -49,7 +55,7 @@ public class WorkerService
 
         _desiredState = WorkerState.Idle;
     }
-    
+
     private async Task HandleStateChangeAsync(WorkerState newState)
     {
         await _workerManager.HandleStateChange(this, newState, WorkerEventType.Updated, "State changed in runner");
@@ -93,7 +99,7 @@ public class WorkerService
 
         var (state, message) = await _streamerRunner.StartAsync();
         bool success = state == WorkerState.Running;
-        
+
         // Start watchdog hvis streameren er startet korrekt
         await _watchdog.StartAsync();
         return new CommandResult(success, message);
@@ -172,8 +178,8 @@ public class WorkerService
 
     private async void RestartWorker(string reason)
     {
-        string logMessage  = $"Restarting worker {WorkerId} due to: {reason}";
-        Log.Information(logMessage );
+        string logMessage = $"Restarting worker {WorkerId} due to: {reason}";
+        Log.Information(logMessage);
         Log.Information($"Restarting worker {WorkerId} due to: {reason}");
 
         // Sæt desired state til Restarting
@@ -199,12 +205,26 @@ public class WorkerService
 
     private void OnWatchdogStateChanged(object? sender, string message)
     {
-        string logMessage  = $"State changed: {message}";
-        Console.WriteLine(logMessage );
-        CreateAndSendLog(logMessage );
-        // for nu fake stop
-        //_workerManager.HandleStateChange(WorkerId, StreamerState.Restarting, message);
-        // _workerManager.HandleStateChange(WorkerId, _streamerRunner.GetState(), message);
+        Console.WriteLine($"-----Watchdog state changed: {message}");
+        // Find arbejderen, der relaterer til senderen (antagelsen er, at sender kan være WorkerService)
+        {
+            var workerRepository = _repositoryFactory.CreateWorkerRepository();
+            var workerEntity = workerRepository.GetWorkerByIdAsync(WorkerId).Result;
+
+            if (workerEntity != null)
+            {
+                // Tæl op
+                workerEntity.WatchdogEventCount++;
+                workerRepository.UpdateWorkerAsync(workerEntity).Wait(); // Gem ændringerne
+
+                Log.Information(
+                    $"------Watchdog state changed for worker {WorkerId}. Event count: {workerEntity.WatchdogEventCount}");
+            }
+            else
+            {
+                Log.Warning($"Worker with ID {WorkerId} not found.");
+            }
+        }
     }
 
     private void OnLogGenerated(object? sender, LogEntry log)
