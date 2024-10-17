@@ -1,0 +1,54 @@
+﻿@using Microsoft.AspNetCore.SignalR.Client
+@using StreamHub.Models
+@using StreamHub.Services
+@inject EngineManager EngineManager
+@inject BlazorSignalRService SignalRService
+
+<div class="bg-gray-800 p-4 rounded-lg mb-4 grid grid-cols-1 md:grid-cols-4 gap-4 relative">
+    @if (string.IsNullOrEmpty(Engine?.ConnectionId))
+    {
+        <div class="absolute inset-0 bg-black bg-opacity-50 flex flex-col rounded-lg justify-center items-center text-white px-4 py-2" style="backdrop-filter: blur(5px); z-index: 10;">
+            <span class="text-2xl font-bold">OFFLINE</span>
+            <span>@Engine.BaseInfo.EngineName</span>
+            @* <span>Last known IP: @Engine.BaseInfo.IpAddress</span> *@
+            @* <span>Last seen: @Engine.BaseInfo.LastSeen</span> *@
+            <button @onclick="() => RemoveEngine(Engine.BaseInfo.EngineId)" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded">Remove Engine</button>
+        </div>
+    }
+
+    <div class="bg-slate-950 p-4 rounded-lg md:col-span-1">
+        <h2 class="text-xl font-semibold">@Engine.BaseInfo.EngineName</h2>
+        <div class="text-gray-400">@Engine.BaseInfo.EngineDescription</div>
+        <div class="text-gray-400">Connected: @Engine.BaseInfo.EngineStartDate</div>
+        <div class="text-gray-400">EngineId: @Engine.BaseInfo.EngineId</div>
+        <MetricExpandPanelComponent EngineId="@Engine.BaseInfo.EngineId" />
+        <MetricLineChartComponent Engine="@Engine"/>
+        <MetricCpuUsageBarChart EngineId="@Engine.BaseInfo.EngineId"/>
+    </div>
+
+    <div class="md:col-span-3">
+        @if (Engine.Workers?.Any() == true)
+        {
+            <div class="grid grid-cols-1 gap-4">
+                @foreach (var worker in Engine.Workers.Values)
+                {
+                    <WorkerComponent EngineId="Engine.BaseInfo.EngineId" Worker="worker"/>
+                }
+            </div>
+        }
+        else
+        {
+            <p>Ingen workers forbundet.</p>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public EngineViewModel? Engine { get; set; }
+
+    private async Task RemoveEngine(Guid engineId)
+    {
+        await SignalRService.HubConnection.SendAsync("RemoveEngine", engineId);
+    }
+}

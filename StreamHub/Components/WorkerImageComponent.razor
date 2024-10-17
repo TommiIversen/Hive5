@@ -3,23 +3,25 @@
 @using StreamHub.Services
 @inject BlazorSignalRService SignalRService
 
-<div class="image-container" style="position: relative;">
+<div class="image-container" @key="@(EngineId.ToString() + WorkerId)" style="position: relative;">
     @if (!string.IsNullOrEmpty(_imageData))
     {
-        <img src="@_imageData" alt="Worker Image" style="max-width: 260px; height: auto;" />
-        <div class="latency-overlay" style="position: absolute; top: 5px; left: 5px; color: white; background-color: rgba(0, 0, 0, 0.5); padding: 2px 4px; border-radius: 3px; font-size: 12px;">
-            Latency: @(_latencyMs) ms
-            @if (_imageLost)
-            {
-                <span style="color: red; margin-left: 5px;">⚠️</span>
-            }
-        </div>
+    <img src="@_imageData" alt="Worker Image" style="max-width: 260px; height: auto;"  />
+    <div class="latency-overlay" style="position: absolute; top: 5px; left: 5px; color: white; background-color: rgba(0, 0, 0, 0.5); padding: 2px 4px; border-radius: 3px; font-size: 12px;">
+        Latency: @(_latencyMs) ms
+        @if (_imageLost)
+        {
+        <span style="color: red; margin-left: 5px;">⚠️</span>
+        }
+    </div>
     }
     else
     {
-        <p>No image available.</p>
+    <p>No image available.</p>
     }
 </div>
+
+
 
 @code {
     [Parameter] public Guid EngineId { get; set; }
@@ -31,13 +33,16 @@
     private int _previousImageSequenceNumber = -1;
     private bool _imageLost = false;
 
-    protected override async Task OnInitializedAsync()
+    protected override Task OnInitializedAsync()
+
     {
         _imageData = InitialImageData;
         SignalRService.HubConnection.On<ImageData>($"ReceiveImage-{EngineId}", async imageData =>
         {
             if (imageData.WorkerId == WorkerId)
             {
+                Console.WriteLine($"----Received image for worker {imageData.WorkerId}  {EngineId}");
+
                 // Beregn latens baseret på forskellen mellem nuværende tid og billedets Timestamp
                 _latencyMs = (long)(DateTime.UtcNow - imageData.Timestamp).TotalMilliseconds;
 
@@ -52,10 +57,12 @@
                 await InvokeAsync(StateHasChanged);
             }
         });
+        return Task.FromResult(Task.CompletedTask);
     }
 
     public void Dispose()
     {
-        SignalRService.HubConnection.Remove("ReceiveImage");
+        Console.WriteLine($"Disposing Image component for worker {WorkerId}");
+        SignalRService.HubConnection.Remove($"ReceiveImage-{EngineId}");
     }
 }

@@ -48,7 +48,8 @@ public class WorkerService
         // Initialiser watchdog med callbacks
         _watchdog = new RunnerWatchdog(workerCreateWorkerId, ShouldRestart, RestartWorker, TimeSpan.FromSeconds(6),
             TimeSpan.FromSeconds(1));
-        _watchdog.StateChanged += OnWatchdogStateChanged;
+        _watchdog.StateChanged += async (sender, message) => await OnWatchdogStateChanged(sender, message);
+
 
         // Forbind runnerens logevent til watchdog'ens loghåndtering
         _streamerRunner.LogGenerated += _watchdog.OnRunnerLogGenerated;
@@ -203,29 +204,29 @@ public class WorkerService
         }
     }
 
-    private void OnWatchdogStateChanged(object? sender, string message)
+    private async Task OnWatchdogStateChanged(object? sender, string message)
     {
         Console.WriteLine($"-----Watchdog state changed: {message}");
+
         // Find arbejderen, der relaterer til senderen (antagelsen er, at sender kan være WorkerService)
+        var workerRepository = _repositoryFactory.CreateWorkerRepository();
+        var workerEntity = await workerRepository.GetWorkerByIdAsync(WorkerId);
+
+        if (workerEntity != null)
         {
-            var workerRepository = _repositoryFactory.CreateWorkerRepository();
-            var workerEntity = workerRepository.GetWorkerByIdAsync(WorkerId).Result;
+            // Tæl op
+            workerEntity.WatchdogEventCount++;
+            await workerRepository.UpdateWorkerAsync(workerEntity); // Gem ændringerne asynkront
 
-            if (workerEntity != null)
-            {
-                // Tæl op
-                workerEntity.WatchdogEventCount++;
-                workerRepository.UpdateWorkerAsync(workerEntity).Wait(); // Gem ændringerne
-
-                Log.Information(
-                    $"------Watchdog state changed for worker {WorkerId}. Event count: {workerEntity.WatchdogEventCount}");
-            }
-            else
-            {
-                Log.Warning($"Worker with ID {WorkerId} not found.");
-            }
+            Log.Information(
+                $"------Watchdog state changed for worker {WorkerId}. Event count: {workerEntity.WatchdogEventCount}");
+        }
+        else
+        {
+            Log.Warning($"Worker with ID {WorkerId} not found.");
         }
     }
+
 
     private void OnLogGenerated(object? sender, LogEntry log)
     {

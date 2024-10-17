@@ -19,13 +19,13 @@ public class WorkerRepository(ApplicationDbContext context) : IWorkerRepository
     public async Task<WorkerEntity?> GetWorkerByIdAsync(string workerId)
     {
         Console.WriteLine($"Data in cache:  {context.Workers.Local.Count}");
-        return await Task.FromResult(await context.Workers.FindAsync(workerId));
+        return await context.Workers.AsNoTracking().FirstOrDefaultAsync(w => w.WorkerId == workerId);
     }
 
 
     public async Task<List<WorkerEntity>> GetAllWorkersAsync()
     {
-        return await context.Workers.ToListAsync();
+        return await context.Workers.AsNoTracking().ToListAsync();
     }
 
     public async Task AddWorkerAsync(WorkerEntity worker)
@@ -34,12 +34,24 @@ public class WorkerRepository(ApplicationDbContext context) : IWorkerRepository
         await context.SaveChangesAsync();
     }
 
+    
     public async Task UpdateWorkerAsync(WorkerEntity worker)
     {
-        worker.UpdatedAt = DateTime.UtcNow; // Opdater tidstempel ved enhver ændring
-        context.Workers.Update(worker);
-        await context.SaveChangesAsync();
+        await using var transaction = await context.Database.BeginTransactionAsync();
+        try
+        {
+            worker.UpdatedAt = DateTime.UtcNow;
+            context.Workers.Update(worker);
+            await context.SaveChangesAsync();
+            await transaction.CommitAsync();
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
     }
+
 
     public async Task DeleteWorkerAsync(string workerId)
     {

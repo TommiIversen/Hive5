@@ -1,7 +1,11 @@
 ﻿@using Common.Models
+@using Microsoft.AspNetCore.SignalR.Client
+@using StreamHub.Models
+@using StreamHub.Services
+@inject BlazorSignalRService SignalRService
 
 <div class="p1 mb-4">
-    <button @onclick="ToggleMetrics" class="flex items-center justify-between w-full p-2 border rounded-lg bg-gray-300 transition duration-200  ease-in-out hover:bg-gray-200">
+    <button @onclick="ToggleMetrics" class="flex items-center justify-between w-full p-2 border rounded-lg bg-blue-800 transition duration-200  ease-in-out hover:bg-blue-600">
         <div class="flex items-center">
             <svg class="mr-2 transform transition-transform duration-300 @(_isExpanded ? "rotate-180" : "")" style="width: 1rem; height: 1rem;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="9 6 15 12 9 18"></polyline>
@@ -13,7 +17,7 @@
 
     @if (_isExpanded && Metric != null)
     {
-        <ul class="p-2 space-y1 text-gray-800 bg-gray100 rounded-lg">
+        <ul class="p-2 space-y1 rounded-lg">
             <li class="flex justify-between">
                 <span class="font-semibold">CPU Usage (%):</span>
                 <span>@Metric.CPUUsage.ToString("F2")</span>
@@ -75,7 +79,9 @@
 </div>
 
 @code {
-    [Parameter] public Metric? Metric { get; set; }
+    private Metric? Metric { get; set; }
+    [Parameter] public required Guid EngineId { get; init; }
+
 
     private bool _isExpanded = false;
 
@@ -84,6 +90,21 @@
         _isExpanded = !_isExpanded;
     }
 
+    protected override async Task OnInitializedAsync()
+    {
+
+        SignalRService.HubConnection.On<Metric>("UpdateMetric", async (metric) =>
+        {
+
+            if (metric.EngineId == EngineId)
+            {
+                Metric = metric;
+                await InvokeAsync(StateHasChanged);
+            }
+        });
+    }
+
+    
     private string TruncateText(string text, int maxLength)
     {
         if (text.Length <= maxLength)

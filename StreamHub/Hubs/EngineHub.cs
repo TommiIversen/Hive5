@@ -37,10 +37,14 @@ public class EngineHub(
     
 
     // Synchronize workers ved startup
-    public void SynchronizeWorkers(List<WorkerEvent> workers, Guid engineId)
+    public async void SynchronizeWorkers(List<WorkerEvent> workers, Guid engineId)
     {
         Console.WriteLine($"-----------SynchronizeWorkers workers: {workers.Count}");
         engineManager.SynchronizeWorkers(workers, engineId);
+        // await hubContext.Clients.Group("frontendClients")
+        //     .SendAsync("WorkerEvent", WorkerEventType.Updated, cancellationService.Token);
+        await hubContext.Clients.Group("frontendClients").SendAsync("EngineChange", cancellationService.Token);
+
     }
 
     public async void ReceiveWorkerEvent(WorkerEvent workerEvent)
@@ -67,6 +71,13 @@ public class EngineHub(
         if (engineManager.TryGetEngine(metric.EngineId, out var engine))
         {
             engine.AddMetric(metric);
+            
+            // first metric ?
+            if (engine.LastMetric == null)
+            {
+                await hubContext.Clients.Group("frontendClients").SendAsync("EngineChange", cancellationService.Token);
+            }
+            
             await hubContext.Clients.All.SendAsync("UpdateMetric", metric, cancellationService.Token);
         }
         else
@@ -135,6 +146,14 @@ public class EngineHub(
     {
         Console.WriteLine($"Unsubscribing from logs for worker {workerId}");
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"worker-{engineId}-{workerId}");
+    }
+    
+    // Invoke SignalR fra blazor frontend - remove engine
+    public async Task RemoveEngine(Guid engineId)
+    {
+        Console.WriteLine($"Removing engine {engineId}");
+        engineManager.RemoveEngine(engineId);
+        await hubContext.Clients.Group("frontendClients").SendAsync("EngineChange", cancellationService.Token);
     }
 
     public override async Task OnConnectedAsync()

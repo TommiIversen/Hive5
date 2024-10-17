@@ -73,7 +73,7 @@
 
         return chart;
     },
-    updateLineChart: function (chart, serializedMetricData) {
+    updateLineChartOld: function (chart, serializedMetricData) {
         const metricData = JSON.parse(serializedMetricData); // Parse serialized data from C#
        console.log('Updating chart with new data:', metricData)
 
@@ -89,6 +89,32 @@
         chart.data.metricData.push(metricData);
 
         if (chart.data.labels.length > 30) {
+            chart.data.labels.shift();
+            chart.data.datasets.forEach(dataset => dataset.data.shift());
+            chart.data.metricData.shift();
+        }
+
+        chart.update();
+    },
+
+    updateLineChart: function (chart, serializedMetricData) {
+        const metricData = JSON.parse(serializedMetricData);
+        console.log('Updating chart with new data:', metricData);
+
+        chart.data.labels.push(metricData.Timestamp);
+        chart.data.datasets[0].data.push(metricData.CPUUsage);
+        chart.data.datasets[1].data.push(metricData.RxUsagePercent);
+        chart.data.datasets[2].data.push(metricData.TxUsagePercent);
+
+        if (!chart.data.metricData) {
+            chart.data.metricData = [];
+        }
+        chart.data.metricData.push(metricData);
+
+        const currentTime = new Date().getTime();
+
+        // Fjern gamle data baseret på tidsstempel og maksimal antal datapunkter
+        while (chart.data.labels.length > 30 || (chart.data.labels.length > 0 && currentTime - new Date(chart.data.labels[0]).getTime() > 10 * 60 * 1000)) {
             chart.data.labels.shift();
             chart.data.datasets.forEach(dataset => dataset.data.shift());
             chart.data.metricData.shift();

@@ -5,12 +5,17 @@
 @inject IJSRuntime JsRuntime
 @inject BlazorSignalRService SignalRService
 @implements IDisposable
+
+
+
 <canvas id="@GetCanvasId()" width="400" height="200"></canvas>
+
 
 @code {
     [Parameter] public EngineViewModel Engine { get; set; } // Modtag hele EngineViewModel som parameter
 
     private IJSObjectReference? _chart;
+    private bool _hasUpdatedState = false; // Flag for at sikre, at StateHasChanged kun kaldes én gang
 
     private long[] _timePoints = new long[30];
     private double[] _cpuUsage = new double[30];
@@ -22,25 +27,28 @@
         Console.WriteLine($"Initializing Historic Line chart for engine {Engine.BaseInfo.EngineName}");
         SignalRService.HubConnection.On<Metric>("UpdateMetric", async (metric) =>
         {
+
+            Console.WriteLine($"Received metric update for engine {Engine.BaseInfo.EngineName}");
             if (metric.EngineId == Engine.BaseInfo.EngineId)
             {
-                    var metricData = new MetricSimpleViewModel(metric);
-                    await UpdateChartData(metricData);
+                var metricData = new MetricSimpleViewModel(metric);
+                await UpdateChartData(metricData);
+
             }
         });
     }
 
     public void Dispose()
     {
-        Console.WriteLine($"Disposing Historic Line chart for engine {Engine.BaseInfo.EngineName}");
-        SignalRService.HubConnection.Remove("UpdateMetric");
+        Console.WriteLine($"Disposing Historic Line chart for engine {Engine.BaseInfo.EngineId}");
+        //SignalRService.HubConnection.Remove("UpdateMetric");
     }
     
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
-            Console.WriteLine($"First render for engine {Engine.BaseInfo.EngineName}");
+            Console.WriteLine($"First LineGraph render for engine {Engine.BaseInfo.EngineName}");
 
             // Initialiser grafen med data fra MetricsQueue
             var initialMetrics = Engine.MetricsQueue.ToList(); // Konverter til liste for at sikre korrekt rækkefølge

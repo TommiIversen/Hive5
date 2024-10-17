@@ -44,7 +44,7 @@
     </td>
 
     <td class="col-4">
-        <WorkerImageComponent WorkerId="@Worker.WorkerId" EngineId="@EngineId" InitialImageData="@Worker.LastImage" />
+        <WorkerImageComponent @key="@(EngineId.ToString() + Worker.WorkerId)" WorkerId="@Worker.WorkerId" EngineId="@EngineId" InitialImageData="@Worker.LastImage" />
     </td>
 </tr>
 
@@ -53,18 +53,19 @@
     [Parameter] public required WorkerViewModel Worker { get; set; }
 
 
-    protected override async Task OnInitializedAsync()
+    protected override Task OnInitializedAsync()
     {
-        SignalRService.HubConnection.On<WorkerEvent>("WorkerEvent", async (workerEvent) =>
+        SignalRService.HubConnection.On<WorkerEvent>("WorkerEvent", async (_) =>
         {
             await InvokeAsync(StateHasChanged);
         });
+        return Task.CompletedTask;
     }
 
     private string GetButtonCss()
     {
         return Worker.IsProcessing ? "bg-gray-400 text-gray-700 cursor-not-allowed"
-            : Worker.Worker.State == WorkerState.Running ? "bg-red-500 text-white hover:bg-red-700"
+            : Worker.Worker != null && Worker.Worker.State == WorkerState.Running ? "bg-red-500 text-white hover:bg-red-700"
             : "bg-green-500 text-white hover:bg-green-700";
     }
 

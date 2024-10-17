@@ -1,5 +1,4 @@
 ﻿@page "/"
-@using Common.Models
 @using Microsoft.AspNetCore.SignalR.Client
 @using StreamHub.Services
 @inject EngineManager EngineManager
@@ -10,93 +9,21 @@
 }
 else
 {
-    <table class="w-full">
-        <thead>
-        <tr>
-            <th class="w-1/4">Engine Info</th>
-            <th class="w-3/4">Workers</th>
-        </tr>
-        </thead>
-        <tbody>
-        @foreach (var engine in EngineManager.GetAllEngines())
-        {
-            // Hvis ConnectionId er null eller tom, så marker som offline (rød baggrund)
-            var isOffline = string.IsNullOrEmpty(engine.ConnectionId);
-            var rowStyle = isOffline ? "background-color: #445566;" : ""; // Rød baggrund hvis offline
+    <div class="p-5">
+        <div class="space-y-4">
+            @foreach (var engine in EngineManager.GetAllEngines())
+            {
+                <EngineComponent Engine="engine" />
+            }
+        </div>
+    </div>
 
-            <!-- Remove Engine Button -->
-            <button
-                @onclick="() => RemoveEngine(engine.BaseInfo.EngineId)"
-                class="px-4 py-2 rounded bg-orange-500 text-white hover:bg-orange-700">
-                Remove Engine
-            </button>
-
-            <tr style="@rowStyle">
-                <td class="w-1/4 align-top">
-                    <div>
-                        <div>BaseInfo</div>
-                        <strong>@engine.ConnectionId</strong> <br/>
-                        <strong>Engine Name:</strong> @engine.BaseInfo.EngineName <br/>
-                        <strong>Engine Description</strong> @engine.BaseInfo.EngineDescription <br/>
-                        <strong>Engine ID:</strong> @engine.BaseInfo.EngineId <br/>
-                        <strong>Engine StartDate: </strong> @engine.BaseInfo.EngineStartDate <br/>
-                        <MetricComponent Metric="engine.LastMetric"/>
-
-                        <!-- Viser CPU-brug for hver kerne, hvis det er tilgængeligt -->
-                        @if (engine.LastMetric?.PerCoreCpuUsage != null && engine.LastMetric.PerCoreCpuUsage.Count > 0)
-                        {
-                            <LineChartComponent Engine="@engine"/>
-                            <strong>Per Core CPU Usage (%):</strong>
-                            <CpuUsageBarChart EngineId="@engine.BaseInfo.EngineId.ToString()" LastMetric="@engine.LastMetric"/>
-                        }
-                        else
-                        {
-                            <strong>No data jet</strong>
-                        }
-                    </div>
-                </td>
-                <td class="w-3/4">
-                    @if (engine.Workers.Any())
-                    {
-                        <table class="w-full">
-                            @foreach (var worker in engine.Workers.Values)
-                            {
-                                <WorkerComponent EngineId="engine.BaseInfo.EngineId" Worker="worker"/>
-                            }
-                        </table>
-                    }
-                    else
-                    {
-                        <p>Ingen workers.</p>
-                    }
-                </td>
-            </tr>
-        }
-        </tbody>
-    </table>
 }
 
 @code {
-
     protected override async Task OnInitializedAsync()
     {
         await SignalRService.StartConnectionAsync();
-        SignalRService.HubConnection.On<Metric>("UpdateMetric", async _ => { await InvokeAsync(StateHasChanged); });
         SignalRService.HubConnection.On("EngineChange", async () => { await InvokeAsync(StateHasChanged); });
     }
-
-    private async Task RemoveEngine(Guid engineId)
-    {
-        var success = EngineManager.RemoveEngine(engineId);
-        if (success)
-        {
-            Console.WriteLine($"Engine {engineId} removed successfully.");
-            await InvokeAsync(StateHasChanged);
-        }
-        else
-        {
-            Console.WriteLine($"Failed to remove engine {engineId}. Engine not found.");
-        }
-    }
-
 }
