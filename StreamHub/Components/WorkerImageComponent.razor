@@ -7,7 +7,7 @@
     @if (!string.IsNullOrEmpty(_imageData))
     {
     <img src="@_imageData" alt="Worker Image" style="max-width: 260px; height: auto;"  />
-    <div class="latency-overlay" style="position: absolute; top: 5px; left: 5px; color: white; background-color: rgba(0, 0, 0, 0.5); padding: 2px 4px; border-radius: 3px; font-size: 12px;">
+    <div class="latency-overlay" style="position: absolute; top: 3px; left: 3px; color: white; background-color: rgba(0, 0, 0, 0.5); padding: 2px 4px; border-radius: 3px; font-size: 12px;">
         Latency: @(_latencyMs) ms
         @if (_imageLost)
         {
@@ -41,8 +41,6 @@
         {
             if (imageData.WorkerId == WorkerId)
             {
-                Console.WriteLine($"----Received image for worker {imageData.WorkerId}  {EngineId}");
-
                 // Beregn latens baseret på forskellen mellem nuværende tid og billedets Timestamp
                 _latencyMs = (long)(DateTime.UtcNow - imageData.Timestamp).TotalMilliseconds;
 

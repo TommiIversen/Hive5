@@ -49,8 +49,6 @@ public class EngineHub(
 
     public async void ReceiveWorkerEvent(WorkerEvent workerEvent)
     {
-        Console.WriteLine($"ReceiveWorkerEvent: {workerEvent.EventType} - {workerEvent.WorkerId} - {workerEvent.Name}");
-
         if (workerEvent.EventType == WorkerEventType.Deleted)
         {
             engineManager.RemoveWorker(workerEvent.EngineId, workerEvent.WorkerId);

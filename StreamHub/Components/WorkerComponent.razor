@@ -6,15 +6,18 @@
 @inject EngineManager EngineManager
 @inject WorkerService WorkerService
 @inject BlazorSignalRService SignalRService
-<tr>
-    <td class="col-4">
-        <strong>Name:</strong> @Worker.Worker.Name <br/>
-        <strong>Description:</strong> @Worker.Worker.Description <br/>
-        <strong>ID:</strong> @Worker.WorkerId <br/>
-        <strong>IsRunning:</strong>@Worker.Worker.State <br/>
-        <strong>IsEnabled:</strong>@Worker.Worker.IsEnabled <br/>
-        <strong>WatchdogEventCount:</strong>@Worker.Worker.WatchdogEventCount <br/>
-        <div>
+<div class="worker-container bg-gray-900 p-4 rounded-lg grid grid-cols-1 md:grid-cols-3 gap-4">
+    <!-- Worker Info -->
+    <div class="worker-info">
+        <div class="font-bold text-lg">@Worker.Worker.Name</div>
+        <div class="text-gray-400">@Worker.Worker.Description</div>
+        <div class="text-gray-400">ID: @Worker.WorkerId</div>
+        <div class="text-gray-400">IsRunning: @Worker.Worker.State</div>
+        <div class="text-gray-400">IsEnabled: @Worker.Worker.IsEnabled</div>
+        <div class="text-gray-400">WatchdogEventCount: @Worker.Worker.WatchdogEventCount</div>
+
+        <!-- Action Buttons -->
+        <div class="mt-4 space-x-2">
             <button @onclick="() => ToggleStartStopWorker(EngineId, Worker.WorkerId, Worker.Worker.State)"
                     class="px-4 py-2 rounded @(GetButtonCss())"
                     disabled="@Worker.IsProcessing">
@@ -26,6 +29,7 @@
                     disabled="@Worker.IsProcessing">
                 Remove
             </button>
+
             <button @onclick="() => ResetWatchdogCountAsync(EngineId, Worker.WorkerId)"
                     class="px-4 py-2 rounded bg-blue-500 text-white hover:bg-blue-700"
                     disabled="@Worker.IsProcessing">
@@ -35,18 +39,20 @@
 
         @if (!string.IsNullOrEmpty(Worker.OperationResult))
         {
-            <div>@Worker.OperationResult</div>
+            <div class="mt-2 text-green-500">@Worker.OperationResult</div>
         }
-    </td>
+    </div>
 
-    <td class="col-4">
-        <WorkerLog LogMessages="Worker.LogMessages" WorkerId="@Worker.WorkerId" EngineId="@EngineId.ToString()" />
-    </td>
+    <!-- Worker Logs -->
+    <div class="worker-logs">
+        <WorkerLog LogMessages="Worker.LogMessages" WorkerId="@Worker.WorkerId" EngineId="@EngineId.ToString()"/>
+    </div>
 
-    <td class="col-4">
-        <WorkerImageComponent @key="@(EngineId.ToString() + Worker.WorkerId)" WorkerId="@Worker.WorkerId" EngineId="@EngineId" InitialImageData="@Worker.LastImage" />
-    </td>
-</tr>
+    <!-- Worker Image -->
+    <div class="worker-image">
+        <WorkerImageComponent @key="@(EngineId.ToString() + Worker.WorkerId)" WorkerId="@Worker.WorkerId" EngineId="@EngineId" InitialImageData="@Worker.LastImage"/>
+    </div>
+</div>
 
 @code {
     [Parameter] public Guid EngineId { get; set; }
@@ -55,10 +61,7 @@
 
     protected override Task OnInitializedAsync()
     {
-        SignalRService.HubConnection.On<WorkerEvent>("WorkerEvent", async (_) =>
-        {
-            await InvokeAsync(StateHasChanged);
-        });
+        SignalRService.HubConnection.On<WorkerEvent>("WorkerEvent", async (_) => { await InvokeAsync(StateHasChanged); });
         return Task.CompletedTask;
     }
 
@@ -85,11 +88,12 @@
         Console.WriteLine($"Remove Result: {resultMessage.Message}");
         await InvokeAsync(StateHasChanged);
     }
-    
+
     private async Task ResetWatchdogCountAsync(Guid engineId, string workerId)
     {
         var resultMessage = await WorkerService.ResetWatchdogEventCountAsync(engineId, workerId);
         Console.WriteLine($"Reset Watchdog Count Result: {resultMessage.Message}");
         await InvokeAsync(StateHasChanged);
     }
+
 }
