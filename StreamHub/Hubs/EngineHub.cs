@@ -52,9 +52,16 @@ public class EngineHub(
         if (workerEvent.EventType == WorkerEventType.Deleted)
         {
             engineManager.RemoveWorker(workerEvent.EngineId, workerEvent.WorkerId);
+            await hubContext.Clients.Group("frontendClients").SendAsync("EngineChange", cancellationService.Token);
         }
-
-        if (workerEvent.EventType is WorkerEventType.Created or WorkerEventType.Updated)
+        
+        if (workerEvent.EventType == WorkerEventType.Created)
+        {
+            engineManager.AddOrUpdateWorker(workerEvent);
+            await hubContext.Clients.Group("frontendClients").SendAsync("EngineChange", cancellationService.Token);
+        }
+        
+        if (workerEvent.EventType == WorkerEventType.Updated)
         {
             engineManager.AddOrUpdateWorker(workerEvent);
         }

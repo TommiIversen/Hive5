@@ -17,12 +17,11 @@ public class StreamHub
     private readonly MessageQueue _globalMessageQueue;
     private readonly CancellationTokenSource _cancellationTokenSource = new();
 
-    //private Guid EngineId { get; } = Guid.NewGuid();
     private readonly ILogger<StreamHub> _logger;
     private readonly WorkerManager _workerManager;
 
     private readonly IEngineService _engineService;
-    private EngineEntities _engineInfo;
+    private readonly EngineEntities _engineInfo;
 
     public StreamHub(
         MessageQueue globalMessageQueue,
@@ -46,9 +45,9 @@ public class StreamHub
             try
             {
                 var hubConnection = new HubConnectionBuilder()
-                    .WithUrl($"{url}?clientType=backend", options =>
+                    .WithUrl($"{url}?clientType=backend", connectionOptions =>
                     {
-                        options.Transports = HttpTransportType.WebSockets; // Kun WebSockets
+                        connectionOptions.Transports = HttpTransportType.WebSockets; // Kun WebSockets
                     })
                     .WithAutomaticReconnect(new[]
                     {
@@ -88,6 +87,28 @@ public class StreamHub
                     logger.LogInformation("Reset Watchdog Event Count Result for worker {WorkerId}: {Message}", workerId, commandResult.Message);
                     return commandResult;
                 });
+                
+                // Add new SignalR handler for creating workers
+                hubConnection.On("CreateWorker", async (WorkerCreate workerCreate) =>
+                {
+                    logger.LogInformation("hubConnection.On: Got CreateWorker: {WorkerName}", workerCreate.Name);
+
+                    // Opret og tilføj worker asynkront via WorkerManager
+                    var workerService = await _workerManager.AddWorkerAsync(_engineInfo.EngineId, workerCreate);
+
+                    // Hvis workerService er null, findes arbejderen allerede
+                    if (workerService == null)
+                    {
+                        logger.LogWarning("Worker with ID {WorkerId} already exists.", workerCreate.WorkerId);
+                        return new CommandResult(false, $"Worker with ID {workerCreate.WorkerId} already exists.");
+                    }
+
+                    // Start arbejderen, hvis den blev tilføjet korrekt
+                    var result = await _workerManager.StartWorkerAsync(workerService.WorkerId);
+
+                    return result;
+                });
+
                 
                 hubConnection.Reconnected += async (_) =>
                 {
@@ -194,13 +215,13 @@ public class StreamHub
         Console.WriteLine($"Start RouteMessagesToClientQueuesAsync ------Processing global queue to clients");
         while (!cancellationToken.IsCancellationRequested)
         {
-            BaseMessage? baseMessage = await _globalMessageQueue.DequeueMessageAsync(cancellationToken);
+            BaseMessage baseMessage = await _globalMessageQueue.DequeueMessageAsync(cancellationToken);
             foreach (var hubConnection in _hubConnectionMessageQueue.Keys)
             {
                 if (baseMessage is ImageData imageMessage)
                 {
                     _hubConnectionMessageQueue[hubConnection]
-                        .EnqueueMessage(imageMessage, $"IMAGE-{imageMessage.WorkerId.ToString()}");
+                        .EnqueueMessage(imageMessage, $"IMAGE-{imageMessage.WorkerId}");
                     continue;
                 }
 

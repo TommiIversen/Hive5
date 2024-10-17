@@ -38,10 +38,8 @@ public class WorkerService
         // Forbind runnerens events til WorkerService handlers
         _streamerRunner.LogGenerated += OnLogGenerated;
         _streamerRunner.ImageGenerated += OnImageGenerated;
-        // Abonner på asynkrone state changes
         _streamerRunner.StateChangedAsync = async (newState) =>
         {
-            // Asynkron logik her
             await HandleStateChangeAsync(newState);
         };
 
@@ -49,11 +47,7 @@ public class WorkerService
         _watchdog = new RunnerWatchdog(workerCreateWorkerId, ShouldRestart, RestartWorker, TimeSpan.FromSeconds(6),
             TimeSpan.FromSeconds(1));
         _watchdog.StateChanged += async (sender, message) => await OnWatchdogStateChanged(sender, message);
-
-
-        // Forbind runnerens logevent til watchdog'ens loghåndtering
         _streamerRunner.LogGenerated += _watchdog.OnRunnerLogGenerated;
-
         _desiredState = WorkerState.Idle;
     }
 
@@ -61,7 +55,6 @@ public class WorkerService
     {
         await _workerManager.HandleStateChange(this, newState, WorkerEventType.Updated, "State changed in runner");
     }
-
 
     public async Task<CommandResult> StartAsync()
     {
@@ -199,7 +192,6 @@ public class WorkerService
         if (!startResult.Success)
         {
             Log.Warning($"Failed to start worker {WorkerId} during restart. Reason: {startResult.Message}");
-            // Hvis vi fejler i at starte, sæt desired state til Idle
             _desiredState = WorkerState.Idle;
         }
     }

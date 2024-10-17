@@ -1,0 +1,33 @@
+﻿<div class="p1 mb-4">
+    <button @onclick="TogglePanel" class="flex items-center justify-between w-full p-2 border rounded-lg bg-blue-800 transition duration-200  ease-in-out hover:bg-blue-600">
+        <div class="flex items-center">
+            <svg class="mr-2 transform transition-transform duration-300 @(_isExpanded ? "rotate-180" : "")" style="width: 1rem; height: 1rem;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 6 15 12 9 18"></polyline>
+            </svg>
+            <span>@Title</span>
+        </div>
+        <span>@(_isExpanded ? "Collapse" : "Expand")</span>
+    </button>
+
+    @if (_isExpanded)
+    {
+        <div class="p-2 space-y1 rounded-lg">
+            @ChildContent
+        </div>
+    }
+</div>
+
+@code {
+    private bool _isExpanded = false;
+
+    [Parameter]
+    public string Title { get; set; } = "Panel";
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    private void TogglePanel()
+    {
+        _isExpanded = !_isExpanded;
+    }
+}

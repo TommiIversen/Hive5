@@ -1,7 +1,10 @@
-﻿@using Microsoft.AspNetCore.SignalR.Client
+﻿@using Common.Models
+@using Microsoft.AspNetCore.SignalR.Client
 @using StreamHub.Models
 @using StreamHub.Services
 @inject EngineManager EngineManager
+@inject WorkerService WorkerService
+
 @inject BlazorSignalRService SignalRService
 
 <div class="bg-gray-800 p-4 rounded-lg mb-4 grid grid-cols-1 md:grid-cols-4 gap-4 relative">
@@ -22,6 +25,8 @@
         <div class="text-gray-400">Connected: @Engine.BaseInfo.EngineStartDate</div>
         <div class="text-gray-400">EngineId: @Engine.BaseInfo.EngineId</div>
         <MetricExpandPanelComponent EngineId="@Engine.BaseInfo.EngineId" />
+        <EngineCreateWorker EngineId="@Engine.BaseInfo.EngineId"/>
+
         <MetricLineChartComponent Engine="@Engine"/>
         <MetricCpuUsageBarChart EngineId="@Engine.BaseInfo.EngineId"/>
     </div>
@@ -45,10 +50,11 @@
 
 @code {
     [Parameter]
-    public EngineViewModel? Engine { get; set; }
+    public required EngineViewModel Engine { get; set; }
 
     private async Task RemoveEngine(Guid engineId)
     {
         await SignalRService.HubConnection.SendAsync("RemoveEngine", engineId);
     }
+    
 }
