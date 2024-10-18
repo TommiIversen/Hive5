@@ -10,9 +10,19 @@ public class EngineViewModel
     public Metric? LastMetric { get; set; }
     public Dictionary<string, WorkerViewModel> Workers { get; set; } = new();
     
-    public ConcurrentQueue<MetricSimpleViewModel> MetricsQueue { get; set; } = new();
+    // New fields
+    public string? IpAddress { get; set; }
+    public int? Port { get; set; }
+    public string? TransportType { get; set; }
+    public DateTime? OnlineSince { get; set; }
+
+    public TimeSpan? Uptime => OnlineSince.HasValue ? DateTime.UtcNow - OnlineSince.Value : null;
 
     
+    public ConcurrentQueue<MetricSimpleViewModel> MetricsQueue { get; set; } = new();
+    public int LocalPort { get; set; }
+
+
     public bool AddWorkerLog(string workerId, LogEntry message)
     {
         if (Workers.ContainsKey(workerId))

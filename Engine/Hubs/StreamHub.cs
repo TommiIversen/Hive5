@@ -22,6 +22,9 @@ public class StreamHub
 
     private readonly IEngineService _engineService;
     private readonly EngineEntities _engineInfo;
+    
+    // fild to init date time
+    private readonly DateTime _initDateTime = DateTime.UtcNow;
 
     public StreamHub(
         MessageQueue globalMessageQueue,
@@ -195,7 +198,8 @@ public class StreamHub
             EngineName = _engineInfo.Name,
             EngineDescription = _engineInfo.Description,
             Version = _engineInfo.Version,
-            InstallDate = _engineInfo.InstallDate
+            InstallDate = _engineInfo.InstallDate,
+            EngineStartDate = _initDateTime
         };
 
         // Brug bool resultatet for at afgøre, hvad der skal ske

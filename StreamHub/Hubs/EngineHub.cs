@@ -1,4 +1,5 @@
 ﻿using Common.Models;
+using Microsoft.AspNetCore.Http.Connections.Features;
 using Microsoft.AspNetCore.SignalR;
 using StreamHub.Services;
 
@@ -24,16 +25,26 @@ public class EngineHub(
         // Tilføj eller opdater engine og sæt forbindelses ID
         var engine = engineManager.GetOrAddEngine(engineInfo);
         engine.ConnectionId = Context.ConnectionId;
-        Console.WriteLine($"Engine {engineInfo.EngineId} connected.");
+        engine.OnlineSince = DateTime.UtcNow;
+
+        // Få flere oplysninger om forbindelsen
+        var httpContext = Context.GetHttpContext();
+        if (httpContext != null)
+        {
+            engine.IpAddress = httpContext.Connection.RemoteIpAddress?.ToString();
+            engine.Port = httpContext.Connection.RemotePort;
+            engine.LocalPort = httpContext.Connection.LocalPort;
+            engine.TransportType = Context.Features.Get<IHttpTransportFeature>()?.TransportType.ToString();
+        
+            Console.WriteLine($"Connected from IP: {engine.IpAddress}, Port: {engine.Port}, Transport: {engine.TransportType}, Time: {engine.OnlineSince}");
+        }
 
         // Tilføj engine til backendClients-gruppen efter godkendelse
         await Groups.AddToGroupAsync(Context.ConnectionId, "backendClients");
-        
-        // Bekræft forbindelsen til engine
         await hubContext.Clients.Group("frontendClients").SendAsync("EngineChange", cancellationService.Token);
-
         return true; // Forbindelsen er godkendt
     }
+
     
 
     // Synchronize workers ved startup
@@ -41,10 +52,7 @@ public class EngineHub(
     {
         Console.WriteLine($"-----------SynchronizeWorkers workers: {workers.Count}");
         engineManager.SynchronizeWorkers(workers, engineId);
-        // await hubContext.Clients.Group("frontendClients")
-        //     .SendAsync("WorkerEvent", WorkerEventType.Updated, cancellationService.Token);
         await hubContext.Clients.Group("frontendClients").SendAsync("EngineChange", cancellationService.Token);
-
     }
 
     public async void ReceiveWorkerEvent(WorkerEvent workerEvent)
