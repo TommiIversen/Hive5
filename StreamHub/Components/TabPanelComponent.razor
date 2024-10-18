@@ -1,0 +1,85 @@
+﻿@using StreamHub.Models
+<div class="mb-1">
+    <div class="flex flex-row space-x-2 mr-2 mb-2">
+        @foreach (var tabName in tabs.Keys)
+        {
+            <button @onclick="() => ToggleTab(tabName)"
+                    class="px-4 py-1 rounded text-white font-bold w-full flex items-center justify-between"
+                    style="@GetTabButtonStyle(tabs[tabName])">
+                <span>@tabName</span>
+
+                <svg class="h-6 w-6 @GetTabIconRotation(tabs[tabName])" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/>
+                </svg>
+            </button>
+        }
+
+        <button @onclick="CloseAllTabs" class="px-2 py-1 bg-gray-600 hover:bg-gray-700 rounded text-white font-bold">
+            X
+        </button>
+    </div>
+
+    @if (tabs["Edit"])
+    {
+        <div class="px-2 mb-2">
+            <FakeComponent1/>
+        </div>
+    }
+
+    @if (tabs["Log"])
+    {
+        <div class="px-2 mb-2">
+            <FakeComponent2/>
+        </div>
+    }
+
+    @if (tabs["Control"])
+    {
+        <div class="px-2 mb-2">
+            <WorkerControlsComponent EngineId="@EngineId"  Worker="Worker"/>
+        </div>
+    }
+
+    @if (tabs["Restarter"])
+    {
+        <div class="px-2 mb-2">
+            <FakeComponent2/>
+        </div>
+    }
+
+</div>
+
+@code {
+    [Parameter] public Guid EngineId { get; set; }
+    [Parameter] public required WorkerViewModel Worker { get; set; }
+
+
+    private Dictionary<string, bool> tabs = new()
+    {
+        {"Edit", false},
+        {"Log", false},
+        {"Control", false},
+        {"Restarter", false}
+    };
+
+    private void ToggleTab(string tabName)
+    {
+        tabs[tabName] = !tabs[tabName];
+    }
+
+    private void CloseAllTabs()
+    {
+        foreach (var key in tabs.Keys.ToList())
+        {
+            tabs[key] = false;
+        }
+    }
+
+
+    private string GetTabButtonStyle(bool isActive) =>
+        isActive ? "background-color: #4A5568;" : "background-color: #2D3748;";
+
+    private string GetTabIconRotation(bool isActive) =>
+        isActive ? "transform rotate-180" : "";
+
+}

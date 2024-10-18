@@ -1,5 +1,4 @@
 ﻿@using Common.Models
-@using Engine.Utils
 @using Microsoft.AspNetCore.SignalR.Client
 @using StreamHub.Models
 @using StreamHub.Services
@@ -15,38 +14,6 @@
         <div class="text-gray-400">IsRunning: @Worker.Worker.State</div>
         <div class="text-gray-400">IsEnabled: @Worker.Worker.IsEnabled</div>
         <div class="text-gray-400">WatchdogEventCount: @Worker.Worker.WatchdogEventCount</div>
-
-        <!-- Action Buttons -->
-        <div class="mt-4 space-x-2">
-            <button @onclick="() => ToggleStartStopWorker(EngineId, Worker.WorkerId, Worker.Worker.State)"
-                    class="px-4 py-2 rounded @(GetButtonCss())"
-                    disabled="@Worker.IsProcessing">
-                @(Worker.Worker.State == WorkerState.Running ? "Stop" : "Start")
-            </button>
-
-            <button @onclick="() => RemoveWorker(EngineId, Worker.WorkerId)"
-                    class="px-4 py-2 rounded @(Worker.IsProcessing ? "bg-gray-400 text-gray-700 cursor-not-allowed" : "bg-yellow-500 text-white hover:bg-yellow-700")"
-                    disabled="@Worker.IsProcessing">
-                Remove
-            </button>
-
-            <button @onclick="() => ResetWatchdogCountAsync(EngineId, Worker.WorkerId)"
-                    class="px-4 py-2 rounded bg-blue-500 text-white hover:bg-blue-700"
-                    disabled="@Worker.IsProcessing">
-                Reset Watchdog Count
-            </button>
-            
-            <button @onclick="() => ToggleEnableDisableWorker(EngineId, Worker.WorkerId, Worker.Worker.IsEnabled)"
-                    class="px-4 py-2 rounded @(Worker.IsProcessing ? "bg-gray-400 text-gray-700 cursor-not-allowed" : "bg-purple-500 text-white hover:bg-purple-700")"
-                    disabled="@Worker.IsProcessing">
-                @(Worker.Worker.IsEnabled ? "Disable" : "Enable")
-            </button>
-        </div>
-
-        @if (!string.IsNullOrEmpty(Worker.OperationResult))
-        {
-            <div class="mt-2 text-green-500">@Worker.OperationResult</div>
-        }
     </div>
 
     <!-- Worker Logs -->
@@ -57,6 +24,10 @@
     <!-- Worker Image -->
     <div class="worker-image">
         <WorkerImageComponent @key="@(EngineId + Worker.WorkerId)" WorkerId="@Worker.WorkerId" EngineId="@EngineId" InitialImageData="@Worker.LastImage"/>
+    </div>
+
+    <div class="col-span-3">
+        <TabPanelComponent EngineId="@EngineId"  Worker="Worker"/>
     </div>
 </div>
 
@@ -70,44 +41,4 @@
         SignalRService.HubConnection.On<WorkerEvent>("WorkerEvent", async (_) => { await InvokeAsync(StateHasChanged); });
         return Task.CompletedTask;
     }
-
-    private string GetButtonCss()
-    {
-        return Worker.IsProcessing ? "bg-gray-400 text-gray-700 cursor-not-allowed"
-            : Worker.Worker != null && Worker.Worker.State == WorkerState.Running ? "bg-red-500 text-white hover:bg-red-700"
-            : "bg-green-500 text-white hover:bg-green-700";
-    }
-
-    private async Task ToggleStartStopWorker(Guid engineId, string workerId, WorkerState state)
-    {
-        var resultMessage = state == WorkerState.Running
-            ? await WorkerService.StopWorkerAsync(engineId, workerId)
-            : await WorkerService.StartWorkerAsync(engineId, workerId);
-
-        Console.WriteLine($"Toggle Result: {resultMessage.Message}");
-        await InvokeAsync(StateHasChanged);
-    }
-
-    private async Task RemoveWorker(Guid engineId, string workerId)
-    {
-        var resultMessage = await WorkerService.RemoveWorkerAsync(engineId, workerId);
-        Console.WriteLine($"Remove Result: {resultMessage.Message}");
-        await InvokeAsync(StateHasChanged);
-    }
-
-    private async Task ResetWatchdogCountAsync(Guid engineId, string workerId)
-    {
-        var resultMessage = await WorkerService.ResetWatchdogEventCountAsync(engineId, workerId);
-        Console.WriteLine($"Reset Watchdog Count Result: {resultMessage.Message}");
-        await InvokeAsync(StateHasChanged);
-    }
-    
-    private async Task ToggleEnableDisableWorker(Guid engineId, string workerId, bool isEnabled)
-    {
-        var resultMessage = await WorkerService.EnableDisableWorkerAsync(engineId, workerId, !isEnabled);
-        Console.WriteLine($"Enable/Disable Result: {resultMessage.Message}");
-        await InvokeAsync(StateHasChanged);
-    }
-
-
 }
