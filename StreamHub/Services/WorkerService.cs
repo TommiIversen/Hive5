@@ -129,4 +129,16 @@ private async Task<CommandResult> HandleWorkerOperationWithDataAsync(string oper
     {
         return await HandleWorkerOperationWithDataAsync("CreateWorker", workerCreate, setProcessing: false);
     }
+    
+    public async Task<CommandResult> EnableDisableWorkerAsync(Guid engineId, string workerId, bool enable)
+    {
+        var message = new WorkerEnableDisableMessage
+        {
+            WorkerId = workerId,
+            EngineId = engineId,
+            Enable = enable
+        };
+
+        return await HandleWorkerOperationWithDataAsync("EnableDisableWorker", message);
+    }
 }

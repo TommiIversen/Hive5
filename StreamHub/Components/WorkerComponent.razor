@@ -35,6 +35,12 @@
                     disabled="@Worker.IsProcessing">
                 Reset Watchdog Count
             </button>
+            
+            <button @onclick="() => ToggleEnableDisableWorker(EngineId, Worker.WorkerId, Worker.Worker.IsEnabled)"
+                    class="px-4 py-2 rounded @(Worker.IsProcessing ? "bg-gray-400 text-gray-700 cursor-not-allowed" : "bg-purple-500 text-white hover:bg-purple-700")"
+                    disabled="@Worker.IsProcessing">
+                @(Worker.Worker.IsEnabled ? "Disable" : "Enable")
+            </button>
         </div>
 
         @if (!string.IsNullOrEmpty(Worker.OperationResult))
@@ -95,5 +101,13 @@
         Console.WriteLine($"Reset Watchdog Count Result: {resultMessage.Message}");
         await InvokeAsync(StateHasChanged);
     }
+    
+    private async Task ToggleEnableDisableWorker(Guid engineId, string workerId, bool isEnabled)
+    {
+        var resultMessage = await WorkerService.EnableDisableWorkerAsync(engineId, workerId, !isEnabled);
+        Console.WriteLine($"Enable/Disable Result: {resultMessage.Message}");
+        await InvokeAsync(StateHasChanged);
+    }
+
 
 }

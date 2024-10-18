@@ -88,6 +88,13 @@ public class StreamHub
                     return commandResult;
                 });
                 
+                hubConnection.On("EnableDisableWorker", async (WorkerEnableDisableMessage message) =>
+                {
+                    logger.LogInformation("hubConnection.On: Got EnableDisableWorker: {WorkerId}, Enable: {Enable}", message.WorkerId, message.Enable);
+                    var commandResult = await _workerManager.EnableDisableWorkerAsync(message.WorkerId, message.Enable);
+                    return commandResult;
+                });
+                
                 // Add new SignalR handler for creating workers
                 hubConnection.On("CreateWorker", async (WorkerCreate workerCreate) =>
                 {

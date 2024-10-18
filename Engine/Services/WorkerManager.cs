@@ -20,8 +20,6 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
 
         var workerRepository = repositoryFactory.CreateWorkerRepository();
         var allWorkers = await workerRepository.GetAllWorkersAsync();
-
-        // Filtrer workers, der er IsEnabled
         var enabledWorkers = allWorkers.ToList();
 
         foreach (var workerEntity in enabledWorkers)
@@ -88,9 +86,7 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
 
         // Tilføj arbejderen til databasen asynkront
         await workerRepository.AddWorkerAsync(workerEntity);
-        
         await SendWorkerEvent(workerCreate.WorkerId, WorkerEventType.Created);
-
         return workerService;
     }
 
@@ -163,7 +159,6 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
         if (worker != null)
         {
             var result = await worker.StartAsync();
-            //await SendWorkerEvent(workerId, WorkerEventType.Updated);
             return result;
         }
 
@@ -180,12 +175,68 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
         if (worker != null)
         {
             var result = await worker.StopAsync();
-            //await SendWorkerEvent(workerId, WorkerEventType.Updated);
             return result;
         }
 
         Log.Warning($"Worker with ID {workerId} not found.");
         return new CommandResult(false, "Worker not found");
+    }
+    
+    public async Task<CommandResult> EnableDisableWorkerAsync(string workerId, bool enable)
+    {
+        Log.Information($"{(enable ? "Enabling" : "Disabling")} worker: {workerId}");
+
+        // Tjek om arbejderen eksisterer
+        var worker = GetWorkerService(workerId);
+        if (worker == null)
+        {
+            Log.Warning($"Worker with ID {workerId} not found.");
+            return new CommandResult(false, "Worker not found");
+        }
+
+        // Hvis vi skal disable arbejderen, stop den først, hvis den er i gang
+        if (!enable)
+        {
+            if (worker.GetState() != WorkerState.Idle)
+            {
+                Log.Information($"Stopping worker {workerId} before disabling...");
+                var stopResult = await worker.StopAsync();
+                if (!stopResult.Success)
+                {
+                    Log.Warning($"Failed to stop worker {workerId}: {stopResult.Message}");
+                    return new CommandResult(false, $"Failed to stop worker: {stopResult.Message}");
+                }
+            }
+        }
+
+        // Opdater databasen for at sætte IsEnabled
+        var workerRepository = repositoryFactory.CreateWorkerRepository();
+        var workerEntity = await workerRepository.GetWorkerByIdAsync(workerId);
+        if (workerEntity == null)
+        {
+            Log.Warning($"Worker entity with ID {workerId} not found in database.");
+            return new CommandResult(false, "Worker not found in database");
+        }
+
+        workerEntity.IsEnabled = enable;
+        await workerRepository.UpdateWorkerAsync(workerEntity);
+        
+        // Hvis vi skal enable arbejderen, start den
+        if (enable)
+        {
+            var startResult = await worker.StartAsync();
+            if (!startResult.Success)
+            {
+                Log.Warning($"Failed to start worker {workerId} after enabling: {startResult.Message}");
+                return new CommandResult(false, $"Worker enabled, but failed to start: {startResult.Message}");
+            }
+        }
+
+        // Send event om at arbejderen er blevet enabled/disabled
+        await SendWorkerEvent(workerId, WorkerEventType.Updated);
+        
+        Log.Information($"Worker {workerId} has been successfully {(enable ? "enabled" : "disabled")}.");
+        return new CommandResult(true, $"Worker {workerId} {(enable ? "enabled" : "disabled")} successfully");
     }
 
 
