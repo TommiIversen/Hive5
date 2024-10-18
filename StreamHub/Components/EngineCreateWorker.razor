@@ -9,26 +9,26 @@
         <h3 class="text-xl text-white font-semibold">Opret ny worker</h3>
         <div class="mt-4">
             <label class="block text-gray-400">Worker ID:</label>
-            <input type="text" @bind="newWorkerId" class="w-full p-2 mt-1 rounded-lg bg-gray-900 text-white"/>
+            <input type="text" @bind="_newWorkerId" class="w-full p-2 mt-1 rounded-lg bg-gray-900 text-white"/>
 
             <label class="block text-gray-400 mt-4">Navn:</label>
-            <input type="text" @bind="newWorkerName" class="w-full p-2 mt-1 rounded-lg bg-gray-900 text-white"/>
+            <input type="text" @bind="_newWorkerName" class="w-full p-2 mt-1 rounded-lg bg-gray-900 text-white"/>
 
             <label class="block text-gray-400 mt-4">Beskrivelse:</label>
-            <input type="text" @bind="newWorkerDescription" class="w-full p-2 mt-1 rounded-lg bg-gray-900 text-white"/>
+            <input type="text" @bind="_newWorkerDescription" class="w-full p-2 mt-1 rounded-lg bg-gray-900 text-white"/>
 
             <label class="block text-gray-400 mt-4">Command:</label>
-            <textarea @bind="newWorkerCommand" class="w-full p-2 mt-1 rounded-lg bg-gray-900 text-white"></textarea>
+            <textarea @bind="_newWorkerCommand" class="w-full p-2 mt-1 rounded-lg bg-gray-900 text-white"></textarea>
 
             <button @onclick="CreateNewWorker" class="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded">
                 Opret Worker
             </button>
         </div>
 
-        @if (!string.IsNullOrEmpty(commandResultMessage))
+        @if (!string.IsNullOrEmpty(_commandResultMessage))
         {
             <div class="mt-4 p-2 bg-gray-800 text-white rounded">
-                @commandResultMessage
+                @_commandResultMessage
             </div>
         }
     </div>
@@ -37,17 +37,27 @@
 @code {
     [Parameter] public Guid EngineId { get; set; }
 
-    private string newWorkerId = string.Empty;
-    private string newWorkerName = string.Empty;
-    private string newWorkerDescription = string.Empty;
-    private string newWorkerCommand = string.Empty;
-    private string commandResultMessage = string.Empty;
+    private string _newWorkerId = string.Empty;
+    private string _newWorkerName = string.Empty;
+    private string _newWorkerDescription = string.Empty;
+    private string _newWorkerCommand = string.Empty;
+    private string _commandResultMessage = string.Empty;
 
     private async Task CreateNewWorker()
     {
-        var workerCreate = new WorkerCreate(newWorkerId, newWorkerName, newWorkerDescription, newWorkerCommand);
-        var commandResult = await WorkerService.CreateWorkerAsync(EngineId, workerCreate);
+        var workerCreate = new WorkerCreate(_newWorkerId, _newWorkerName, _newWorkerDescription, _newWorkerCommand);
+        workerCreate.EngineId = EngineId;
+        var commandResult = await WorkerService.CreateWorkerAsync(workerCreate);
         
-        commandResultMessage = commandResult.Success ? "Worker oprettet succesfuldt!" : $"Fejl: {commandResult.Message}";
+        // reset form if success 
+        if (commandResult.Success)
+        {
+            _newWorkerId = string.Empty;
+            _newWorkerName = string.Empty;
+            _newWorkerDescription = string.Empty;
+            _newWorkerCommand = string.Empty;
+        }
+        
+        _commandResultMessage = commandResult.Message;
     }
 }

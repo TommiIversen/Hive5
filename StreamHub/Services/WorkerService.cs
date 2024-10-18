@@ -18,80 +18,37 @@ public class WorkerService
         _cancellationService = cancellationService;
     }
 
-    private async Task<CommandResult> HandleWorkerOperationAsync(Guid engineId, string workerId, string operation,
+    private async Task<CommandResult> HandleWorkerOperationWithDataAsync(string operation, BaseMessage data,
         int timeoutMilliseconds = 5000)
     {
-        var worker = _engineManager.GetWorker(engineId, workerId);
-        if (worker == null)
+        if (!_engineManager.TryGetEngine(data.EngineId, out var engine))
         {
-            Console.WriteLine($"{operation}: Worker {workerId} not found");
-            return new CommandResult(false, "Worker not found.");
-        }
-
-        worker.IsProcessing = true;
-
-        if (_engineManager.TryGetEngine(engineId, out var engine))
-        {
-            using var timeoutCts = new CancellationTokenSource(timeoutMilliseconds);
-            using var linkedCts =
-                CancellationTokenSource.CreateLinkedTokenSource(_cancellationService.Token, timeoutCts.Token);
-            var msg = "";
-            try
-            {
-                Console.WriteLine($"Forwarding {operation} request for worker {workerId} on engine {engineId}");
-
-                // Invoke the specified operation (StartWorker or StopWorker)
-                var result = await _hubContext.Clients.Client(engine.ConnectionId)
-                    .InvokeAsync<CommandResult>(operation, workerId, linkedCts.Token);
-
-                msg = $"{result.Message} Time: {DateTime.Now}";
-                return new CommandResult(true, $"Worker {workerId} {operation.ToLower()}: {result.Message}");
-            }
-            catch (OperationCanceledException)
-            {
-                msg = $"Operation canceled for worker {workerId} due to timeout or cancellation.";
-                return new CommandResult(false, msg);
-            }
-            catch (Exception ex)
-            {
-                msg = $"Error {operation.ToLower()}ing worker {workerId}: {ex.Message}";
-                return new CommandResult(false, msg);
-            }
-            finally
-            {
-                Console.WriteLine(msg);
-                worker.OperationResult = msg;
-                worker.IsProcessing = false;
-            }
-        }
-        else
-        {
-            Console.WriteLine($"{operation}: Engine {engineId} not found");
+            Console.WriteLine($"{operation}: Engine {data.EngineId} not found");
             return new CommandResult(false, "Engine not found.");
         }
-    }
-    
-    private async Task<CommandResult> HandleWorkerOperationWithDataAsync(Guid engineId, string operation, object data, int timeoutMilliseconds = 5000)
-    {
-        if (!_engineManager.TryGetEngine(engineId, out var engine))
+
+        if (engine.ConnectionId == null)
         {
-            Console.WriteLine($"{operation}: Engine {engineId} not found");
-            return new CommandResult(false, "Engine not found.");
+            Console.WriteLine($"{operation}: Engine {data.EngineId} not connected");
+            return new CommandResult(false, "Engine not connected.");
         }
+
 
         using var timeoutCts = new CancellationTokenSource(timeoutMilliseconds);
-        using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(_cancellationService.Token, timeoutCts.Token);
+        using var linkedCts =
+            CancellationTokenSource.CreateLinkedTokenSource(_cancellationService.Token, timeoutCts.Token);
         var msg = "";
         try
         {
-            Console.WriteLine($"Forwarding {operation} request with data on engine {engineId}");
+            Console.WriteLine($"Forwarding {operation} request with data on engine {data.EngineId}");
 
             // Invoke the operation that requires more complex data (e.g., CreateWorker)
+
             var result = await _hubContext.Clients.Client(engine.ConnectionId)
                 .InvokeAsync<CommandResult>(operation, data, linkedCts.Token);
 
             msg = $"{result.Message} Time: {DateTime.Now}";
-            return new CommandResult(true, $"{operation}: {result.Message}");
+            return new CommandResult(result.Success, $"{operation}: {result.Message}");
         }
         catch (OperationCanceledException)
         {
@@ -110,29 +67,37 @@ public class WorkerService
     }
 
 
-
-    public async Task<CommandResult> StopWorkerAsync(Guid engineId, string workerId, int timeoutMilliseconds = 5000)
+    public async Task<CommandResult> StopWorkerAsync(Guid engineId, string workerId)
     {
-        return await HandleWorkerOperationAsync(engineId, workerId, "StopWorker", timeoutMilliseconds);
+        var message = new WorkerOperationMessage(engineId, workerId);
+        message.EngineId = engineId;
+        return await HandleWorkerOperationWithDataAsync("StopWorker", message);
     }
 
-    public async Task<CommandResult> StartWorkerAsync(Guid engineId, string workerId, int timeoutMilliseconds = 5000)
+
+    public async Task<CommandResult> StartWorkerAsync(Guid engineId, string workerId)
     {
-        return await HandleWorkerOperationAsync(engineId, workerId, "StartWorker", timeoutMilliseconds);
+        var message = new WorkerOperationMessage(engineId, workerId);
+        message.EngineId = engineId;
+        return await HandleWorkerOperationWithDataAsync("StartWorker", message);
     }
 
-    public async Task<CommandResult> RemoveWorkerAsync(Guid engineId, string workerId, int timeoutMilliseconds = 5000)
+
+    public async Task<CommandResult> RemoveWorkerAsync(Guid engineId, string workerId)
     {
-        return await HandleWorkerOperationAsync(engineId, workerId, "RemoveWorker", timeoutMilliseconds);
+        var message = new WorkerOperationMessage(engineId, workerId);
+        return await HandleWorkerOperationWithDataAsync("RemoveWorker", message);
     }
-    
-    public async Task<CommandResult> ResetWatchdogEventCountAsync(Guid engineId, string workerId, int timeoutMilliseconds = 5000)
+
+
+    public async Task<CommandResult> ResetWatchdogEventCountAsync(Guid engineId, string workerId)
     {
-        return await HandleWorkerOperationAsync(engineId, workerId, "ResetWatchdogEventCount", timeoutMilliseconds);
+        var message = new WorkerOperationMessage(engineId, workerId);
+        return await HandleWorkerOperationWithDataAsync("ResetWatchdogEventCount", message);
     }
-    
-    public async Task<CommandResult> CreateWorkerAsync(Guid engineId, WorkerCreate workerCreate, int timeoutMilliseconds = 5000)
+
+    public async Task<CommandResult> CreateWorkerAsync(WorkerCreate workerCreate)
     {
-        return await HandleWorkerOperationWithDataAsync(engineId, "CreateWorker", workerCreate, timeoutMilliseconds);
+        return await HandleWorkerOperationWithDataAsync("CreateWorker", workerCreate);
     }
 }

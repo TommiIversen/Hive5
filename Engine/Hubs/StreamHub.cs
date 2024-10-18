@@ -57,34 +57,34 @@ public class StreamHub
                     .Build();
 
                 // Handle StopWorker command asynchronously
-                hubConnection.On("StopWorker", async (string workerId) =>
+                hubConnection.On("StopWorker", async (WorkerOperationMessage message) =>
                 {
-                    logger.LogInformation("hubConnection.On: Got StopWorker: {WorkerId}", workerId);
-                    var commandResult = await _workerManager.StopWorkerAsync(workerId);
+                    logger.LogInformation("hubConnection.On: Got StopWorker: {WorkerId}", message.WorkerId);
+                    var commandResult = await _workerManager.StopWorkerAsync(message.WorkerId);
                     return commandResult;
                 });
 
-                hubConnection.On("StartWorker", async (string workerId) =>
+                hubConnection.On("StartWorker", async (WorkerOperationMessage message) =>
                 {
-                    logger.LogInformation("hubConnection.On: Got StartWorker: {WorkerId}", workerId);
-                    var commandResult = await _workerManager.StartWorkerAsync(workerId);
+                    logger.LogInformation("hubConnection.On: Got StartWorker: {WorkerId}", message.WorkerId);
+                    var commandResult = await _workerManager.StartWorkerAsync(message.WorkerId);
                     return commandResult;
                 });
                 
                 // Handle RemoveWorker command asynchronously
-                hubConnection.On("RemoveWorker", async (string workerId) =>
+                hubConnection.On("RemoveWorker", async (WorkerOperationMessage message) =>
                 {
-                    logger.LogInformation("hubConnection.On: Got RemoveWorker: {WorkerId}", workerId);
-                    var commandResult = await _workerManager.RemoveWorkerAsync(workerId);
+                    logger.LogInformation("hubConnection.On: Got RemoveWorker: {WorkerId}", message.WorkerId);
+                    var commandResult = await _workerManager.RemoveWorkerAsync(message.WorkerId);
                     return commandResult;
                 });
                 
                 // Handle ResetWatchdogEventCount command asynchronously
-                hubConnection.On("ResetWatchdogEventCount", async (string workerId) =>
+                hubConnection.On("ResetWatchdogEventCount", async (WorkerOperationMessage message) =>
                 {
-                    logger.LogInformation("hubConnection.On: Got ResetWatchdogEventCount: {WorkerId}", workerId);
-                    var commandResult = await _workerManager.ResetWatchdogEventCountAsync(workerId);
-                    logger.LogInformation("Reset Watchdog Event Count Result for worker {WorkerId}: {Message}", workerId, commandResult.Message);
+                    logger.LogInformation("hubConnection.On: Got ResetWatchdogEventCount: {WorkerId}", message.WorkerId);
+                    var commandResult = await _workerManager.ResetWatchdogEventCountAsync(message.WorkerId);
+                    logger.LogInformation("Reset Watchdog Event Count Result for worker {WorkerId}: {Message}", message.WorkerId, commandResult.Message);
                     return commandResult;
                 });
                 

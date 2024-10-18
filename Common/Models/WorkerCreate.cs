@@ -2,7 +2,7 @@
 
 namespace Common.Models;
 
-public class WorkerCreate
+public class WorkerCreate: BaseMessage
 {
     [SetsRequiredMembers]
     public WorkerCreate(string workerId, string name, string description, string command)
