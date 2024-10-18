@@ -5,14 +5,6 @@
 @inject BlazorSignalRService SignalRService
 @inject IJSRuntime JsRuntime
 
-<!-- Show/Hide Button -->
-<button
-    @onclick="ToggleShowLog"
-    class="px-4 py-2 rounded 
-        @(_showLog ? "bg-blue-500 text-white hover:bg-blue-700" : "bg-gray-500 text-white hover:bg-gray-700")">
-    @(_showLog ? "Hide Logs" : "Show Logs")
-</button>
-
 <!-- Pause/Unpause Button -->
 <button
     @onclick="TogglePauseRendering"
@@ -30,7 +22,7 @@
 <div class="w-60">
     
 </div>
-@if (_showLog && LogMessages.Any())
+@if (LogMessages.Any())
 {
     <div style="height: 200px; overflow-y: auto; resize: vertical;" class="w-100">
         <Virtualize Items="LogMessages.TakeLast(100).Reverse().ToList()" Context="logMessage" ItemSize="10">
@@ -39,7 +31,6 @@
                     @if (IsOutOfSequence(logMessage))
                     {
                         <span class="text-warning">&#9888;</span>
-                        <!-- Warning icon -->
                     }
                     @logMessage.LogSequenceNumber: @logMessage.Timestamp : @logMessage.Message
                 </div>
@@ -47,7 +38,7 @@
         </Virtualize>
     </div>
 }
-else if (_showLog)
+else
 {
     <p>Ingen logbeskeder.</p>
 }
@@ -58,7 +49,6 @@ else if (_showLog)
     [Parameter] public required string EngineId { get; init; }
 
     private bool _isSubscribed = false;
-    private bool _showLog = true;
     private bool _pauseRendering = false;
     private bool _forceRender = true;
 
@@ -66,14 +56,11 @@ else if (_showLog)
 
     private bool IsOutOfSequence(LogEntry logMessage)
     {
-        // Hvis _previousSequenceNumber er null, betyder det, at vi endnu ikke har et forrige sekvensnummer
         if (_previousSequenceNumber == null)
         {
-            _previousSequenceNumber = logMessage.LogSequenceNumber; // Opdater til det første nummer
-            return false; // Første logbesked betragtes som værende i rækkefølge
+            _previousSequenceNumber = logMessage.LogSequenceNumber;
+            return false;
         }
-
-        // Tjek om den nuværende sekvensnummer er 1 mindre end det forrige (i omvendt rækkefølge)
         if (logMessage.LogSequenceNumber != _previousSequenceNumber - 1)
         {
             _previousSequenceNumber = logMessage.LogSequenceNumber; // Opdater for næste tjek
@@ -83,8 +70,7 @@ else if (_showLog)
         _previousSequenceNumber = logMessage.LogSequenceNumber; // Opdater for næste tjek
         return false; // Sekvensen er i orden
     }
-
-
+    
 
     protected override async Task OnInitializedAsync()
     {
@@ -99,28 +85,11 @@ else if (_showLog)
         });
     }
 
-    private async Task ToggleShowLog()
-    {
-        _showLog = !_showLog;
-
-        if (_showLog && !_pauseRendering)
-        {
-            await SubscribeToLogs();
-        }
-        else
-        {
-            await UnsubscribeFromLogs();
-        }
-
-        _forceRender = true;
-        await InvokeAsync(StateHasChanged);
-    }
-
     private async Task TogglePauseRendering()
     {
         _pauseRendering = !_pauseRendering;
 
-        if (!_pauseRendering && _showLog)
+        if (!_pauseRendering)
         {
             await SubscribeToLogs();
         }
@@ -154,15 +123,12 @@ else if (_showLog)
     protected override bool ShouldRender()
     {
         _previousSequenceNumber = null;
-
-        
         if (_forceRender)
         {
             _forceRender = false;
             return true;
         }
-
-        return !_pauseRendering || !_showLog;
+        return !_pauseRendering;
     }
 
     private async void DownloadLogs()
@@ -190,5 +156,4 @@ else if (_showLog)
         var fileUrl = $"data:text/plain;base64,{base64}";
         await JsRuntime.InvokeVoidAsync("triggerFileDownload", fileName, fileUrl);
     }
-
 }

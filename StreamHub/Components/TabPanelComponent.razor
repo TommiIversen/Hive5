@@ -29,7 +29,9 @@
     @if (tabs["Log"])
     {
         <div class="px-2 mb-2">
-            <FakeComponent2/>
+
+            <WorkerLog LogMessages="Worker.LogMessages" WorkerId="@Worker.WorkerId" EngineId="@EngineId.ToString()"/>
+
         </div>
     }
 

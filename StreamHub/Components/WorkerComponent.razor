@@ -5,32 +5,32 @@
 @inject EngineManager EngineManager
 @inject WorkerService WorkerService
 @inject BlazorSignalRService SignalRService
-<div class="worker-container bg-gray-900 p-4 rounded-lg grid grid-cols-1 md:grid-cols-3 gap-4">
-    <!-- Worker Info -->
-    <div class="worker-info">
-        <div class="font-bold text-lg">@Worker.Worker.Name</div>
-        <div class="text-gray-400">@Worker.Worker.Description</div>
-        <div class="text-gray-400">ID: @Worker.WorkerId</div>
-        <div class="text-gray-400">IsRunning: @Worker.Worker.State</div>
-        <div class="text-gray-400">IsEnabled: @Worker.Worker.IsEnabled</div>
-        <div class="text-gray-400">WatchdogEventCount: @Worker.Worker.WatchdogEventCount</div>
+<div class="worker-card bg-gray-900 rounded-lg overflow-hidden shadow-lg mb-3 p-2">
+    <!-- Flex container til info og image -->
+    <div class="flex justify-between">
+        <!-- Worker Info -->
+        <div class="flex-1 pr-4">
+            <div class="font-bold text-lg">@Worker.Worker.Name</div>
+            <div class="text-gray-400">@Worker.Worker.Description</div>
+            <div class="text-gray-400">ID: @Worker.WorkerId</div>
+            <div class="text-gray-400">IsRunning: @(Worker.Worker.State )</div>
+            <div class="text-gray-400">IsEnabled: @(Worker.Worker.IsEnabled ? "Yes" : "No")</div>
+            <div class="text-gray-400">WatchdogEventCount: @Worker.Worker.WatchdogEventCount</div>
+        </div>
+
+        <!-- Worker Image container placeret til højre -->
+        <div class="flex-none">
+            <div class="relative w-[300px] h-[168.75px] overflow-hidden rounded">
+                <WorkerImageComponent @key="@(EngineId + Worker.WorkerId)" WorkerId="@Worker.WorkerId" EngineId="@EngineId" InitialImageData="@Worker.LastImage" />
+            </div>
+        </div>
     </div>
 
-    <!-- Worker Logs -->
-    <div class="worker-logs">
-        <WorkerLog LogMessages="Worker.LogMessages" WorkerId="@Worker.WorkerId" EngineId="@EngineId.ToString()"/>
-    </div>
-
-    <!-- Worker Image -->
-    <div class="worker-image">
-        <WorkerImageComponent @key="@(EngineId + Worker.WorkerId)" WorkerId="@Worker.WorkerId" EngineId="@EngineId" InitialImageData="@Worker.LastImage"/>
-    </div>
-
-    <div class="col-span-3">
-        <TabPanelComponent EngineId="@EngineId"  Worker="Worker"/>
+    <!-- TabPanel placeret i bunden og fylder hele bredden -->
+    <div class="mt-4">
+        <TabPanelComponent EngineId="@EngineId" Worker="Worker" />
     </div>
 </div>
-
 @code {
     [Parameter] public Guid EngineId { get; set; }
     [Parameter] public required WorkerViewModel Worker { get; set; }
