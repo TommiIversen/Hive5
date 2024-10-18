@@ -1,11 +1,7 @@
 ﻿namespace Common.Models;
 
-public class WorkerOperationMessage : BaseMessage
+public class WorkerOperationMessage
 {
-    public string WorkerId { get; set; }
-    public WorkerOperationMessage(Guid engineId, string workerId)
-    {
-        EngineId = engineId;
-        WorkerId = workerId;
-    }
+    public required string WorkerId { get; set; }
+    public required Guid EngineId { get; set; }
 }

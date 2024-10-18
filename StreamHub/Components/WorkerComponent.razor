@@ -50,7 +50,7 @@
 
     <!-- Worker Image -->
     <div class="worker-image">
-        <WorkerImageComponent @key="@(EngineId.ToString() + Worker.WorkerId)" WorkerId="@Worker.WorkerId" EngineId="@EngineId" InitialImageData="@Worker.LastImage"/>
+        <WorkerImageComponent @key="@(EngineId + Worker.WorkerId)" WorkerId="@Worker.WorkerId" EngineId="@EngineId" InitialImageData="@Worker.LastImage"/>
     </div>
 </div>
 

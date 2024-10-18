@@ -45,8 +45,14 @@
 
     private async Task CreateNewWorker()
     {
-        var workerCreate = new WorkerCreate(_newWorkerId, _newWorkerName, _newWorkerDescription, _newWorkerCommand);
-        workerCreate.EngineId = EngineId;
+        var workerCreate = new WorkerCreate
+        {
+            EngineId = EngineId,
+            WorkerId = _newWorkerId,
+            Name = _newWorkerName,
+            Description = _newWorkerDescription,
+            Command = _newWorkerCommand
+        };
         var commandResult = await WorkerService.CreateWorkerAsync(workerCreate);
         
         // reset form if success 
