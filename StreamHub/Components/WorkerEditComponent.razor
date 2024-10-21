@@ -1,0 +1,91 @@
+﻿@using Common.Models
+@using Microsoft.AspNetCore.SignalR.Client
+@using StreamHub.Models
+@using StreamHub.Services
+@inject WorkerService WorkerService
+@inject BlazorSignalRService SignalRService
+
+
+@code {
+    [Parameter] public Guid EngineId { get; set; }
+    [Parameter] public required WorkerViewModel Worker { get; set; }
+
+    private string _workerName;
+    private string _workerDescription;
+    private string _workerCommand;
+
+    protected override void OnInitialized()
+    {
+        // Initialiser lokale variabler med de eksisterende værdier fra Worker
+        _workerName = Worker.Worker.Name;
+        _workerDescription = Worker.Worker.Description;
+        _workerCommand = Worker.Worker.Command;
+        SignalRService.HubConnection.On<WorkerEvent>("WorkerEvent", async (_) =>
+        {
+            Console.WriteLine($"STATSTSTGEGEGEGEGEGE Initialized; {Worker.IsProcessing}");
+            await InvokeAsync(StateHasChanged);
+        });
+    }
+    
+    private string GetButtonCss()
+    {
+        return Worker.IsProcessing
+            ? "bg-gray-400 text-gray-700 cursor-not-allowed"
+            : "bg-blue-600 hover:bg-blue-700 text-white";
+    }
+    
+    private async Task ApplyChangesAsync()
+    {
+        // Opret et WorkerCreate objekt ud fra de redigerede værdier
+        var editWorker = new WorkerCreate
+        {
+            EngineId = EngineId,
+            WorkerId = Worker.Worker.WorkerId,
+            Name = _workerName,
+            Description = _workerDescription,
+            Command = _workerCommand
+        };
+
+        // Kald EditWorkerAsync metoden for at gemme ændringerne
+        var result = await WorkerService.EditWorkerAsync(editWorker);
+        if (result.Success)
+        {
+            // Opdater originalen med de nye værdier hvis det er nødvendigt
+            Worker.Worker.Name = _workerName;
+            Worker.Worker.Description = _workerDescription;
+            Worker.Worker.Command = _workerCommand;
+        }
+    }
+}
+
+<div class="px-2 mb-2">
+    <div class="px-4 py-2 bg-gray-800 flex space-x-4 rounded-lg">
+
+        <!-- Left Side: Description, Name, and Button -->
+        <div class="flex-2 space-y-4">
+            <div>
+                <label class="block text-gray-300">Worker Name</label>
+                <input @bind="_workerName"
+                       class="bg-gray-600 p-2 rounded text-white w-full" />
+            </div>
+            <div>
+                <label class="block text-gray-300">Worker Description</label>
+                <input @bind="_workerDescription"
+                       class="bg-gray-600 p-2 rounded text-white w-full" />
+            </div>
+            <button @onclick="ApplyChangesAsync"
+                    class="px-4 py-2 rounded w-full font-bold @GetButtonCss()"
+                    disabled="@Worker.IsProcessing">
+                Apply Changes
+            </button>
+        </div>
+
+        <!-- Right Side: Worker Command -->
+        <div class="flex-1">
+            <label class="block text-gray-300">Worker Command</label>
+            <textarea @bind="_workerCommand"
+                      class="bg-gray-600 p-2 rounded text-white w-full"
+                      style="min-height: 300px;"></textarea>
+        </div>
+    </div>
+</div>

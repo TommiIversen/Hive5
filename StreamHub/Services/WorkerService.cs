@@ -18,66 +18,74 @@ public class WorkerService
         _cancellationService = cancellationService;
     }
 
-private async Task<CommandResult> HandleWorkerOperationWithDataAsync(string operation, WorkerOperationMessage data,
-    int timeoutMilliseconds = 5000, bool setProcessing = true)
-{
-    if (!_engineManager.TryGetEngine(data.EngineId, out var engine))
+    private async Task<CommandResult> HandleWorkerOperationWithDataAsync(string operation, WorkerOperationMessage data,
+        int timeoutMilliseconds = 5000, bool setProcessing = true)
     {
-        Console.WriteLine($"{operation}: Engine {data.EngineId} not found");
-        return new CommandResult(false, "Engine not found.");
-    }
+        CommandResult result = new CommandResult(false, "Unknown error.");
+        var msg = "";
 
-    if (engine.ConnectionId == null)
-    {
-        Console.WriteLine($"{operation}: Engine {data.EngineId} not connected");
-        return new CommandResult(false, "Engine not connected.");
-    }
+        if (!_engineManager.TryGetEngine(data.EngineId, out var engine))
+        {
+            msg = $"{operation}: Engine {data.EngineId} not found";
+            Console.WriteLine(msg);
+            return new CommandResult(false, msg);
+        }
 
-    var worker = _engineManager.GetWorker(data.EngineId, data.WorkerId);
+        if (engine.ConnectionId == null)
+        {
+            msg = $"{operation}: Engine {data.EngineId} not connected";
+            Console.WriteLine(msg);
+            return new CommandResult(false, msg);
+        }
 
-    if (worker == null && setProcessing)
-    {
-        Console.WriteLine($"{operation}: Worker {data.WorkerId} not found");
-        return new CommandResult(false, "Worker not found.");
-    }
+        var worker = _engineManager.GetWorker(data.EngineId, data.WorkerId);
 
-    if (setProcessing && worker != null)
-    {
-        worker.IsProcessing = true;
-    }
+        if (worker == null && setProcessing)
+        {
+            msg = $"{operation}: Worker {data.WorkerId} not found";
+            Console.WriteLine(msg);
+            return new CommandResult(false, msg);
+        }
 
-    using var timeoutCts = new CancellationTokenSource(timeoutMilliseconds);
-    using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(_cancellationService.Token, timeoutCts.Token);
-    var msg = "";
-    try
-    {
-        Console.WriteLine($"Forwarding {operation} request with data on engine {data.EngineId}");
-        var result = await _hubContext.Clients.Client(engine.ConnectionId)
-            .InvokeAsync<CommandResult>(operation, data, linkedCts.Token);
-
-        msg = $"{result.Message} Time: {DateTime.Now}";
-        return new CommandResult(result.Success, $"{operation}: {result.Message}");
-    }
-    catch (OperationCanceledException)
-    {
-        msg = $"Operation canceled for {operation} due to timeout or cancellation.";
-        return new CommandResult(false, msg);
-    }
-    catch (Exception ex)
-    {
-        msg = $"Error during {operation}: {ex.Message}";
-        return new CommandResult(false, msg);
-    }
-    finally
-    {
-        Console.WriteLine(msg);
         if (setProcessing && worker != null)
         {
-            worker.OperationResult = msg;
-            worker.IsProcessing = false;
+            worker.IsProcessing = true;
         }
+
+        using var timeoutCts = new CancellationTokenSource(timeoutMilliseconds);
+        using var linkedCts =
+            CancellationTokenSource.CreateLinkedTokenSource(_cancellationService.Token, timeoutCts.Token);
+
+        try
+        {
+            Console.WriteLine($"Forwarding {operation} request with data on engine {data.EngineId}");
+            result = await _hubContext.Clients.Client(engine.ConnectionId)
+                .InvokeAsync<CommandResult>(operation, data, linkedCts.Token);
+
+            msg = $"{result.Message} Time: {DateTime.Now}";
+        }
+        catch (OperationCanceledException)
+        {
+            msg = $"Operation canceled for {operation} due to timeout or cancellation.";
+            result = new CommandResult(false, msg);
+        }
+        catch (Exception ex)
+        {
+            msg = $"Error during {operation}: {ex.Message}";
+            result = new CommandResult(false, msg);
+        }
+        finally
+        {
+            Console.WriteLine(msg);
+            if (setProcessing && worker != null)
+            {
+                worker.OperationResult = msg;
+                worker.IsProcessing = false;
+            }
+        }
+
+        return result;
     }
-}
 
 
     public async Task<CommandResult> StopWorkerAsync(Guid engineId, string workerId)
@@ -129,7 +137,14 @@ private async Task<CommandResult> HandleWorkerOperationWithDataAsync(string oper
     {
         return await HandleWorkerOperationWithDataAsync("CreateWorker", workerCreate, setProcessing: false);
     }
-    
+
+
+    public async Task<CommandResult> EditWorkerAsync(WorkerCreate workerCreate)
+    {
+        return await HandleWorkerOperationWithDataAsync("EditWorker", workerCreate, setProcessing: true);
+    }
+
+
     public async Task<CommandResult> EnableDisableWorkerAsync(Guid engineId, string workerId, bool enable)
     {
         var message = new WorkerEnableDisableMessage

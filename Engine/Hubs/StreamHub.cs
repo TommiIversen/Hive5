@@ -98,6 +98,14 @@ public class StreamHub
                     return commandResult;
                 });
                 
+                hubConnection.On("EditWorker", async (WorkerEdit workerEdit) =>
+                {
+                    logger.LogInformation("hubConnection.On: Got EditWorker for WorkerId: {WorkerId}", workerEdit.WorkerId);
+                    var commandResult = await _workerManager.EditWorkerAsync(workerEdit.WorkerId, workerEdit.Name, workerEdit.Description, workerEdit.Command);
+                    logger.LogInformation("Edit Worker Result for worker {WorkerId}: {Message}", workerEdit.WorkerId, commandResult.Message);
+                    return commandResult;
+                });
+                
                 // Add new SignalR handler for creating workers
                 hubConnection.On("CreateWorker", async (WorkerCreate workerCreate) =>
                 {

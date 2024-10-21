@@ -1,4 +1,9 @@
-﻿@using StreamHub.Models
+﻿@using Common.Models
+@using Microsoft.AspNetCore.SignalR.Client
+@using StreamHub.Models
+@using StreamHub.Services
+@inject BlazorSignalRService SignalRService
+
 <div class="mb-1">
     <div class="flex flex-row space-x-2 mr-2 mb-2">
         @foreach (var tabName in tabs.Keys)
@@ -22,23 +27,21 @@
     @if (tabs["Edit"])
     {
         <div class="px-2 mb-2">
-            <FakeComponent1/>
+            <WorkerEditComponent EngineId="@EngineId" Worker="Worker"/>
         </div>
     }
 
     @if (tabs["Log"])
     {
         <div class="px-2 mb-2">
-
             <WorkerLog LogMessages="Worker.LogMessages" WorkerId="@Worker.WorkerId" EngineId="@EngineId.ToString()"/>
-
         </div>
     }
 
     @if (tabs["Control"])
     {
         <div class="px-2 mb-2">
-            <WorkerControlsComponent EngineId="@EngineId"  Worker="Worker"/>
+            <WorkerControlsComponent @key="@(EngineId + Worker.WorkerId)" EngineId="@EngineId" Worker="Worker"/>
         </div>
     }
 
@@ -54,7 +57,6 @@
 @code {
     [Parameter] public Guid EngineId { get; set; }
     [Parameter] public required WorkerViewModel Worker { get; set; }
-
 
     private Dictionary<string, bool> tabs = new()
     {

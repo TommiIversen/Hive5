@@ -16,4 +16,15 @@
       <ProjectReference Include="..\Engine\Engine.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <_ContentIncludedByDefault Remove="Components\Worker\ExpandablePanel.razor" />
+      <_ContentIncludedByDefault Remove="Components\Worker\FakeComponent1.razor" />
+      <_ContentIncludedByDefault Remove="Components\Worker\FakeComponent2.razor" />
+      <_ContentIncludedByDefault Remove="Components\Worker\TabPanelComponent.razor" />
+      <_ContentIncludedByDefault Remove="Components\Worker\WorkerComponent.razor" />
+      <_ContentIncludedByDefault Remove="Components\Worker\WorkerControlsComponent.razor" />
+      <_ContentIncludedByDefault Remove="Components\Worker\WorkerImageComponent.razor" />
+      <_ContentIncludedByDefault Remove="Components\Worker\WorkerLog.razor" />
+    </ItemGroup>
+
 </Project>
