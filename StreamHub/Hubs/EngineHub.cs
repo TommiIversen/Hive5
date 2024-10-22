@@ -57,24 +57,24 @@ public class EngineHub(
 
     public async void ReceiveWorkerEvent(WorkerEvent workerEvent)
     {
-        if (workerEvent.EventType == WorkerEventType.Deleted)
+        switch (workerEvent.EventType)
         {
-            engineManager.RemoveWorker(workerEvent.EngineId, workerEvent.WorkerId);
-            await hubContext.Clients.Group("frontendClients").SendAsync("EngineChange", cancellationService.Token);
+            case WorkerEventType.Deleted:
+                engineManager.RemoveWorker(workerEvent.EngineId, workerEvent.WorkerId);
+                await hubContext.Clients.Group("frontendClients").SendAsync("EngineChange", cancellationService.Token);
+                break;
+            case WorkerEventType.Created:
+                engineManager.AddOrUpdateWorker(workerEvent);
+                await hubContext.Clients.Group("frontendClients").SendAsync("EngineChange", cancellationService.Token);
+                break;
+            case WorkerEventType.Updated:
+                engineManager.AddOrUpdateWorker(workerEvent);
+                string workerEventTopic = $"WorkerEvent-{workerEvent.EngineId}-{workerEvent.WorkerId}";
+                
+                await hubContext.Clients.Group("frontendClients")
+                    .SendAsync(workerEventTopic, workerEvent, cancellationService.Token);
+                break;
         }
-        
-        if (workerEvent.EventType == WorkerEventType.Created)
-        {
-            engineManager.AddOrUpdateWorker(workerEvent);
-            await hubContext.Clients.Group("frontendClients").SendAsync("EngineChange", cancellationService.Token);
-        }
-        
-        if (workerEvent.EventType == WorkerEventType.Updated)
-        {
-            engineManager.AddOrUpdateWorker(workerEvent);
-        }
-        await hubContext.Clients.Group("frontendClients")
-            .SendAsync("WorkerEvent", workerEvent, cancellationService.Token);
     }
 
 
@@ -133,7 +133,7 @@ public class EngineHub(
         {
             worker.LastImage = $"data:image/jpeg;base64,{Convert.ToBase64String(imageData.ImageBytes)}";
             await hubContext.Clients.Group("frontendClients")
-                .SendAsync($"ReceiveImage-{imageData.EngineId}", imageData, cancellationService.Token);
+                .SendAsync($"ReceiveImage-{imageData.EngineId}-{imageData.WorkerId}", imageData, cancellationService.Token);
         }
         else
         {

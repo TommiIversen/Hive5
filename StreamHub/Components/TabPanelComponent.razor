@@ -27,7 +27,7 @@
     @if (_tabs["Edit"])
     {
         <div class="px-2 mb-2">
-            <WorkerEditComponent EngineId="@EngineId" Worker="Worker"/>
+            <WorkerEditComponent EngineId="@EngineId"  Worker="@Worker"/>
         </div>
     }
 
@@ -41,7 +41,7 @@
     @if (_tabs["Control"])
     {
         <div class="px-2 mb-2">
-            <WorkerControlsComponent @key="@(EngineId + Worker.WorkerId)" EngineId="@EngineId" Worker="Worker"/>
+            <WorkerControlsComponent @key="@(EngineId + Worker.WorkerId)" WorkerId="@Worker.WorkerId" EngineId="@EngineId" Worker="Worker"/>
         </div>
     }
 
@@ -78,7 +78,6 @@
             _tabs[key] = false;
         }
     }
-
 
     private string GetTabButtonStyle(bool isActive) =>
         isActive ? "background-color: #4A5568;" : "background-color: #2D3748;";

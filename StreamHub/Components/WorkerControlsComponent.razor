@@ -40,15 +40,17 @@
 
 @code {
     [Parameter] public Guid EngineId { get; set; }
+    [Parameter] public required string WorkerId { get; init; }
     [Parameter] public required WorkerViewModel Worker { get; set; }
     
     
     protected override Task OnInitializedAsync()
     {
         Console.WriteLine("WorkerControlsComponent Initialized");
-       
-        SignalRService.HubConnection.On<WorkerEvent>("WorkerEvent", async (_) => 
+        string workerEventTopic = $"WorkerEvent-{EngineId}-{Worker.WorkerId}";
+        SignalRService.HubConnection.On<WorkerEvent>(workerEventTopic, async (workerEvent) => 
         { 
+            Console.WriteLine($"WorkerEvent workercontrol received: workerEventTopic: {workerEventTopic}");
             await Task.Delay(10); // Giver systemet tid til at synkronisere Worker.IsProcessing
             await InvokeAsync(StateHasChanged); 
         });

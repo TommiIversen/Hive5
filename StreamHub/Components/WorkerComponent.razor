@@ -35,10 +35,10 @@
     [Parameter] public Guid EngineId { get; set; }
     [Parameter] public required WorkerViewModel Worker { get; set; }
 
-
     protected override Task OnInitializedAsync()
     {
-        SignalRService.HubConnection.On<WorkerEvent>("WorkerEvent", async (_) => { await InvokeAsync(StateHasChanged); });
+        string workerEventTopic = $"WorkerEvent-{EngineId}-{Worker.WorkerId}";
+        SignalRService.HubConnection.On<WorkerEvent>(workerEventTopic, async (_) => { await InvokeAsync(StateHasChanged); });
         return Task.CompletedTask;
     }
 }
