@@ -46,7 +46,13 @@
     protected override Task OnInitializedAsync()
     {
         Console.WriteLine("WorkerControlsComponent Initialized");
-        SignalRService.HubConnection.On<WorkerEvent>("WorkerEvent", async (_) => { await InvokeAsync(StateHasChanged); });
+       
+        SignalRService.HubConnection.On<WorkerEvent>("WorkerEvent", async (_) => 
+        { 
+            await Task.Delay(10); // Giver systemet tid til at synkronisere Worker.IsProcessing
+            await InvokeAsync(StateHasChanged); 
+        });
+        
         return Task.CompletedTask;
     }
     

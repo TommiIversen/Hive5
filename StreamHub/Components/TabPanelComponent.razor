@@ -6,14 +6,14 @@
 
 <div class="mb-1">
     <div class="flex flex-row space-x-2 mr-2 mb-2">
-        @foreach (var tabName in tabs.Keys)
+        @foreach (var tabName in _tabs.Keys)
         {
             <button @onclick="() => ToggleTab(tabName)"
                     class="px-4 py-1 rounded text-white font-bold w-full flex items-center justify-between"
-                    style="@GetTabButtonStyle(tabs[tabName])">
+                    style="@GetTabButtonStyle(_tabs[tabName])">
                 <span>@tabName</span>
 
-                <svg class="h-6 w-6 @GetTabIconRotation(tabs[tabName])" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg class="h-6 w-6 @GetTabIconRotation(_tabs[tabName])" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/>
                 </svg>
             </button>
@@ -24,28 +24,28 @@
         </button>
     </div>
 
-    @if (tabs["Edit"])
+    @if (_tabs["Edit"])
     {
         <div class="px-2 mb-2">
             <WorkerEditComponent EngineId="@EngineId" Worker="Worker"/>
         </div>
     }
 
-    @if (tabs["Log"])
+    @if (_tabs["Log"])
     {
         <div class="px-2 mb-2">
             <WorkerLog LogMessages="Worker.LogMessages" WorkerId="@Worker.WorkerId" EngineId="@EngineId.ToString()"/>
         </div>
     }
 
-    @if (tabs["Control"])
+    @if (_tabs["Control"])
     {
         <div class="px-2 mb-2">
             <WorkerControlsComponent @key="@(EngineId + Worker.WorkerId)" EngineId="@EngineId" Worker="Worker"/>
         </div>
     }
 
-    @if (tabs["Restarter"])
+    @if (_tabs["Restarter"])
     {
         <div class="px-2 mb-2">
             <FakeComponent2/>
@@ -58,7 +58,7 @@
     [Parameter] public Guid EngineId { get; set; }
     [Parameter] public required WorkerViewModel Worker { get; set; }
 
-    private Dictionary<string, bool> tabs = new()
+    private Dictionary<string, bool> _tabs = new()
     {
         {"Edit", false},
         {"Log", false},
@@ -68,14 +68,14 @@
 
     private void ToggleTab(string tabName)
     {
-        tabs[tabName] = !tabs[tabName];
+        _tabs[tabName] = !_tabs[tabName];
     }
 
     private void CloseAllTabs()
     {
-        foreach (var key in tabs.Keys.ToList())
+        foreach (var key in _tabs.Keys.ToList())
         {
-            tabs[key] = false;
+            _tabs[key] = false;
         }
     }
 
