@@ -22,7 +22,6 @@
         _workerCommand = Worker.Worker.Command;
         SignalRService.HubConnection.On<WorkerEvent>("WorkerEvent", async (_) =>
         {
-            Console.WriteLine($"STATSTSTGEGEGEGEGEGE Initialized; {Worker.IsProcessing}");
             await InvokeAsync(StateHasChanged);
         });
     }
