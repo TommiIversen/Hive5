@@ -124,7 +124,7 @@ public class EngineManager
         {
             if (engine.Workers.ContainsKey(workerId))
             {
-                engine.Workers.Remove(workerId);
+                engine.Workers.Remove(workerId, out _);
                 Console.WriteLine($"Worker {workerId} successfully removed from engine {engineId}.");
             }
             else

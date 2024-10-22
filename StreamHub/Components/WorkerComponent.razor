@@ -16,19 +16,20 @@
             <div class="text-gray-400">IsRunning: @(Worker.Worker.State )</div>
             <div class="text-gray-400">IsEnabled: @(Worker.Worker.IsEnabled ? "Yes" : "No")</div>
             <div class="text-gray-400">WatchdogEventCount: @Worker.Worker.WatchdogEventCount</div>
+            <div class="text-gray-400">Last Updated: @Worker.Worker.Timestamp</div>
         </div>
 
         <!-- Worker Image container placeret til højre -->
         <div class="flex-none">
             <div class="relative w-[300px] h-[168.75px] overflow-hidden rounded">
-                <WorkerImageComponent @key="@(EngineId + Worker.WorkerId)" WorkerId="@Worker.WorkerId" EngineId="@EngineId" InitialImageData="@Worker.LastImage" />
+                <WorkerImageComponent @key="@( $"WorkerImageComponent-{EngineId}-{Worker.WorkerId}" )" WorkerId="@Worker.WorkerId" EngineId="@EngineId" InitialImageData="@Worker.LastImage" />
             </div>
         </div>
     </div>
 
     <!-- TabPanel placeret i bunden og fylder hele bredden -->
     <div class="mt-4">
-        <TabPanelComponent EngineId="@EngineId" Worker="Worker" />
+        <TabPanelComponent @key="@( $"WorkerTabpanelComponent-{EngineId}-{Worker.WorkerId}" )" EngineId="@EngineId" Worker="Worker" />
     </div>
 </div>
 @code {
@@ -40,5 +41,11 @@
         string workerEventTopic = $"WorkerEvent-{EngineId}-{Worker.WorkerId}";
         SignalRService.HubConnection.On<WorkerEvent>(workerEventTopic, async (_) => { await InvokeAsync(StateHasChanged); });
         return Task.CompletedTask;
+    }
+    
+    protected override async Task OnParametersSetAsync()
+    {
+        Console.WriteLine($"-----OnParametersSetAsync: Worker state updated for {EngineId}");
+        await base.OnParametersSetAsync();
     }
 }

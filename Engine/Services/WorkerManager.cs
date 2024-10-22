@@ -88,48 +88,7 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
         await SendWorkerEvent(workerCreate.WorkerId, WorkerEventType.Created);
         return workerService;
     }
-
-    public WorkerService AddWorker(WorkerCreate workerCreate)
-    {
-        Log.Information($"Adding worker... {workerCreate.Name}");
-        IWorkerRepository workerRepository = repositoryFactory.CreateWorkerRepository();
-
-        // Tjek, om WorkerId allerede findes i databasen
-        var existingWorker = workerRepository.GetWorkerByIdAsync(workerCreate.WorkerId).Result;
-
-        // Hvis arbejderen allerede findes i databasen
-        if (existingWorker != null)
-        {
-            Log.Warning($"Worker with ID {workerCreate.WorkerId} already exists in database.");
-            // Tjek om arbejderen også findes i _workers, ellers opret ny WorkerService for den
-            return GetOrCreateWorkerService(workerCreate, new FakeStreamerRunner());
-        }
-
-        // Hvis arbejderen ikke findes, opret en ny i databasen og i _workers
-        IStreamerRunner streamerRunner = new FakeStreamerRunner();
-        var workerId = workerCreate.WorkerId ?? Guid.NewGuid().ToString();
-        workerCreate.WorkerId = workerId;
-
-        var worker = GetOrCreateWorkerService(workerCreate, streamerRunner);
-
-        Console.WriteLine($"Adding worker to database.. {workerCreate.WorkerId}");
-
-        var workerEntity = new WorkerEntity
-        {
-            WorkerId = workerCreate.WorkerId,
-            Name = workerCreate.Name,
-            Description = workerCreate.Description,
-            Command = workerCreate.Command,
-            IsEnabled = true,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        };
-
-        workerRepository.AddWorkerAsync(workerEntity).Wait(); // Synchronous call for simplicity, async is preferred
-
-        return worker;
-    }
-
+    
     private WorkerService GetOrCreateWorkerService(WorkerCreate workerCreate, IStreamerRunner streamerRunner)
     {
         // Hvis arbejderen allerede findes i databasen og i _workers, returner den eksisterende service
@@ -251,28 +210,28 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
         }
 
         // Tjek om der er ændringer i Name, Description eller Command
-        var isModified = false;
+        string isModified = "";
 
         if (workerEntity.Name != newName)
         {
             workerEntity.Name = newName;
-            isModified = true;
+            isModified = "New Name";
         }
 
         if (workerEntity.Description != newDescription)
         {
             workerEntity.Description = newDescription;
-            isModified = true;
+            isModified = "New Description";
         }
 
         var commandChanged = workerEntity.Command != newCommand;
         if (commandChanged)
         {
             workerEntity.Command = newCommand;
-            isModified = true;
+            isModified = "New Command";
         }
 
-        if (!isModified)
+        if (string.IsNullOrEmpty(isModified))
         {
             Log.Information($"No changes detected for worker {workerId}.");
             return new CommandResult(true, "No changes detected");
@@ -305,7 +264,7 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
         await SendWorkerEvent(workerId, WorkerEventType.Updated);
 
         Log.Information($"Worker {workerId} updated successfully.");
-        return new CommandResult(true, "Worker updated successfully");
+        return new CommandResult(true, $"Worker updated successfully: {isModified}");
     }
 
 

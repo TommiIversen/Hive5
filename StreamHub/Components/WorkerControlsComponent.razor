@@ -34,7 +34,7 @@
 
     @if (!string.IsNullOrEmpty(Worker.OperationResult))
     {
-    <div class="mt-2 text-green-500">@Worker.OperationResult</div>
+        <div class="mt-2 text-green-500">@Worker.OperationResult</div>
     }
 </div>
 
@@ -42,26 +42,34 @@
     [Parameter] public Guid EngineId { get; set; }
     [Parameter] public required string WorkerId { get; init; }
     [Parameter] public required WorkerViewModel Worker { get; set; }
-    
-    
-    protected override Task OnInitializedAsync()
+
+    private bool _firstRender = true;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        Console.WriteLine("WorkerControlsComponent Initialized");
-        string workerEventTopic = $"WorkerEvent-{EngineId}-{Worker.WorkerId}";
-        SignalRService.HubConnection.On<WorkerEvent>(workerEventTopic, async (workerEvent) => 
-        { 
-            Console.WriteLine($"WorkerEvent workercontrol received: workerEventTopic: {workerEventTopic}");
-            await Task.Delay(10); // Giver systemet tid til at synkronisere Worker.IsProcessing
-            await InvokeAsync(StateHasChanged); 
-        });
-        
-        return Task.CompletedTask;
+        if (firstRender)
+        {
+            Console.WriteLine("First render complete, now you can update the component if necessary.");
+            StateHasChanged();
+        }
+        else
+        {
+            Console.WriteLine("OnAfterRenderAsync: DOM opdateret for worker " + WorkerId);
+        }
+
+        await base.OnAfterRenderAsync(firstRender);
     }
-    
+
+    protected override async Task OnParametersSetAsync()
+    {
+        Console.WriteLine($"OnParametersSetAsync: Worker state updated for {WorkerId}");
+        await base.OnParametersSetAsync();
+    }
+
     private string GetButtonCss()
     {
         return Worker.IsProcessing ? "bg-gray-400 text-gray-700 cursor-not-allowed"
-            : Worker.Worker != null && Worker.Worker.State == WorkerState.Running ? "bg-red-500 text-white hover:bg-red-700"
+            : Worker.Worker.State == WorkerState.Running ? "bg-red-500 text-white hover:bg-red-700"
             : "bg-green-500 text-white hover:bg-green-700";
     }
 
@@ -88,17 +96,18 @@
         Console.WriteLine($"Reset Watchdog Count Result: {resultMessage.Message}");
         await InvokeAsync(StateHasChanged);
     }
-    
+
     private async Task ToggleEnableDisableWorker(Guid engineId, string workerId, bool isEnabled)
     {
         var resultMessage = await WorkerService.EnableDisableWorkerAsync(engineId, workerId, !isEnabled);
         Console.WriteLine($"Enable/Disable Result: {resultMessage.Message}");
         await InvokeAsync(StateHasChanged);
     }
-    
+
     public void Dispose()
     {
         Console.WriteLine("Disposing WorkerControlsComponent");
         SignalRService.HubConnection.Remove("WorkerEvent");
     }
+
 }

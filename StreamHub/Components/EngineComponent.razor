@@ -1,5 +1,4 @@
-﻿@using Common.Models
-@using Microsoft.AspNetCore.SignalR.Client
+﻿@using Microsoft.AspNetCore.SignalR.Client
 @using StreamHub.Models
 @using StreamHub.Services
 @inject EngineManager EngineManager
@@ -25,7 +24,6 @@
         <EngineConnectionInfoComponent Engine="@Engine"/>
         <MetricExpandPanelComponent EngineId="@Engine.BaseInfo.EngineId" />
         <EngineCreateWorker EngineId="@Engine.BaseInfo.EngineId"/>
-
         <MetricLineChartComponent Engine="@Engine"/>
         <MetricCpuUsageBarChart EngineId="@Engine.BaseInfo.EngineId"/>
     </div>
@@ -51,6 +49,8 @@
     [Parameter]
     public required EngineViewModel Engine { get; set; }
 
+    
+    
     private async Task RemoveEngine(Guid engineId)
     {
         await SignalRService.HubConnection.SendAsync("RemoveEngine", engineId);

@@ -20,10 +20,15 @@
         _workerName = Worker.Worker.Name;
         _workerDescription = Worker.Worker.Description;
         _workerCommand = Worker.Worker.Command;
-        SignalRService.HubConnection.On<WorkerEvent>("WorkerEvent", async (_) =>
-        {
-            await InvokeAsync(StateHasChanged);
-        });
+       
+        string workerEventTopic = $"WorkerEvent-{EngineId}-{Worker.WorkerId}";
+        SignalRService.HubConnection.On<WorkerEvent>(workerEventTopic, async (_) => { await InvokeAsync(StateHasChanged); });
+    }
+    
+    protected override async Task OnParametersSetAsync()
+    {
+        Console.WriteLine($"-----OnParametersSetAsync: Worker state updated for {EngineId}");
+        await base.OnParametersSetAsync();
     }
     
     private string GetButtonCss()
@@ -47,13 +52,6 @@
 
         // Kald EditWorkerAsync metoden for at gemme ændringerne
         var result = await WorkerService.EditWorkerAsync(editWorker);
-        if (result.Success)
-        {
-            // Opdater originalen med de nye værdier hvis det er nødvendigt
-            Worker.Worker.Name = _workerName;
-            Worker.Worker.Description = _workerDescription;
-            Worker.Worker.Command = _workerCommand;
-        }
     }
 }
 

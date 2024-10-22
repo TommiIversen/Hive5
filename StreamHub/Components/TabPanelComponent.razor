@@ -27,21 +27,21 @@
     @if (_tabs["Edit"])
     {
         <div class="px-2 mb-2">
-            <WorkerEditComponent EngineId="@EngineId"  Worker="@Worker"/>
+            <WorkerEditComponent @key="@( $"WorkerEditComponent-{EngineId}-{Worker.WorkerId}" )" EngineId="@EngineId"  Worker="@Worker"/>
         </div>
     }
 
     @if (_tabs["Log"])
     {
         <div class="px-2 mb-2">
-            <WorkerLog LogMessages="Worker.LogMessages" WorkerId="@Worker.WorkerId" EngineId="@EngineId.ToString()"/>
+            <WorkerLog @key="@( $"WorkerLoggerComponent-{EngineId}-{Worker.WorkerId}" )" LogMessages="Worker.LogMessages" WorkerId="@Worker.WorkerId" EngineId="@EngineId.ToString()"/>
         </div>
     }
 
     @if (_tabs["Control"])
     {
         <div class="px-2 mb-2">
-            <WorkerControlsComponent @key="@(EngineId + Worker.WorkerId)" WorkerId="@Worker.WorkerId" EngineId="@EngineId" Worker="Worker"/>
+            <WorkerControlsComponent @key="@( $"WorkerControlsComponent-{EngineId}-{Worker.WorkerId}" )" WorkerId="@Worker.WorkerId" EngineId="@EngineId" Worker="Worker"></WorkerControlsComponent>
         </div>
     }
 
@@ -66,6 +66,12 @@
         {"Restarter", false}
     };
 
+    protected override async Task OnParametersSetAsync()
+    {
+        Console.WriteLine($"OnParametersSetAsync: Worker state updated for {EngineId}");
+        await base.OnParametersSetAsync();
+    }
+    
     private void ToggleTab(string tabName)
     {
         _tabs[tabName] = !_tabs[tabName];

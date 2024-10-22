@@ -4,27 +4,18 @@ using StreamHub.Hubs;
 
 namespace StreamHub.Services;
 
-public class WorkerService
+public class WorkerService(
+    IHubContext<EngineHub> hubContext,
+    EngineManager engineManager,
+    CancellationService cancellationService)
 {
-    private readonly IHubContext<EngineHub> _hubContext;
-    private readonly EngineManager _engineManager;
-    private readonly CancellationService _cancellationService;
-
-    public WorkerService(IHubContext<EngineHub> hubContext, EngineManager engineManager,
-        CancellationService cancellationService)
-    {
-        _hubContext = hubContext;
-        _engineManager = engineManager;
-        _cancellationService = cancellationService;
-    }
-
     private async Task<CommandResult> HandleWorkerOperationWithDataAsync(string operation, WorkerOperationMessage data,
         int timeoutMilliseconds = 5000, bool setProcessing = true)
     {
-        CommandResult result = new CommandResult(false, "Unknown error.");
+        CommandResult result;
         var msg = "";
 
-        if (!_engineManager.TryGetEngine(data.EngineId, out var engine))
+        if (!engineManager.TryGetEngine(data.EngineId, out var engine))
         {
             msg = $"{operation}: Engine {data.EngineId} not found";
             Console.WriteLine(msg);
@@ -38,28 +29,28 @@ public class WorkerService
             return new CommandResult(false, msg);
         }
 
-        var worker = _engineManager.GetWorker(data.EngineId, data.WorkerId);
+        var worker = engineManager.GetWorker(data.EngineId, data.WorkerId);
 
-        if (worker == null && setProcessing)
+        if (worker == null)
         {
             msg = $"{operation}: Worker {data.WorkerId} not found";
             Console.WriteLine(msg);
             return new CommandResult(false, msg);
         }
 
-        if (setProcessing && worker != null)
+        if (setProcessing)
         {
             worker.IsProcessing = true;
         }
 
         using var timeoutCts = new CancellationTokenSource(timeoutMilliseconds);
         using var linkedCts =
-            CancellationTokenSource.CreateLinkedTokenSource(_cancellationService.Token, timeoutCts.Token);
+            CancellationTokenSource.CreateLinkedTokenSource(cancellationService.Token, timeoutCts.Token);
 
         try
         {
             Console.WriteLine($"Forwarding {operation} request with data on engine {data.EngineId}");
-            result = await _hubContext.Clients.Client(engine.ConnectionId)
+            result = await hubContext.Clients.Client(engine.ConnectionId)
                 .InvokeAsync<CommandResult>(operation, data, linkedCts.Token);
 
             msg = $"{result.Message} Time: {DateTime.Now}";
@@ -77,13 +68,12 @@ public class WorkerService
         finally
         {
             Console.WriteLine(msg);
-            if (setProcessing && worker != null)
+            if (setProcessing)
             {
                 worker.OperationResult = msg;
                 worker.IsProcessing = false;
             }
         }
-
         return result;
     }
 
@@ -153,7 +143,7 @@ public class WorkerService
             EngineId = engineId,
             Enable = enable
         };
-
+        
         return await HandleWorkerOperationWithDataAsync("EnableDisableWorker", message);
     }
 }
