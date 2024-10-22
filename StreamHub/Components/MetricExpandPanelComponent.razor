@@ -73,8 +73,8 @@
     [Parameter] public required Guid EngineId { get; init; }
 
     protected override async Task OnInitializedAsync()
-    {
-        SignalRService.HubConnection.On<Metric>("UpdateMetric", async (metric) =>
+    {        
+        SignalRService.HubConnection.On<Metric>($"UpdateMetric-{EngineId}", async (metric) =>
         {
             if (metric.EngineId == EngineId)
             {
