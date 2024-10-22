@@ -83,10 +83,10 @@ public class EngineHub(
     {
         if (engineManager.TryGetEngine(metric.EngineId, out var engine))
         {
-            engine.AddMetric(metric);
+            engine?.AddMetric(metric);
             
             // first metric ?
-            if (engine.LastMetric == null)
+            if (engine?.LastMetric == null)
             {
                 await hubContext.Clients.Group("frontendClients").SendAsync("EngineChange", cancellationService.Token);
             }
@@ -107,7 +107,7 @@ public class EngineHub(
             // For debugging msg sequence + delay in the system
             //TimeSpan delay = DateTime.UtcNow - logMessage.Timestamp;
             //Console.WriteLine($"Time delay: {delay.TotalMilliseconds} Milliseconds - {logMessage.Timestamp} - {DateTime.UtcNow} - {logMessage.LogSequenceNumber}");
-            var wasAdded = engine.AddWorkerLog(logMessage.WorkerId, logMessage);
+            var wasAdded = engine != null && engine.AddWorkerLog(logMessage.WorkerId, logMessage);
 
             if (wasAdded)
             {

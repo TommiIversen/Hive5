@@ -1,5 +1,4 @@
-﻿@using Common.Models
-@using Microsoft.AspNetCore.SignalR.Client
+﻿@using Microsoft.AspNetCore.SignalR.Client
 @using StreamHub.Models
 @using StreamHub.Services
 @inject BlazorSignalRService SignalRService
@@ -24,12 +23,11 @@
         </button>
     </div>
 
-    @if (_tabs["Edit"])
-    {
+
         <div class="px-2 mb-2">
             <WorkerEditComponent @key="@( $"WorkerEditComponent-{EngineId}-{Worker.WorkerId}" )" EngineId="@EngineId"  Worker="@Worker"/>
         </div>
-    }
+    
 
     @if (_tabs["Log"])
     {
@@ -38,25 +36,18 @@
         </div>
     }
 
-    @if (_tabs["Control"])
-    {
+
         <div class="px-2 mb-2">
             <WorkerControlsComponent @key="@( $"WorkerControlsComponent-{EngineId}-{Worker.WorkerId}" )" WorkerId="@Worker.WorkerId" EngineId="@EngineId" Worker="Worker"></WorkerControlsComponent>
         </div>
-    }
-
-    @if (_tabs["Restarter"])
-    {
-        <div class="px-2 mb-2">
-            <FakeComponent2/>
-        </div>
-    }
-
+    
+    
 </div>
 
 @code {
     [Parameter] public Guid EngineId { get; set; }
-    [Parameter] public required WorkerViewModel Worker { get; set; }
+    [Parameter] public required WorkerViewModel Worker { get; init; }
+
 
     private Dictionary<string, bool> _tabs = new()
     {
@@ -65,12 +56,6 @@
         {"Control", false},
         {"Restarter", false}
     };
-
-    protected override async Task OnParametersSetAsync()
-    {
-        Console.WriteLine($"OnParametersSetAsync: Worker state updated for {EngineId}");
-        await base.OnParametersSetAsync();
-    }
     
     private void ToggleTab(string tabName)
     {
@@ -91,4 +76,12 @@
     private string GetTabIconRotation(bool isActive) =>
         isActive ? "transform rotate-180" : "";
 
+    protected override Task OnInitializedAsync()
+    {
+        SignalRService.HubConnection.On<object>($"WorkerLockEvent-{EngineId}-{Worker.WorkerId}", async (_) => 
+        {
+            await InvokeAsync(StateHasChanged);
+        });
+        return Task.CompletedTask;
+    }
 }

@@ -14,7 +14,7 @@ public class WorkerService(
     {
         CommandResult result;
         var msg = "";
-
+        Console.WriteLine("Start of serverWorkerService: " + operation);
         if (!engineManager.TryGetEngine(data.EngineId, out var engine))
         {
             msg = $"{operation}: Engine {data.EngineId} not found";
@@ -22,7 +22,7 @@ public class WorkerService(
             return new CommandResult(false, msg);
         }
 
-        if (engine.ConnectionId == null)
+        if (engine?.ConnectionId == null)
         {
             msg = $"{operation}: Engine {data.EngineId} not connected";
             Console.WriteLine(msg);
@@ -72,8 +72,16 @@ public class WorkerService(
             {
                 worker.OperationResult = msg;
                 worker.IsProcessing = false;
+                
+                // Send nu SignalR-besked for at opdatere UI efter state er sat korrekt
+                await hubContext.Clients.Group("frontendClients")
+                    .SendAsync($"WorkerLockEvent-{data.EngineId}-{data.WorkerId}", new { worker.IsProcessing, msg });
             }
         }
+
+        Console.WriteLine("End of serverWorkerService: " + msg);
+        Console.WriteLine(worker.IsProcessing);
+        Console.WriteLine(worker.OperationResult);
         return result;
     }
 
@@ -131,6 +139,7 @@ public class WorkerService(
 
     public async Task<CommandResult> EditWorkerAsync(WorkerCreate workerCreate)
     {
+        
         return await HandleWorkerOperationWithDataAsync("EditWorker", workerCreate, setProcessing: true);
     }
 

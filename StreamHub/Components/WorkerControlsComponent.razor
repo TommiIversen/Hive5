@@ -1,6 +1,5 @@
 ﻿@using Common.Models
 @using Engine.Utils
-@using Microsoft.AspNetCore.SignalR.Client
 @using StreamHub.Models
 @using StreamHub.Services
 @inject EngineManager EngineManager
@@ -41,28 +40,10 @@
 @code {
     [Parameter] public Guid EngineId { get; set; }
     [Parameter] public required string WorkerId { get; init; }
-    [Parameter] public required WorkerViewModel Worker { get; set; }
-    
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender)
-        {
-            Console.WriteLine("First render complete, now you can update the component if necessary.");
-            StateHasChanged();
-        }
-        else
-        {
-            Console.WriteLine("OnAfterRenderAsync: DOM opdateret for worker " + WorkerId);
-        }
+    [Parameter] public required WorkerViewModel Worker { get; init; }
 
-        await base.OnAfterRenderAsync(firstRender);
-    }
 
-    protected override async Task OnParametersSetAsync()
-    {
-        Console.WriteLine($"OnParametersSetAsync: Worker state updated for {WorkerId}");
-        await base.OnParametersSetAsync();
-    }
+
 
     private string GetButtonCss()
     {

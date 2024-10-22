@@ -34,7 +34,7 @@
 </div>
 @code {
     [Parameter] public Guid EngineId { get; set; }
-    [Parameter] public required WorkerViewModel Worker { get; set; }
+    [Parameter] public required WorkerViewModel Worker { get; init; }
 
     protected override Task OnInitializedAsync()
     {
@@ -45,7 +45,6 @@
     
     protected override async Task OnParametersSetAsync()
     {
-        Console.WriteLine($"-----OnParametersSetAsync: Worker state updated for {EngineId}");
         await base.OnParametersSetAsync();
     }
 }

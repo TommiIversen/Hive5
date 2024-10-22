@@ -1,4 +1,4 @@
-﻿namespace Engine.Utils;
+﻿namespace Common.Models;
 
 public enum WorkerState
 {

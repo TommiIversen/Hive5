@@ -1,6 +1,4 @@
-﻿// Models/Metric.cs
-
-namespace Common.Models;
+﻿namespace Common.Models;
 
 public class Metric : BaseMessage
 {
