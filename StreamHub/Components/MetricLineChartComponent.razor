@@ -7,7 +7,6 @@
 @implements IDisposable
 
 
-
 <canvas id="@GetCanvasId()" width="400" height="200"></canvas>
 
 
@@ -21,11 +20,10 @@
     private double[] _cpuUsage = new double[30];
     private double[] _netRx = new double[30];
     private double[] _netTx = new double[30];
-    
+
     protected override async Task OnInitializedAsync()
     {
-        Console.WriteLine($"Initializing Historic Line chart for engine {Engine.BaseInfo.EngineName}");
-        SignalRService.HubConnection.On<Metric>("UpdateMetric", async (metric) =>
+        SignalRService.HubConnection.On<Metric>($"UpdateMetric-{Engine.BaseInfo.EngineId}", async (metric) =>
         {
             if (metric.EngineId == Engine.BaseInfo.EngineId)
             {
@@ -38,16 +36,13 @@
     public void Dispose()
     {
         Console.WriteLine($"Disposing Historic Line chart for engine {Engine.BaseInfo.EngineId}");
-        //SignalRService.HubConnection.Remove("UpdateMetric");
     }
-    
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
             Console.WriteLine($"First LineGraph render for engine {Engine.BaseInfo.EngineName}");
-
-            // Initialiser grafen med data fra MetricsQueue
             var initialMetrics = Engine.MetricsQueue.ToList(); // Konverter til liste for at sikre korrekt rækkefølge
 
             var initialData = new
@@ -58,19 +53,18 @@
                 txData = initialMetrics.Select(m => m.TxUsagePercent).ToArray(),
                 metricData = initialMetrics.ToArray() // Inkluder hele MetricData for tooltips
             };
-
             _chart = await JsRuntime.InvokeAsync<IJSObjectReference>("chartInterop.createLineChart", GetCanvasId(), initialData);
         }
     }
-    
+
     private async Task UpdateChartData(MetricSimpleViewModel newMetricData)
     {
-        if (_chart != null) // Sørg for, at grafen er initialiseret
+        if (_chart != null)
         {
             var serializedData = System.Text.Json.JsonSerializer.Serialize(newMetricData);
             await JsRuntime.InvokeVoidAsync("chartInterop.updateLineChart", _chart, serializedData);
         }
     }
-    
+
     private string GetCanvasId() => $"cpuChart-{Engine.BaseInfo.EngineId}";
 }

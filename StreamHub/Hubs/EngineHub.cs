@@ -91,7 +91,7 @@ public class EngineHub(
                 await hubContext.Clients.Group("frontendClients").SendAsync("EngineChange", cancellationService.Token);
             }
             
-            await hubContext.Clients.All.SendAsync("UpdateMetric", metric, cancellationService.Token);
+            await hubContext.Clients.All.SendAsync($"UpdateMetric-{metric.EngineId}", metric, cancellationService.Token);
         }
         else
         {
