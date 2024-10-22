@@ -14,7 +14,6 @@ public class WorkerService(
     {
         CommandResult result;
         var msg = "";
-        Console.WriteLine("Start of serverWorkerService: " + operation);
         if (!engineManager.TryGetEngine(data.EngineId, out var engine))
         {
             msg = $"{operation}: Engine {data.EngineId} not found";
@@ -78,10 +77,6 @@ public class WorkerService(
                     .SendAsync($"WorkerLockEvent-{data.EngineId}-{data.WorkerId}", new { worker.IsProcessing, msg });
             }
         }
-
-        Console.WriteLine("End of serverWorkerService: " + msg);
-        Console.WriteLine(worker.IsProcessing);
-        Console.WriteLine(worker.OperationResult);
         return result;
     }
 

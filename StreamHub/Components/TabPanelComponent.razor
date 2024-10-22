@@ -23,11 +23,12 @@
         </button>
     </div>
 
-
+    @if (_tabs["Edit"])
+    {
         <div class="px-2 mb-2">
             <WorkerEditComponent @key="@( $"WorkerEditComponent-{EngineId}-{Worker.WorkerId}" )" EngineId="@EngineId"  Worker="@Worker"/>
         </div>
-    
+    }
 
     @if (_tabs["Log"])
     {
@@ -36,12 +37,20 @@
         </div>
     }
 
-
+    @if (_tabs["Control"])
+    {
         <div class="px-2 mb-2">
             <WorkerControlsComponent @key="@( $"WorkerControlsComponent-{EngineId}-{Worker.WorkerId}" )" WorkerId="@Worker.WorkerId" EngineId="@EngineId" Worker="Worker"></WorkerControlsComponent>
         </div>
-    
-    
+    }
+
+    @if (_tabs["Restarter"])
+    {
+        <div class="px-2 mb-2">
+            <FakeComponent2/>
+        </div>
+    }
+
 </div>
 
 @code {
