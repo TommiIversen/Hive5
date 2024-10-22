@@ -42,9 +42,7 @@
     [Parameter] public Guid EngineId { get; set; }
     [Parameter] public required string WorkerId { get; init; }
     [Parameter] public required WorkerViewModel Worker { get; set; }
-
-    private bool _firstRender = true;
-
+    
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)

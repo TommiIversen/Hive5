@@ -10,7 +10,7 @@ public class EngineManager
 
     public EngineViewModel GetOrAddEngine(EngineBaseInfo baseInfo)
     {
-        return _engines.GetOrAdd(baseInfo.EngineId, id => new EngineViewModel { BaseInfo = baseInfo });
+        return _engines.GetOrAdd(baseInfo.EngineId, _ => new EngineViewModel { BaseInfo = baseInfo });
     }
 
     public void AddOrUpdateWorker(WorkerOut workerOut)
@@ -19,43 +19,54 @@ public class EngineManager
         {
             if (engine.Workers.TryGetValue(workerOut.WorkerId, out var workerViewModel))
             {
-                if (workerViewModel.EventProcessedTimestamp >= workerOut.Timestamp)
+                if (IsOutdatedEvent(workerViewModel, workerOut))
                 {
-                    // Anvender Message Filter til at sammenligne indkommende beskeds timestamp 
-                    // med den sidst behandlede event for at implementere en Idempotent Receiver, 
-                    // som forhindrer behandling af forældede eller duplikerede beskeder.
                     Console.WriteLine($"Skipping outdated event for worker {workerOut.WorkerId} - {workerOut.Name}");
-                    Console.WriteLine(
-                        $"EventProcessedTimestamp: {workerViewModel.EventProcessedTimestamp} VS workerOut.Timestamp:  {workerOut.Timestamp}");
-                    return; // Hvis eventet er ældre eller lig med den nuværende tilstand, gør ingenting
+                    return;
                 }
 
-                // Update the existing worker
-                workerViewModel.Worker = workerOut;
-                workerViewModel.EventProcessedTimestamp = workerOut.Timestamp; // Opdater tidsstemplet
+                UpdateExistingWorker(workerViewModel, workerOut);
             }
             else
             {
-                engine.Workers[workerOut.WorkerId] = new WorkerViewModel
-                {
-                    WorkerId = workerOut.WorkerId,
-                    Worker = workerOut,
-                    EventProcessedTimestamp = workerOut.Timestamp
-                };
+                AddNewWorker(engine, workerOut);
             }
         }
         else
         {
-            // Handle the case where the engine does not exist
             Console.WriteLine($"Engine {workerOut.EngineId} not found. Cannot add or update worker.");
         }
     }
 
+    private bool IsOutdatedEvent(WorkerViewModel workerViewModel, WorkerOut workerOut)
+    {
+        return workerViewModel.EventProcessedTimestamp >= workerOut.Timestamp;
+    }
 
-    public bool TryGetEngine(Guid engineId, out EngineViewModel engineInfo)
+    private void UpdateExistingWorker(WorkerViewModel workerViewModel, WorkerOut workerOut)
+    {
+        workerViewModel.Worker = workerOut;
+        workerViewModel.EventProcessedTimestamp = workerOut.Timestamp; // Opdater tidsstemplet
+        Console.WriteLine($"Worker {workerOut.WorkerId} updated.");
+    }
+
+    private void AddNewWorker(EngineViewModel engine, WorkerOut workerOut)
+    {
+        engine.Workers[workerOut.WorkerId] = new WorkerViewModel
+        {
+            WorkerId = workerOut.WorkerId,
+            Worker = workerOut,
+            EventProcessedTimestamp = workerOut.Timestamp
+        };
+        Console.WriteLine($"Worker {workerOut.WorkerId} added.");
+    }
+
+    
+    public bool TryGetEngine(Guid engineId, out EngineViewModel? engineInfo)
     {
         return _engines.TryGetValue(engineId, out engineInfo);
     }
+
 
 
     public bool RemoveConnection(string connectionId)

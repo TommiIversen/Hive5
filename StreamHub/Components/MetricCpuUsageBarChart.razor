@@ -13,7 +13,7 @@
     private IJSObjectReference? _chart;
     private readonly List<string> _coreNames = new();
 
-    protected override async Task OnInitializedAsync()
+    protected override Task OnInitializedAsync()
     {
         SignalRService.HubConnection.On<Metric>($"UpdateMetric-{EngineId}", async (metric) =>
         {
@@ -30,6 +30,7 @@
                 _chart = await JsRuntime.InvokeAsync<IJSObjectReference>("barChartInterop.createBarChart", GetCanvasId(), _coreNames, metric.PerCoreCpuUsage);
             }
         });
+        return Task.CompletedTask;
     }
 
     public void Dispose()

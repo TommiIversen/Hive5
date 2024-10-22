@@ -194,8 +194,8 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
         return new CommandResult(true, $"Worker {workerId} {(enable ? "enabled" : "disabled")} successfully");
     }
 
-    public async Task<CommandResult> EditWorkerAsync(string workerId, string newName, string newDescription,
-        string newCommand)
+    public async Task<CommandResult> EditWorkerAsync(string workerId, string? newName, string? newDescription,
+        string? newCommand)
     {
         Log.Information($"Editing worker: {workerId}");
 
@@ -237,10 +237,8 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
             return new CommandResult(true, "No changes detected");
         }
 
-        // Opdater opdateringstidspunktet
         workerEntity.UpdatedAt = DateTime.UtcNow;
 
-        // Opdater arbejderen i databasen
         await workerRepository.UpdateWorkerAsync(workerEntity);
 
         // Hvis kommandoen er ændret, genstart arbejderen med den nye kommando

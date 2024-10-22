@@ -72,8 +72,8 @@
     private Metric? Metric { get; set; }
     [Parameter] public required Guid EngineId { get; init; }
 
-    protected override async Task OnInitializedAsync()
-    {        
+    protected override Task OnInitializedAsync()
+    {
         SignalRService.HubConnection.On<Metric>($"UpdateMetric-{EngineId}", async (metric) =>
         {
             if (metric.EngineId == EngineId)
@@ -82,6 +82,7 @@
                 await InvokeAsync(StateHasChanged);
             }
         });
+        return Task.CompletedTask;
     }
 
     private string TruncateText(string text, int maxLength)

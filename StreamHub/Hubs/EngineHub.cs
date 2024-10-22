@@ -142,9 +142,10 @@ public class EngineHub(
     }
 
     // SignalR unhandlede message fra klient microservice
-    public async Task ReceiveDeadLetter(object deadLetter)
+    public Task ReceiveDeadLetter(object deadLetter)
     {
         Console.WriteLine($"Dead letter received: {deadLetter}");
+        return Task.CompletedTask;
     }
 
     // Invoke SignalR fra blazor frontend

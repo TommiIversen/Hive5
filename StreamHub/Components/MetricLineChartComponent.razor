@@ -14,8 +14,6 @@
     [Parameter] public required EngineViewModel Engine { get; set; } // Modtag hele EngineViewModel som parameter
 
     private IJSObjectReference? _chart;
-    private bool _hasUpdatedState = false; // Flag for at sikre, at StateHasChanged kun kaldes én gang
-
     private long[] _timePoints = new long[30];
     private double[] _cpuUsage = new double[30];
     private double[] _netRx = new double[30];

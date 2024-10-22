@@ -10,9 +10,9 @@
     [Parameter] public Guid EngineId { get; set; }
     [Parameter] public required WorkerViewModel Worker { get; set; }
 
-    private string _workerName;
-    private string _workerDescription;
-    private string _workerCommand;
+    private string? _workerName;
+    private string? _workerDescription;
+    private string? _workerCommand;
 
     protected override void OnInitialized()
     {
