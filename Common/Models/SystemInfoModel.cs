@@ -1,6 +1,6 @@
 ﻿namespace Common.Models;
 
-public class SystemInfoModel
+public class SystemInfoModel: BaseMessage
 {
     public required string OsName { get; set; }
     public string OSVersion { get; set; }
