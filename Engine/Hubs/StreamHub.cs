@@ -31,24 +31,22 @@ public class StreamHub
         ILogger<StreamHub> logger,
         ILoggerFactory loggerFactory,
         WorkerManager workerManager,
-        IEngineService engineService,
-        IOptions<StreamHubOptions> options)
+        IEngineService engineService)
     {
         _logger = logger;
         _globalMessageQueue = globalMessageQueue;
         _workerManager = workerManager;
         _engineService = engineService;
-        var hubUrls = options.Value.HubUrls;
-        var maxQueueSize = options.Value.MaxQueueSize;
+        var maxQueueSize = 20;
 
         _engineInfo = GetEngineInfo();
         
-        foreach (var url in hubUrls)
+        foreach (var hubUrl in _engineInfo.HubUrls.Select(h => h.HubUrl))
         {
             try
             {
                 var hubConnection = new HubConnectionBuilder()
-                    .WithUrl($"{url}?clientType=backend", connectionOptions =>
+                    .WithUrl($"{hubUrl}?clientType=backend", connectionOptions =>
                     {
                         connectionOptions.Transports = HttpTransportType.WebSockets; // Kun WebSockets
                     })
@@ -130,25 +128,25 @@ public class StreamHub
                 
                 hubConnection.Reconnected += async (_) =>
                 {
-                    logger.LogInformation("hubConnection:: Reconnected to streamhub {url} - {ConnectionId}", url,
+                    logger.LogInformation("hubConnection:: Reconnected to streamhub {url} - {ConnectionId}", hubUrl,
                         hubConnection.ConnectionId);
-                    await SendEngineConnectedAsync(hubConnection, url);
+                    await SendEngineConnectedAsync(hubConnection, hubUrl);
                 };
 
                 hubConnection.Closed += async (error) =>
                 {
                     logger.LogWarning("Connection closed: {Error}", error?.Message);
                     await Task.Delay(5000); // Vent før næste forsøg
-                    await TryReconnect(hubConnection, url, _cancellationTokenSource.Token);
+                    await TryReconnect(hubConnection, hubUrl, _cancellationTokenSource.Token);
                 };
 
                 _hubConnectionMessageQueue[hubConnection] =
                     new MultiQueue(loggerFactory.CreateLogger<MultiQueue>(), maxQueueSize);
-                _ = Task.Run(async () => await TryReconnect(hubConnection, url, _cancellationTokenSource.Token));
+                _ = Task.Run(async () => await TryReconnect(hubConnection, hubUrl, _cancellationTokenSource.Token));
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Failed to connect to {Url}", url);
+                logger.LogError(ex, "Failed to connect to {Url}", hubUrl);
             }
         }
 
@@ -207,7 +205,13 @@ public class StreamHub
             EngineDescription = _engineInfo.Description,
             Version = _engineInfo.Version,
             InstallDate = _engineInfo.InstallDate,
-            EngineStartDate = _initDateTime
+            EngineStartDate = _initDateTime,
+            HubUrls = _engineInfo.HubUrls.Select(h => new HubUrlInfo
+            {
+                Id = h.Id,
+                HubUrl = h.HubUrl,
+                ApiKey = h.ApiKey
+            }).ToList()
         };
 
         // Brug bool resultatet for at afgøre, hvad der skal ske

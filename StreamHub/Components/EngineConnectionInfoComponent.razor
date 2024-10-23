@@ -1,54 +1,102 @@
-﻿@using StreamHub.Models
-@code {
-    [Parameter]
-    public required EngineViewModel Engine { get; set; }
-}
-
+﻿@using Common.Models
+@using StreamHub.Models
 <ExpandablePanel Title="Engine Info">
+    <div class="p-2 space-y1 rounded-lg">
+        <ul>
+            <li class="flex justify-between">
+                <span class="font-semibold">IP Address:</span>
+                <span>@(string.IsNullOrEmpty(Engine.IpAddress) ? "N/A" : Engine.IpAddress)</span>
+            </li>
+            <li class="flex justify-between">
+                <span class="font-semibold">Port:</span>
+                <span>@(Engine.Port.HasValue ? Engine.Port.Value.ToString() : "N/A")</span>
+            </li>
+            <li class="flex justify-between">
+                <span class="font-semibold">Transport Type:</span>
+                <span>@(string.IsNullOrEmpty(Engine.TransportType) ? "N/A" : Engine.TransportType)</span>
+            </li>
+            <li class="flex justify-between">
+                <span class="font-semibold">Online Since:</span>
+                <span>@(Engine.OnlineSince.HasValue ? Engine.OnlineSince.Value.ToString("g") : "N/A")</span>
+            </li>
+            <li class="flex justify-between">
+                <span class="font-semibold">Uptime:</span>
+                <span>@(Engine.Uptime.HasValue ? Engine.Uptime.Value.ToString(@"dd\.hh\:mm\:ss") : "N/A")</span>
+            </li>
+            <li class="flex justify-between">
+                <span class="font-semibold">EngineId:</span>
+                <span>@Engine.BaseInfo.EngineId</span>
+            </li>
 
-        <div class="p-2 space-y1 rounded-lg">
-            <ul>
-                <li class="flex justify-between">
-                    <span class="font-semibold">IP Address:</span>
-                    <span>@(string.IsNullOrEmpty(Engine.IpAddress) ? "N/A" : Engine.IpAddress)</span>
-                </li>
-                <li class="flex justify-between">
-                    <span class="font-semibold">Port:</span>
-                    <span>@(Engine.Port.HasValue ? Engine.Port.Value.ToString() : "N/A")</span>
-                </li>
-                <li class="flex justify-between">
-                    <span class="font-semibold">Transport Type:</span>
-                    <span>@(string.IsNullOrEmpty(Engine.TransportType) ? "N/A" : Engine.TransportType)</span>
-                </li>
-                <li class="flex justify-between">
-                    <span class="font-semibold">Online Since:</span>
-                    <span>@(Engine.OnlineSince.HasValue ? Engine.OnlineSince.Value.ToString("g") : "N/A")</span>
-                </li>
-                <li class="flex justify-between">
-                    <span class="font-semibold">Uptime:</span>
-                    <span>@(Engine.Uptime.HasValue ? Engine.Uptime.Value.ToString(@"dd\.hh\:mm\:ss") : "N/A")</span>
-                </li>
-                <li class="flex justify-between">
-                    <span class="font-semibold">EngineId:</span>
-                    <span>@Engine.BaseInfo.EngineId</span>
-                </li>
+            <li class="flex justify-between">
+                <span class="font-semibold">LocalPort:</span>
+                <span>@Engine.LocalPort</span>
+            </li>
 
-                <li class="flex justify-between">
-                    <span class="font-semibold">LocalPort:</span>
-                    <span>@Engine.LocalPort</span>
-                </li>
+            <li class="flex justify-between">
+                <span class="font-semibold">Engine InstallDate:</span>
+                <span>@Engine.BaseInfo.InstallDate</span>
+            </li>
 
-                <li class="flex justify-between">
-                    <span class="font-semibold">Engine InstallDate:</span>
-                    <span>@Engine.BaseInfo.InstallDate</span>
-                </li>
+            <li class="flex justify-between">
+                <span class="font-semibold">Engine StartDate:</span>
+                <span>@Engine.BaseInfo.EngineStartDate.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")</span>
+            </li>
 
-                <li class="flex justify-between">
-                    <span class="font-semibold">Engine StartDate:</span>
-                    <span>@Engine.BaseInfo.EngineStartDate.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")</span>
-                </li>
-                
-            </ul>
+        </ul>
+
+        <h4 class="mt-4 font-semibold">Hub URLs:</h4>
+        <div class="space-y-4">
+            @if (Engine.BaseInfo.HubUrls.Any())
+            {
+                @foreach (var url in Engine.BaseInfo.HubUrls)
+                {
+                    <div class="bg-slate-800 p-4 rounded-lg shadow-md">
+                        <div class="flex mb-2 items-center">
+                            <span class="font-semibold mr-2">URL:</span>
+                            <div class="break-all">@url.HubUrl</div> 
+                        </div>
+                        <div class="flex mb-2 items-center">
+                            <span class="font-semibold mr-2">API Key:</span>
+                            <div class="break-all">@url.ApiKey</div> 
+                        </div>
+                        <div class="flex space-x-2">
+                            <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" @onclick="() => EditUrl(url)">Rediger</button>
+                            <button class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded" @onclick="() => DeleteUrl(url.Id)">Slet</button>
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="text-gray-500">Ingen URLs fundet</div>
+            }
         </div>
-    }
+        <!-- Knap til at tilføje ny URL -->
+        <div class="mt-4">
+            <button class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded" @onclick="AddUrl">Tilføj ny URL</button>
+        </div>
+    </div>
+
 </ExpandablePanel>
+
+
+@code {
+    [Parameter] public required EngineViewModel Engine { get; set; }
+
+    private void EditUrl(HubUrlInfo url)
+    {
+        // Implementér redigeringslogik her
+    }
+
+    private void DeleteUrl(int urlId)
+    {
+        // Implementér sletningslogik her
+    }
+
+    private void AddUrl()
+    {
+        // Implementér logik til at tilføje ny URL
+    }
+
+}

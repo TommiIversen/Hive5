@@ -7,25 +7,20 @@ namespace Engine.DAL.Repositories;
 public interface IEngineRepository
 {
     Task<EngineEntities?> GetEngineAsync();
-    Task UpdateEngineAsync(string name, string description);
+    Task SaveEngineAsync(EngineEntities engine);
 }
+
 
 public class EngineRepository(ApplicationDbContext context) : IEngineRepository
 {
-    public async Task<EngineEntities> GetEngineAsync()
+    public async Task<EngineEntities?> GetEngineAsync()
     {
-        // Henter den eneste EngineEntity i databasen
-        return await context.EngineEntities.FirstOrDefaultAsync();
+        return await context.EngineEntities.Include(e => e.HubUrls).FirstOrDefaultAsync();
     }
 
-    public async Task UpdateEngineAsync(string name, string description)
+    public async Task SaveEngineAsync(EngineEntities engine)
     {
-        var engine = await GetEngineAsync();
-        if (engine != null)
-        {
-            engine.Name = name;
-            engine.Description = description;
-            await context.SaveChangesAsync();
-        }
+        context.EngineEntities.Update(engine);
+        await context.SaveChangesAsync();
     }
 }

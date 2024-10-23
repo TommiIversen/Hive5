@@ -7,8 +7,6 @@ namespace Engine.Database
     {
         public DbSet<EngineEntities> EngineEntities { get; set; }
         public DbSet<WorkerEntity> Workers { get; set; }
-
-
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) {}
     }
 }

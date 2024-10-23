@@ -61,16 +61,6 @@ builder.Services.AddScoped<IEngineRepository, EngineRepository>();
 builder.Services.AddSingleton<IEngineService, EngineService>();
 builder.Services.AddSingleton<StreamHub>();
 
-builder.Services.Configure<StreamHubOptions>(options =>
-{
-    options.HubUrls = new List<string>
-    {
-        "http://127.0.0.1:9000/streamhub",
-        "http://127.0.0.1:8999/streamhub"
-    };
-    options.MaxQueueSize = 20;
-});
-
 // Registrer den konkrete implementering af INetworkInterfaceProvider til brug i MetricsService
 builder.Services.AddSingleton<INetworkInterfaceProvider, NetworkInterfaceProvider>(); 
 builder.Services.AddSingleton<MetricsService>();
