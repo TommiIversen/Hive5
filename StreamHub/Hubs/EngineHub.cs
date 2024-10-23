@@ -18,14 +18,17 @@ public class EngineHub(
         if (engineManager.TryGetEngine(engineInfo.EngineId, out var existingEngine) && 
             !string.IsNullOrEmpty(existingEngine.ConnectionId))
         {
-            Console.WriteLine($"Engine {engineInfo.EngineId} is already connected. Rejecting new connection.");
+            Console.WriteLine($"RegisterEngineConnection Engine {engineInfo.EngineId} is already connected. Rejecting new connection.");
             return false; // Afvis forbindelsen, da engine allerede er aktiv
         }
 
+        Console.WriteLine($"RegisterEngineConnection Engine {engineInfo.EngineId} connected.");
+        
         // Tilføj eller opdater engine og sæt forbindelses ID
         var engine = engineManager.GetOrAddEngine(engineInfo);
         engine.ConnectionId = Context.ConnectionId;
         engine.OnlineSince = DateTime.UtcNow;
+        engine.BaseInfo = engineInfo;
 
         // Få flere oplysninger om forbindelsen
         var httpContext = Context.GetHttpContext();
@@ -87,7 +90,6 @@ public class EngineHub(
     public async void ReceiveEngineEvent(EngineEvent engineEvent)
     {
         Console.WriteLine($"GOTTTTT EngineEvent: {engineEvent.EventType} - {engineEvent.EngineId}");
-        
         switch (engineEvent.EventType)
         {
             // case EventType.Deleted:
@@ -100,8 +102,6 @@ public class EngineHub(
             //     break;
             case EventType.Updated:
                 engineManager.UpdateBaseInfo(engineEvent);
-                
-                
                 await hubContext.Clients.Group("frontendClients").SendAsync("EngineChange", cancellationService.Token);
                 break;
         }

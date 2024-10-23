@@ -1,6 +1,5 @@
 ﻿using System.Collections.Concurrent;
 using Common.Models;
-using Engine.DAL.Entities;
 using Engine.Services;
 using Microsoft.AspNetCore.Http.Connections;
 using Microsoft.AspNetCore.SignalR.Client;
@@ -28,7 +27,7 @@ public class StreamHub
     private readonly ILoggerFactory _loggerFactory;
 
     private readonly IEngineService _engineService;
-    private EngineEntities? _engineInfo;
+    private Guid _engineId;
 
     // fild to init date time
     private readonly DateTime _initDateTime = DateTime.UtcNow;
@@ -45,9 +44,10 @@ public class StreamHub
         _workerManager = workerManager;
         _engineService = engineService;
         _loggerFactory = loggerFactory;
-        _engineInfo = GetEngineInfo();
-
-        foreach (var hubUrl in _engineInfo.HubUrls.Select(h => h.HubUrl))
+        
+        var engineInfo = GetEngineBaseInfo().Result;
+        _engineId = engineInfo.EngineId;
+        foreach (var hubUrl in engineInfo.HubUrls.Select(h => h.HubUrl))
         {
             StartHubConnection(hubUrl);
         }
@@ -55,24 +55,24 @@ public class StreamHub
         _ = Task.Run(async () => await RouteMessagesToClientQueuesAsync(_cancellationTokenSource.Token));
     }
     
-    public void AddHubUrl(string newHubUrl)
-    {
-        try
-        {
-            StartHubConnection(newHubUrl);
-
-            // Tilføj URL'en til databasen
-            var hubUrlEntity = new HubUrlEntity { HubUrl = newHubUrl };
-            _engineInfo.HubUrls.Add(hubUrlEntity);
-
-            // Gem ændringerne i databasen
-            _engineService.UpdateEngineAsync(_engineInfo.Name, _engineInfo.Description).Wait();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to add and start hub connection for {Url}", newHubUrl);
-        }
-    }
+    // public void AddHubUrl(string newHubUrl)
+    // {
+    //     try
+    //     {
+    //         StartHubConnection(newHubUrl);
+    //
+    //         // Tilføj URL'en til databasen
+    //         var hubUrlEntity = new HubUrlEntity { HubUrl = newHubUrl };
+    //         _engineInfo.HubUrls.Add(hubUrlEntity);
+    //
+    //         // Gem ændringerne i databasen
+    //         _engineService.UpdateEngineAsync(_engineInfo.EngineName, _engineInfo.EngineDescription).Wait();
+    //     }
+    //     catch (Exception ex)
+    //     {
+    //         _logger.LogError(ex, "Failed to add and start hub connection for {Url}", newHubUrl);
+    //     }
+    // }
 
 private async Task<CommandResult> RemoveHubUrlAsync(string hubUrlToRemove)
 {
@@ -112,17 +112,7 @@ private async Task<CommandResult> RemoveHubUrlAsync(string hubUrlToRemove)
         {
             await _engineService.RemoveHubUrlAsync(hubUrlEntity.Id); // Brug EngineService til at fjerne URL'en fra databasen
             _logger.LogInformation("Successfully removed hub URL {Url} from database via EngineService", hubUrlToRemove);
-            
-            var localD = await _engineService.GetEngineAsync();  // Tving opdatering af _engineInfo
-            
-            // print out url in _engineInfo
-            foreach (var hubUrl in localD.HubUrls.Select(h => h.HubUrl))
-            {
-                Console.WriteLine($"JGKGKGKGFKFGKGF Updated URL: {hubUrl}");
-            }
-            
-            
-            
+
             var engineUpdateEvent = await GetEngineBaseInfo();    // Opdateret engine data til event
             
             // loop over urls in engineInfo
@@ -229,7 +219,7 @@ private async Task<CommandResult> RemoveHubUrlAsync(string hubUrlToRemove)
                 _logger.LogInformation("hubConnection.On: Got CreateWorker: {WorkerName}", workerCreate.Name);
 
                 // Opret og tilføj worker asynkront via WorkerManager
-                var workerService = await _workerManager.AddWorkerAsync(_engineInfo.EngineId, workerCreate);
+                var workerService = await _workerManager.AddWorkerAsync(_engineId, workerCreate);
 
                 // Hvis workerService er null, findes arbejderen allerede
                 if (workerService == null)
@@ -277,20 +267,6 @@ private async Task<CommandResult> RemoveHubUrlAsync(string hubUrlToRemove)
         }
     }
 
-    private EngineEntities? GetEngineInfo()
-    {
-        try
-        {
-            return _engineService.GetEngineAsync().Result ??
-                   throw new InvalidOperationException(); // Blokerer synkront indtil engine-info er hentet
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to retrieve engine info.");
-            throw; // Hvis det fejler, stop start af applikationen
-        }
-    }
-
     private async Task TryReconnect(HubConnection hubConnection, string url, CancellationToken token)
     {
         while (true)
@@ -333,8 +309,8 @@ private async Task<CommandResult> RemoveHubUrlAsync(string hubUrlToRemove)
             if (connectionResult)
             {
                 Console.WriteLine("Connection to StreamHub acknowledged, synchronizing workers...");
-                var workers = await _workerManager.GetAllWorkers(_engineInfo.EngineId);
-                await hubConnection.InvokeAsync("SynchronizeWorkers", workers, _engineInfo.EngineId);
+                var workers = await _workerManager.GetAllWorkers(_engineId);
+                await hubConnection.InvokeAsync("SynchronizeWorkers", workers, _engineId);
                 await ProcessClientMessagesAsync(hubConnection, streamhubUrl, _cancellationTokenSource.Token);
             }
             else
@@ -399,7 +375,7 @@ private async Task<CommandResult> RemoveHubUrlAsync(string hubUrlToRemove)
     // Process the queue for each streamhub signalR connection independently
     private async Task ProcessClientMessagesAsync(HubConnection hubConnection, string url, CancellationToken cancellationToken)
     {
-        Console.WriteLine($"Start ProcessClientMessagesAsync ------Processing hub queue to {_engineInfo.EngineId}");
+        Console.WriteLine($"Start ProcessClientMessagesAsync ------Processing hub queue to {_engineId}");
 
         if (_hubConnections.TryGetValue(url, out var connectionInfo))
         {
@@ -441,7 +417,7 @@ private async Task<CommandResult> RemoveHubUrlAsync(string hubUrlToRemove)
 
     private void EnrichMessage(BaseMessage baseMessage, int sequenceNumber)
     {
-        baseMessage.EngineId = _engineInfo.EngineId;
+        baseMessage.EngineId = _engineId;
         baseMessage.SequenceNumber = sequenceNumber;
     }
 }
