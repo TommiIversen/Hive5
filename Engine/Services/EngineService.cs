@@ -37,7 +37,7 @@ public class EngineService : IEngineService
         {
             engine.Name = name;
             engine.Description = description;
-            await _engineRepository.SaveEngineAsync(engine);  // Kalder Save i stedet for en speciel Update-metode
+            await _engineRepository.SaveEngineAsync(engine); 
         }
     }
 
@@ -53,14 +53,21 @@ public class EngineService : IEngineService
 
     public async Task RemoveHubUrlAsync(int hubUrlId)
     {
-        var engine = await _engineRepository.GetEngineAsync();
-        var hubUrl = engine?.HubUrls.FirstOrDefault(h => h.Id == hubUrlId);
+        await using var dbContext = await _contextFactory.CreateDbContextAsync();
+        var hubUrl = await dbContext.Set<HubUrlEntity>().FindAsync(hubUrlId);
+    
         if (hubUrl != null)
         {
-            engine.HubUrls.Remove(hubUrl);
-            await _engineRepository.SaveEngineAsync(engine);
+            dbContext.Set<HubUrlEntity>().Remove(hubUrl);
+            await dbContext.SaveChangesAsync();
+        Console.WriteLine($"Successfully removed HubUrlEntity with Id {hubUrlId}");
+        }
+        else
+        {
+            Console.WriteLine($"HubUrlEntity with Id {hubUrlId} not found");
         }
     }
+
 
     public async Task EditHubUrlAsync(int hubUrlId, string newHubUrl, string newApiKey)
     {

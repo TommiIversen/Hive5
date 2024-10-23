@@ -85,7 +85,7 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
 
         // Tilføj arbejderen til databasen asynkront
         await workerRepository.AddWorkerAsync(workerEntity);
-        await SendWorkerEvent(workerCreate.WorkerId, WorkerEventType.Created);
+        await SendWorkerEvent(workerCreate.WorkerId, EventType.Created);
         return workerService;
     }
     
@@ -188,7 +188,7 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
         }
 
         // Send event om at arbejderen er blevet enabled/disabled
-        await SendWorkerEvent(workerId, WorkerEventType.Updated);
+        await SendWorkerEvent(workerId, EventType.Updated);
 
         Log.Information($"Worker {workerId} has been successfully {(enable ? "enabled" : "disabled")}.");
         return new CommandResult(true, $"Worker {workerId} {(enable ? "enabled" : "disabled")} successfully");
@@ -259,7 +259,7 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
         }
 
         // Send en event om at arbejderen er blevet opdateret
-        await SendWorkerEvent(workerId, WorkerEventType.Updated);
+        await SendWorkerEvent(workerId, EventType.Updated);
 
         Log.Information($"Worker {workerId} updated successfully.");
         return new CommandResult(true, $"Worker updated successfully: {isModified}");
@@ -345,7 +345,7 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
             workerEntity.WatchdogEventCount = 0;
             await workerRepository.UpdateWorkerAsync(workerEntity);
             Log.Information($"Watchdog event count reset for worker {workerId}.");
-            await SendWorkerEvent(workerId, WorkerEventType.Updated);
+            await SendWorkerEvent(workerId, EventType.Updated);
             return new CommandResult(true, "Watchdog event count reset successfully.");
         }
         else
@@ -364,7 +364,7 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
             Description = "Worker has been deleted",
             Command = "WorkerDeleted",
             WorkerId = workerId,
-            EventType = WorkerEventType.Deleted,
+            EventType = EventType.Deleted,
             Timestamp = DateTime.UtcNow,
             IsEnabled = false,
             WatchdogEventCount = 0
@@ -372,7 +372,7 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
         messageQueue.EnqueueMessage(workerEvent);
     }
 
-    private async Task SendWorkerEvent(string workerId, WorkerEventType eventType)
+    private async Task SendWorkerEvent(string workerId, EventType eventType)
     {
         Console.WriteLine($"SendWorkerEvent: Sending worker event: {eventType} - {workerId}");
         var workerService = GetWorkerService(workerId);
@@ -395,7 +395,7 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
     }
 
     public async Task HandleStateChange(WorkerService workerService, WorkerState newState,
-        WorkerEventType eventType = WorkerEventType.Updated, string reason = "")
+        EventType eventType = EventType.Updated, string reason = "")
     {
         var logMessage = $"Worker {workerService.WorkerId} state changed to {newState}: {reason}";
         Log.Information(logMessage);

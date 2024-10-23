@@ -53,7 +53,7 @@ public class WorkerService
 
     private async Task HandleStateChangeAsync(WorkerState newState)
     {
-        await _workerManager.HandleStateChange(this, newState, WorkerEventType.Updated, "State changed in runner");
+        await _workerManager.HandleStateChange(this, newState, EventType.Updated, "State changed in runner");
     }
 
     public async Task<CommandResult> StartAsync()

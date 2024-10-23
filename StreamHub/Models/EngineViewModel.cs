@@ -5,7 +5,7 @@ namespace StreamHub.Models;
 
 public class EngineViewModel
 {
-    public required EngineBaseInfo BaseInfo { get; init; }
+    public required EngineBaseInfo BaseInfo { get; set; }
     public string? ConnectionId { get; set; }
     public Metric? LastMetric { get; set; }
     public ConcurrentDictionary<string, WorkerViewModel> Workers { get; } = new();

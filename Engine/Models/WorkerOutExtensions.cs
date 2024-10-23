@@ -9,7 +9,7 @@ public static class WorkerOutExtensions
     
     
     public static WorkerEvent ToWorkerEvent(this WorkerEntity workerEntity, Guid engineId, 
-        WorkerState state, WorkerEventType eventType = WorkerEventType.Updated)
+        WorkerState state, EventType eventType = EventType.Updated)
     {
         return new WorkerEvent
         {
@@ -29,7 +29,7 @@ public static class WorkerOutExtensions
     
     
     public static WorkerEvent ToWorkerEvent(this WorkerEntity workerEntity, 
-        WorkerState state, WorkerEventType eventType = WorkerEventType.Updated)
+        WorkerState state, EventType eventType = EventType.Updated)
     {
         return new WorkerEvent
         {

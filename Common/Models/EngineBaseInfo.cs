@@ -20,3 +20,9 @@ public class HubUrlInfo
     public string HubUrl { get; set; } = string.Empty;
     public string ApiKey { get; set; } = string.Empty;
 }
+
+
+public class EngineEvent : EngineBaseInfo
+{
+    public required EventType EventType { get; set; }
+}

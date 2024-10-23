@@ -13,19 +13,18 @@ public static class MessageRouter
             case Metric metric:
                 await hubConnection.InvokeAsync("ReceiveMetric", metric);
                 break;
-
             case LogEntry log:
                 await hubConnection.InvokeAsync("ReceiveLog", log);
                 break;
-
             case ImageData image:
                 await hubConnection.InvokeAsync("ReceiveImage", image);
                 break;
-            
             case WorkerEvent workerEvent:
                 await hubConnection.InvokeAsync("ReceiveWorkerEvent", workerEvent);
                 break;
-            
+            case EngineEvent engineEvent:
+                await hubConnection.InvokeAsync("ReceiveEngineEvent", engineEvent);
+                break;
             default:
                 HandleUnknownMessage(hubConnection, baseMessage);
                 break;

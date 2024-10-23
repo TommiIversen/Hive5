@@ -12,6 +12,25 @@ public class EngineManager
     {
         return _engines.GetOrAdd(baseInfo.EngineId, _ => new EngineViewModel { BaseInfo = baseInfo });
     }
+    
+    // method to update base info
+    public void UpdateBaseInfo(EngineBaseInfo baseInfo)
+    {
+        Console.WriteLine($"Updating base info for engine {baseInfo.EngineId}");
+        if (_engines.TryGetValue(baseInfo.EngineId, out var engine))
+        {
+            Console.WriteLine($"Base info for engine {baseInfo.EngineId} updated.");
+            engine.BaseInfo = baseInfo;
+            engine.BaseInfo.HubUrls = new List<HubUrlInfo>(baseInfo.HubUrls); // Kopi af ny HubUrls-liste
+            
+            // print out urls
+            foreach (var url in engine.BaseInfo.HubUrls)
+            {
+                Console.WriteLine($"UPDATEEEEE HubUrl: {url.HubUrl}");
+            }
+            
+        }
+    }
 
     public void AddOrUpdateWorker(WorkerOut workerOut)
     {

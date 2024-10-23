@@ -15,8 +15,10 @@ public class EngineRepository(ApplicationDbContext context) : IEngineRepository
 {
     public async Task<EngineEntities?> GetEngineAsync()
     {
-        return await context.EngineEntities.Include(e => e.HubUrls).FirstOrDefaultAsync();
-    }
+        return await context.EngineEntities
+            .AsNoTracking() // Tilføj No Tracking for at undgå caching
+            .Include(e => e.HubUrls)
+            .FirstOrDefaultAsync();    }
 
     public async Task SaveEngineAsync(EngineEntities engine)
     {

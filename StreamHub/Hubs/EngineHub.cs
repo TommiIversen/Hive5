@@ -45,7 +45,34 @@ public class EngineHub(
         return true; // Forbindelsen er godkendt
     }
 
-    
+    // SignalR hander for at fjerne en hub URL
+    public async Task RemoveHubUrl(string hubUrl, Guid engineId)
+    {
+        Console.WriteLine($"Removing hub connection for URL: {hubUrl}");
+        
+        // Tjek om engine allerede er forbundet
+        if (engineManager.TryGetEngine(engineId, out var existingEngine) && 
+            string.IsNullOrEmpty(existingEngine.ConnectionId))
+        {
+            Console.WriteLine($"Engine is not connected.");
+            //return new CommandResult(false, "Engine is not connected");
+        }
+
+        using var timeoutCts = new CancellationTokenSource(5000);
+        using var linkedCts =
+            CancellationTokenSource.CreateLinkedTokenSource(cancellationService.Token, timeoutCts.Token);
+        
+        if (existingEngine != null)
+        {
+            CommandResult result;
+            result = await hubContext.Clients.Client(existingEngine.ConnectionId)
+                .InvokeAsync<CommandResult>("RemoveHubConnection", hubUrl , linkedCts.Token);
+            Console.WriteLine($"RemoveHubUrlRemoveHubUrlRemoveHubUrlRemoveHubUrl Result: {result.Message}");
+        }
+
+        await hubContext.Clients.Group("frontendClients").SendAsync("EngineChange", cancellationService.Token);
+        //return new CommandResult(true, "Hub URL removed");
+    }
 
     // Synchronize workers ved startup
     public async void SynchronizeWorkers(List<WorkerEvent> workers, Guid engineId)
@@ -55,19 +82,45 @@ public class EngineHub(
         await hubContext.Clients.Group("frontendClients").SendAsync("EngineChange", cancellationService.Token);
     }
 
+    
+    // ReceiveEngineEvent like ReceiveWorkerEvent
+    public async void ReceiveEngineEvent(EngineEvent engineEvent)
+    {
+        Console.WriteLine($"GOTTTTT EngineEvent: {engineEvent.EventType} - {engineEvent.EngineId}");
+        
+        switch (engineEvent.EventType)
+        {
+            // case EventType.Deleted:
+            //     engineManager.RemoveEngine(engineEvent.EngineId);
+            //     await hubContext.Clients.Group("frontendClients").SendAsync("EngineChange", cancellationService.Token);
+            //     break;
+            // case EventType.Created:
+            //     engineManager.AddOrUpdateEngine(engineEvent);
+            //     await hubContext.Clients.Group("frontendClients").SendAsync("EngineChange", cancellationService.Token);
+            //     break;
+            case EventType.Updated:
+                engineManager.UpdateBaseInfo(engineEvent);
+                
+                
+                await hubContext.Clients.Group("frontendClients").SendAsync("EngineChange", cancellationService.Token);
+                break;
+        }
+    }
+    
+    
     public async void ReceiveWorkerEvent(WorkerEvent workerEvent)
     {
         switch (workerEvent.EventType)
         {
-            case WorkerEventType.Deleted:
+            case EventType.Deleted:
                 engineManager.RemoveWorker(workerEvent.EngineId, workerEvent.WorkerId);
                 await hubContext.Clients.Group("frontendClients").SendAsync("EngineChange", cancellationService.Token);
                 break;
-            case WorkerEventType.Created:
+            case EventType.Created:
                 engineManager.AddOrUpdateWorker(workerEvent);
                 await hubContext.Clients.Group("frontendClients").SendAsync("EngineChange", cancellationService.Token);
                 break;
-            case WorkerEventType.Updated:
+            case EventType.Updated:
                 engineManager.AddOrUpdateWorker(workerEvent);
                 string workerEventTopic = $"WorkerEvent-{workerEvent.EngineId}-{workerEvent.WorkerId}";
                 
@@ -169,6 +222,9 @@ public class EngineHub(
         engineManager.RemoveEngine(engineId);
         await hubContext.Clients.Group("frontendClients").SendAsync("EngineChange", cancellationService.Token);
     }
+    
+    
+
 
     public override async Task OnConnectedAsync()
     {

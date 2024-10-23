@@ -1,5 +1,10 @@
 ﻿@using Common.Models
+@using Microsoft.AspNetCore.SignalR.Client
 @using StreamHub.Models
+@using StreamHub.Services
+@inject BlazorSignalRService SignalRService
+
+
 <ExpandablePanel Title="Engine Info">
     <div class="p-2 space-y1 rounded-lg">
         <ul>
@@ -62,7 +67,7 @@
                         </div>
                         <div class="flex space-x-2">
                             <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" @onclick="() => EditUrl(url)">Rediger</button>
-                            <button class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded" @onclick="() => DeleteUrl(url.Id)">Slet</button>
+                            <button class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded" @onclick="() => DeleteUrl(url.HubUrl)">Slet</button>
                         </div>
                     </div>
                 }
@@ -84,14 +89,21 @@
 @code {
     [Parameter] public required EngineViewModel Engine { get; set; }
 
+    
+    protected override async Task OnInitializedAsync()
+    {
+        SignalRService.HubConnection.On("EngineChange", async () => { await InvokeAsync(StateHasChanged); });
+    }
+    
     private void EditUrl(HubUrlInfo url)
     {
         // Implementér redigeringslogik her
     }
 
-    private void DeleteUrl(int urlId)
+    private async Task DeleteUrl(string urlId)
     {
-        // Implementér sletningslogik her
+        Console.WriteLine($"Deleting URL with ID: {urlId}");
+        await SignalRService.HubConnection.SendAsync("RemoveHubUrl", urlId, Engine.BaseInfo.EngineId);
     }
 
     private void AddUrl()
