@@ -8,11 +8,10 @@
         @foreach (var tabName in _tabs.Keys)
         {
             <button @onclick="() => ToggleTab(tabName)"
-                    class="px-4 py-1 rounded text-white font-bold w-full flex items-center justify-between"
-                    style="@GetTabButtonStyle(_tabs[tabName])">
+                    class="px-4 @GetTabButtonStyle(_tabs[tabName]) py-1 rounded border border-gray-500 transition duration-200  ease-in-out hover:bg-slate-600 text-white font-bold w-full flex items-center justify-between">
                 <span>@tabName</span>
 
-                <svg class="h-6 w-6 @GetTabIconRotation(_tabs[tabName])" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg class="h-6 transition-transform duration-300 w-6 @GetTabIconRotation(_tabs[tabName])" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/>
                 </svg>
             </button>
@@ -80,7 +79,7 @@
     }
 
     private string GetTabButtonStyle(bool isActive) =>
-        isActive ? "background-color: #4A5568;" : "background-color: #2D3748;";
+        isActive ? "bg-slate-600 " : "bg-slate-800";
 
     private string GetTabIconRotation(bool isActive) =>
         isActive ? "transform rotate-180" : "";
