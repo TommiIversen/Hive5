@@ -30,7 +30,7 @@ public class WorkerService(
 
         var worker = engineManager.GetWorker(data.EngineId, data.WorkerId);
 
-        if (worker == null)
+        if (worker == null && operation != "CreateWorker")
         {
             msg = $"{operation}: Worker {data.WorkerId} not found";
             Console.WriteLine(msg);
@@ -128,6 +128,7 @@ public class WorkerService(
 
     public async Task<CommandResult> CreateWorkerAsync(WorkerCreate workerCreate)
     {
+        Console.WriteLine($"CreateWorkerAsync: {workerCreate.WorkerId}");
         return await HandleWorkerOperationWithDataAsync("CreateWorker", workerCreate, setProcessing: false);
     }
 
