@@ -1,8 +1,10 @@
 ﻿using System.Collections.Concurrent;
 using Common.Models;
 using Engine.Services;
+using Engine.Utils;
 using Microsoft.AspNetCore.Http.Connections;
 using Microsoft.AspNetCore.SignalR.Client;
+using Serilog;
 
 namespace Engine.Hubs;
 
@@ -11,7 +13,7 @@ public class HubConnectionInfo
     public required HubConnection HubConnection { get; set; }
     public required MultiQueue MessageQueue { get; set; }
     public DateTime SyncTimestamp { get; set; } = DateTime.MinValue;
-    public CancellationTokenSource ReconnectTokenSource { get; set; } = new(); 
+    public CancellationTokenSource ReconnectTokenSource { get; set; } = new();
 }
 
 public class StreamHub
@@ -44,7 +46,7 @@ public class StreamHub
         _workerManager = workerManager;
         _engineService = engineService;
         _loggerFactory = loggerFactory;
-        
+
         var engineInfo = GetEngineBaseInfo().Result;
         _engineId = engineInfo.EngineId;
         foreach (var hubUrl in engineInfo.HubUrls.Select(h => h.HubUrl))
@@ -54,7 +56,7 @@ public class StreamHub
 
         _ = Task.Run(async () => await RouteMessagesToClientQueuesAsync(_cancellationTokenSource.Token));
     }
-    
+
     // public void AddHubUrl(string newHubUrl)
     // {
     //     try
@@ -74,69 +76,72 @@ public class StreamHub
     //     }
     // }
 
-private async Task<CommandResult> RemoveHubUrlAsync(string hubUrlToRemove)
-{
-    Console.WriteLine($"Removing hub connection for URL: {hubUrlToRemove}");
-
-    // Hvis forbindelsen findes, skal vi stoppe den og fjerne den fra hubConnections
-    if (_hubConnections.TryGetValue(hubUrlToRemove, out var connectionInfo))
+    private async Task<CommandResult> RemoveHubUrlAsync(string hubUrlToRemove)
     {
-        try
-        {
-            // Annullér retry-loopet ved at annullere token source
-            await connectionInfo.ReconnectTokenSource.CancelAsync();
-            
-            // Stop forbindelsen, hvis den er aktiv
-            await connectionInfo.HubConnection.StopAsync();
-            _hubConnections.TryRemove(hubUrlToRemove, out _);
-            _logger.LogInformation("Stopped and removed active hub connection for {Url}", hubUrlToRemove);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to stop and remove hub connection for {Url}", hubUrlToRemove);
-            return new CommandResult(false, $"Failed to stop hub connection: {ex.Message}");
-        }
-    }
-    else
-    {
-        _logger.LogWarning("No active connection found for {Url}, proceeding to remove it from database.", hubUrlToRemove);
-    }
+        Console.WriteLine($"Removing hub connection for URL: {hubUrlToRemove}");
 
-    // Uanset om forbindelsen var aktiv eller ej, skal vi stadig fjerne URL'en fra databasen
-    try
-    {
-        var engine = await _engineService.GetEngineAsync();
-        var hubUrlEntity = engine?.HubUrls.FirstOrDefault(h => h.HubUrl == hubUrlToRemove);
-        
-        if (hubUrlEntity != null)
+        // Hvis forbindelsen findes, skal vi stoppe den og fjerne den fra hubConnections
+        if (_hubConnections.TryGetValue(hubUrlToRemove, out var connectionInfo))
         {
-            await _engineService.RemoveHubUrlAsync(hubUrlEntity.Id); // Brug EngineService til at fjerne URL'en fra databasen
-            _logger.LogInformation("Successfully removed hub URL {Url} from database via EngineService", hubUrlToRemove);
-
-            var engineUpdateEvent = await GetEngineBaseInfo();    // Opdateret engine data til event
-            
-            // loop over urls in engineInfo
-            foreach (var hubUrl in engineUpdateEvent.HubUrls.Select(h => h.HubUrl))
+            try
             {
-                Console.WriteLine($"Updated URL: {hubUrl}");
+                // Annullér retry-loopet ved at annullere token source
+                await connectionInfo.ReconnectTokenSource.CancelAsync();
+
+                // Stop forbindelsen, hvis den er aktiv
+                await connectionInfo.HubConnection.StopAsync();
+                _hubConnections.TryRemove(hubUrlToRemove, out _);
+                _logger.LogInformation("Stopped and removed active hub connection for {Url}", hubUrlToRemove);
             }
-            
-            _globalMessageQueue.EnqueueMessage(engineUpdateEvent); // Send opdatering til alle forbindelser
-            
-            return new CommandResult(true, $"Successfully removed hub URL {hubUrlToRemove} from database.");
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to stop and remove hub connection for {Url}", hubUrlToRemove);
+                return new CommandResult(false, $"Failed to stop hub connection: {ex.Message}");
+            }
         }
         else
         {
-            _logger.LogWarning("Hub URL {Url} not found in the database.", hubUrlToRemove);
-            return new CommandResult(false, $"Hub URL {hubUrlToRemove} not found in the database.");
+            _logger.LogWarning("No active connection found for {Url}, proceeding to remove it from database.",
+                hubUrlToRemove);
+        }
+
+        // Uanset om forbindelsen var aktiv eller ej, skal vi stadig fjerne URL'en fra databasen
+        try
+        {
+            var engine = await _engineService.GetEngineAsync();
+            var hubUrlEntity = engine?.HubUrls.FirstOrDefault(h => h.HubUrl == hubUrlToRemove);
+
+            if (hubUrlEntity != null)
+            {
+                await _engineService.RemoveHubUrlAsync(hubUrlEntity
+                    .Id); // Brug EngineService til at fjerne URL'en fra databasen
+                _logger.LogInformation("Successfully removed hub URL {Url} from database via EngineService",
+                    hubUrlToRemove);
+
+                var engineUpdateEvent = await GetEngineBaseInfo(); // Opdateret engine data til event
+
+                // loop over urls in engineInfo
+                foreach (var hubUrl in engineUpdateEvent.HubUrls.Select(h => h.HubUrl))
+                {
+                    Console.WriteLine($"Updated URL: {hubUrl}");
+                }
+
+                _globalMessageQueue.EnqueueMessage(engineUpdateEvent); // Send opdatering til alle forbindelser
+
+                return new CommandResult(true, $"Successfully removed hub URL {hubUrlToRemove} from database.");
+            }
+            else
+            {
+                _logger.LogWarning("Hub URL {Url} not found in the database.", hubUrlToRemove);
+                return new CommandResult(false, $"Hub URL {hubUrlToRemove} not found in the database.");
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to remove hub URL {Url} from database.", hubUrlToRemove);
+            return new CommandResult(false, $"Failed to remove hub URL {hubUrlToRemove} from database: {ex.Message}");
         }
     }
-    catch (Exception ex)
-    {
-        _logger.LogError(ex, "Failed to remove hub URL {Url} from database.", hubUrlToRemove);
-        return new CommandResult(false, $"Failed to remove hub URL {hubUrlToRemove} from database: {ex.Message}");
-    }
-}
 
     private void StartHubConnection(string hubUrl)
     {
@@ -176,7 +181,7 @@ private async Task<CommandResult> RemoveHubUrlAsync(string hubUrlToRemove)
                 var commandResult = await _workerManager.RemoveWorkerAsync(message.WorkerId);
                 return commandResult;
             });
-            
+
             hubConnection.On("RemoveHubConnection", async (string hubUrlToRemove) =>
             {
                 _logger.LogInformation("hubConnection.On: Got request to remove HubUrl: {HubUrl}", hubUrlToRemove);
@@ -217,23 +222,15 @@ private async Task<CommandResult> RemoveHubUrlAsync(string hubUrlToRemove)
             hubConnection.On("CreateWorker", async (WorkerCreate workerCreate) =>
             {
                 _logger.LogInformation("hubConnection.On: Got CreateWorker: {WorkerName}", workerCreate.Name);
-
-                // Opret og tilføj worker asynkront via WorkerManager
                 var workerService = await _workerManager.AddWorkerAsync(_engineId, workerCreate);
-
-                // Hvis workerService er null, findes arbejderen allerede
                 if (workerService == null)
                 {
                     _logger.LogWarning("Worker with ID {WorkerId} already exists.", workerCreate.WorkerId);
                     return new CommandResult(false, $"Worker with ID {workerCreate.WorkerId} already exists.");
                 }
-
-                // Start arbejderen, hvis den blev tilføjet korrekt
                 var result = await _workerManager.StartWorkerAsync(workerService.WorkerId);
-
                 return result;
             });
-
 
             hubConnection.Reconnected += async (_) =>
             {
@@ -260,7 +257,9 @@ private async Task<CommandResult> RemoveHubUrlAsync(string hubUrlToRemove)
 
             _hubConnections[hubUrl] = connectionInfo;
 
-            _ = Task.Run(async () => await TryReconnect(hubConnection, hubUrl, connectionInfo.ReconnectTokenSource.Token));        }
+            _ = Task.Run(async () =>
+                await TryReconnect(hubConnection, hubUrl, connectionInfo.ReconnectTokenSource.Token));
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to connect to {Url}", hubUrl);
@@ -296,19 +295,31 @@ private async Task<CommandResult> RemoveHubUrlAsync(string hubUrlToRemove)
     {
         if (_hubConnections.TryGetValue(streamhubUrl, out var connectionInfo))
         {
-            // Opdater synkroniseringstidspunktet direkte i connectionInfo
             connectionInfo.SyncTimestamp = DateTime.UtcNow;
-
             Console.WriteLine($"----------Sending engine Init messages to streamHub on: {streamhubUrl}");
 
             var engineModel = await GetEngineBaseInfo();
+            bool connectedAndAccepted = await hubConnection.InvokeAsync<bool>("RegisterEngineConnection", engineModel);
 
-            // Brug bool resultatet for at afgøre, hvad der skal ske
-            bool connectionResult = await hubConnection.InvokeAsync<bool>("RegisterEngineConnection", engineModel);
-
-            if (connectionResult)
+            if (connectedAndAccepted)
             {
-                Console.WriteLine("Connection to StreamHub acknowledged, synchronizing workers...");
+                Console.WriteLine(" ---------- Connection to StreamHub acknowledged, synchronizing workers...");
+                
+                var systemInfoCollector = new SystemInfoCollector();
+                var systemInfo = systemInfoCollector.GetSystemInfo();
+                systemInfo.EngineId = _engineId;
+                Console.WriteLine($"SystemInfo: {systemInfo.OsName} {systemInfo.OSVersion} {systemInfo.Architecture} {systemInfo.Uptime} {systemInfo.ProcessCount} {systemInfo.Platform}");
+                
+                try
+                {
+                    await hubConnection.InvokeAsync("SendSystemInfo", systemInfo);
+                    Log.Information("System information blev sendt succesfuldt via SignalR.");
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Fejl opstod under forsøget på at sende systeminformation via SignalR.");
+                }
+                
                 var workers = await _workerManager.GetAllWorkers(_engineId);
                 await hubConnection.InvokeAsync("SynchronizeWorkers", workers, _engineId);
                 await ProcessClientMessagesAsync(hubConnection, streamhubUrl, _cancellationTokenSource.Token);
@@ -373,7 +384,8 @@ private async Task<CommandResult> RemoveHubUrlAsync(string hubUrlToRemove)
     }
 
     // Process the queue for each streamhub signalR connection independently
-    private async Task ProcessClientMessagesAsync(HubConnection hubConnection, string url, CancellationToken cancellationToken)
+    private async Task ProcessClientMessagesAsync(HubConnection hubConnection, string url,
+        CancellationToken cancellationToken)
     {
         Console.WriteLine($"Start ProcessClientMessagesAsync ------Processing hub queue to {_engineId}");
 
@@ -392,7 +404,8 @@ private async Task<CommandResult> RemoveHubUrlAsync(string hubUrlToRemove)
                 // Filtrer forældede WorkerEvent-beskeder baseret på syncTimestamp
                 if (baseMessage is WorkerEvent workerEvent && workerEvent.Timestamp < syncTimestamp)
                 {
-                    Console.WriteLine($"✂Skipping outdated event for streamHub: {url} - {workerEvent.EventType} {workerEvent.Name}");
+                    Console.WriteLine(
+                        $"✂Skipping outdated event for streamHub: {url} - {workerEvent.EventType} {workerEvent.Name}");
                     continue;
                 }
 

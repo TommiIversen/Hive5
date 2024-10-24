@@ -16,17 +16,11 @@ public class NetworkInterfaceProvider : INetworkInterfaceProvider
     }
 }
 
-public class NetworkUsageMonitor
+public class NetworkUsageMonitor(INetworkInterfaceProvider networkInterfaceProvider)
 {
-    private readonly INetworkInterfaceProvider _networkInterfaceProvider;
     private readonly Dictionary<string, long> _lastBytesReceived = new();
     private readonly Dictionary<string, long> _lastBytesSent = new();
     private DateTime _lastChecked = DateTime.UtcNow;
-
-    public NetworkUsageMonitor(INetworkInterfaceProvider networkInterfaceProvider)
-    {
-        _networkInterfaceProvider = networkInterfaceProvider;
-    }
 
     public class NetworkInterfaceUsage
     {
@@ -40,7 +34,7 @@ public class NetworkUsageMonitor
 
     public List<NetworkInterfaceUsage> GetNetworkUsage()
     {
-        var interfaces = _networkInterfaceProvider.GetAllNetworkInterfaces();
+        var interfaces = networkInterfaceProvider.GetAllNetworkInterfaces();
         var currentTime = DateTime.UtcNow;
         var elapsedSeconds = (currentTime - _lastChecked).TotalSeconds;
 

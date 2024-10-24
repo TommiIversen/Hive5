@@ -86,6 +86,22 @@ public class EngineHub(
         engineManager.SynchronizeWorkers(workers, engineId);
         await hubContext.Clients.Group("frontendClients").SendAsync("EngineChange", cancellationService.Token);
     }
+    
+    public async void SendSystemInfo(SystemInfoModel systemInfo)
+    {
+        Console.WriteLine($"SendSystemInfo: {systemInfo.OsName} - {systemInfo.OSVersion} - {systemInfo.Architecture} - {systemInfo.Uptime} - {systemInfo.ProcessCount} - {systemInfo.Platform}");
+        
+        
+        if (engineManager.TryGetEngine(systemInfo.EngineId, out var engine))
+        {
+            engine.SystemInfo = systemInfo;
+            await hubContext.Clients.Group("frontendClients").SendAsync("EngineChange", cancellationService.Token);
+        }
+        else
+        {
+            Console.WriteLine($"SendSystemInfo: Engine {systemInfo.EngineId} not found");
+        }
+    }
 
     
     // ReceiveEngineEvent like ReceiveWorkerEvent

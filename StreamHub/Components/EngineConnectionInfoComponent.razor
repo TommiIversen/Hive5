@@ -48,6 +48,36 @@
                 <span>@Engine.BaseInfo.EngineStartDate.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")</span>
             </li>
 
+
+            SystemInfo
+
+            <ul>
+                <li class="flex justify-between">
+                    <span class="font-semibold">OsName:</span>
+                    <span>@Engine.SystemInfo?.OsName</span>
+                </li>
+                <li class="flex justify-between">
+                    <span class="font-semibold">OS Version:</span>
+                    <span>@Engine.SystemInfo?.OSVersion</span>
+                </li>
+                <li class="flex justify-between">
+                    <span class="font-semibold">Architecture:</span>
+                    <span>@Engine.SystemInfo?.Architecture</span>
+                </li>
+                <li class="flex justify-between">
+                    <span class="font-semibold">OS Uptime:</span>
+                    <span>@Engine.SystemInfo?.Uptime</span>
+                </li>
+                <li class="flex justify-between">
+                    <span class="font-semibold">Process Count:</span>
+                    <span>@Engine.SystemInfo?.ProcessCount</span>
+                </li>
+                <li class="flex justify-between">
+                    <span class="font-semibold">Platform:</span>
+                    <span>@Engine.SystemInfo?.Platform</span>
+                </li>
+            </ul>
+
         </ul>
 
         <h4 class="mt-4 font-semibold">Hub URLs:</h4>

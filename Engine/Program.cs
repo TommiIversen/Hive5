@@ -21,6 +21,7 @@ Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Debug()
     .MinimumLevel.Override("Microsoft", Serilog.Events.LogEventLevel.Information) // Microsoft-specifik logning
     .MinimumLevel.Override("Microsoft.AspNetCore", Serilog.Events.LogEventLevel.Warning) // ASP.NET Core-specifik logning
+    .MinimumLevel.Override("Microsoft.EntityFrameworkCore", Serilog.Events.LogEventLevel.Warning) // EF Core-specifik logning
     .WriteTo.Console() // Logger til konsol
     .WriteTo.File(
         path: Path.Combine(basePath, "logs", "log-.txt"), // Brug basePath til logs
@@ -104,17 +105,6 @@ metricsService.Start();
 
 var workerManager = app.Services.GetRequiredService<WorkerManager>();
 await workerManager.InitializeWorkersAsync();
-
-// Log.Information("Creating workers...");
-// var workerCreate1 = new WorkerCreate(workerId: "w1",  name: "Worker1", description: "Desc", command: "gstreamer");
-// var workerCreate2 = new WorkerCreate(workerId: "w2", name: "Worker2", description: "Desc2", command: "gstreamer2");
-// var workerCreate3 = new WorkerCreate(workerId: "w3",name: "Worker3", description: "Desc3", command: "gstreamer3");
-// var worker1 = workerManager.AddWorker(workerCreate1);
-// var worker2 = workerManager.AddWorker(workerCreate2);
-// var worker3 = workerManager.AddWorker(workerCreate3);
-// await workerManager.StartWorkerAsync(worker1.WorkerId);
-// await workerManager.StartWorkerAsync(worker2.WorkerId);
-// await workerManager.StartWorkerAsync(worker3.WorkerId);
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
