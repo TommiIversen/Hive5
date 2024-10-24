@@ -198,7 +198,7 @@ public class WorkerService
     private async Task OnWatchdogStateChanged(object? sender, string message)
     {
         Console.WriteLine($"-----Watchdog state changed: {message}");
-
+        CreateAndSendLog(message, "Watchdog", LogLevel.Error);
         // Find arbejderen, der relaterer til senderen (antagelsen er, at sender kan være WorkerService)
         var workerRepository = _repositoryFactory.CreateWorkerRepository();
         var workerEntity = await workerRepository.GetWorkerByIdAsync(WorkerId);
@@ -237,15 +237,45 @@ public class WorkerService
         return _streamerRunner.GetState();
     }
 
-    private void CreateAndSendLog(string message)
+    private void CreateAndSendLog(string message, string service, LogLevel logLevel)
     {
         var log = new LogEntry
         {
             WorkerId = WorkerId,
             Timestamp = DateTime.UtcNow,
-            Message = $"Service: {message}",
+            Message = $"{service}: {message}",
+            LogLevel = logLevel,
             LogSequenceNumber = Interlocked.Increment(ref _logCounter)
         };
+    
+        // Enqueue log to the message queue
         _messageQueue.EnqueueMessage(log);
+
+        // Dynamisk logning baseret på logLevel
+        switch (logLevel)
+        {
+            case LogLevel.Trace:
+                Log.Verbose($"Worker with ID {WorkerId}: {message}");
+                break;
+            case LogLevel.Debug:
+                Log.Debug($"Worker with ID {WorkerId}: {message}");
+                break;
+            case LogLevel.Information:
+                Log.Information($"Worker with ID {WorkerId}: {message}");
+                break;
+            case LogLevel.Warning:
+                Log.Warning($"Worker with ID {WorkerId}: {message}");
+                break;
+            case LogLevel.Error:
+                Log.Error($"Worker with ID {WorkerId}: {message}");
+                break;
+            case LogLevel.Critical:
+                Log.Fatal($"Worker with ID {WorkerId}: {message}");
+                break;
+            default:
+                Log.Information($"Worker with ID {WorkerId}: {message}");
+                break;
+        }
     }
+
 }

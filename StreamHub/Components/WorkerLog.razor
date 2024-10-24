@@ -27,10 +27,10 @@
     <div style="height: 200px; overflow-y: auto; resize: vertical;" class="w-100">
         <Virtualize Items="LogMessages.TakeLast(100).Reverse().ToList()" Context="logMessage" ItemSize="10">
             <div class="log-entry">
-                <div>
+                <div class="@GetLogLevelClass(logMessage.LogLevel)">
                     @if (IsOutOfSequence(logMessage))
                     {
-                        <span class="text-warning">&#9888;</span>
+                    <span class="text-warning">&#9888;</span>
                     }
                     @logMessage.LogSequenceNumber: @logMessage.Timestamp : @logMessage.LogLevel : @logMessage.Message
                 </div>
@@ -84,6 +84,17 @@ else
             }
         });
     }
+    
+    private string GetLogLevelClass(LogLevel logLevel)
+    {
+        return logLevel switch
+        {
+            LogLevel.Warning => "bg-yellow-900 text-yellow-200",
+            LogLevel.Error => "bg-red-900 text-red-200",
+            LogLevel.Critical => "bg-red-900 text-red-200 font-bold",
+            _ => "", // Standardfarve for Information eller lavere
+        };
+    }
 
     private async Task TogglePauseRendering()
     {
@@ -133,11 +144,8 @@ else
 
     private async void DownloadLogs()
     {
-        var engineId = LogMessages.FirstOrDefault()?.EngineId.ToString() ?? "Unknown Engine";
-        var workerId = LogMessages.FirstOrDefault()?.WorkerId ?? "Unknown Worker";
-
         var logContent = new System.Text.StringBuilder();
-        logContent.AppendLine($"EngineId: {engineId}, WorkerId: {workerId}");
+        logContent.AppendLine($"EngineId: {EngineId}, WorkerId: {WorkerId}");
         logContent.AppendLine("Timestamp,LogLevel,Message");
 
         foreach (var logEntry in LogMessages)
@@ -145,7 +153,7 @@ else
             logContent.AppendLine($"{logEntry.Timestamp},{logEntry.LogLevel},{logEntry.Message}");
         }
 
-        var logFileName = $"logs_{workerId}_{DateTime.UtcNow:yyyyMMdd_HHmmss}.txt";
+        var logFileName = $"logs_{WorkerId}_{DateTime.UtcNow:yyyyMMdd_HHmmss}.txt";
         await TriggerFileDownload(logFileName, logContent.ToString());
     }
 

@@ -107,13 +107,14 @@ public class FakeStreamerRunner : IStreamerRunner
         CreateAndSendLog("Fake log message");
     }
 
-    private void CreateAndSendLog(string message)
+    private void CreateAndSendLog(string message, LogLevel logLevel = LogLevel.Information)
     {
         var log = new LogEntry
         {
             WorkerId = WorkerId,
             Timestamp = DateTime.UtcNow,
-            Message = message
+            Message = message,
+            LogLevel = logLevel
         };
         LogGenerated?.Invoke(this, log);
     }
@@ -134,7 +135,8 @@ public class FakeStreamerRunner : IStreamerRunner
                 ImageBytes = GenerateFakeImage("Crashed")
             };
             ImageGenerated?.Invoke(this, imageData);
-            SendLog(" - Streamer paused for 4 seconds");
+            //SendLog(" - Streamer paused for 4 seconds");
+            CreateAndSendLog("Streamer paused for 4 seconds", LogLevel.Warning);
             Task.Delay(4000).ContinueWith(_ => { _isPauseActive = false; });
             return; // Skip image generation under pause
         }
