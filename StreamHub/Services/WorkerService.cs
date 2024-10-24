@@ -1,4 +1,4 @@
-﻿using Common.Models;
+﻿using Common.DTOs;
 using Microsoft.AspNetCore.SignalR;
 using StreamHub.Hubs;
 

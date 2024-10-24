@@ -1,4 +1,5 @@
-﻿using Common.Models;
+﻿using Common.DTOs;
+
 using Microsoft.AspNetCore.SignalR.Client;
 using Serilog;
 

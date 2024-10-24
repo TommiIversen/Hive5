@@ -1,5 +1,5 @@
 ﻿using System.Runtime.InteropServices;
-using Common.Models;
+using Common.DTOs;
 using Engine.Interfaces;
 
 namespace Engine.Utils;

@@ -1,13 +1,10 @@
-﻿using Common.Models;
+﻿using Common.DTOs;
 using Engine.DAL.Entities;
-using Engine.Utils;
 
 namespace Engine.Models;
 
 public static class WorkerOutExtensions
 {
-    
-    
     public static WorkerEvent ToWorkerEvent(this WorkerEntity workerEntity, Guid engineId, 
         WorkerState state, EventType eventType = EventType.Updated)
     {

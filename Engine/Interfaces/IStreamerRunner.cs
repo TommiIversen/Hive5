@@ -1,5 +1,4 @@
-﻿using Common.Models;
-using Engine.Utils;
+﻿using Common.DTOs;
 
 namespace Engine.Interfaces;
 

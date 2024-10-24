@@ -1,5 +1,5 @@
 ﻿using System.Collections.Concurrent;
-using Common.Models;
+using Common.DTOs;
 
 namespace StreamHub.Models;
 

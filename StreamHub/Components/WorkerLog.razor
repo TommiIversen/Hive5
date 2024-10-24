@@ -1,5 +1,5 @@
 ﻿@using System.Collections.Concurrent
-@using Common.Models
+@using Common.DTOs
 @using Microsoft.AspNetCore.SignalR.Client
 @using StreamHub.Services
 @inject BlazorSignalRService SignalRService
@@ -32,7 +32,7 @@
                     {
                         <span class="text-warning">&#9888;</span>
                     }
-                    @logMessage.LogSequenceNumber: @logMessage.Timestamp : @logMessage.Message
+                    @logMessage.LogSequenceNumber: @logMessage.Timestamp : @logMessage.LogLevel : @logMessage.Message
                 </div>
             </div>
         </Virtualize>
@@ -138,14 +138,14 @@ else
 
         var logContent = new System.Text.StringBuilder();
         logContent.AppendLine($"EngineId: {engineId}, WorkerId: {workerId}");
-        logContent.AppendLine("Timestamp,Message");
+        logContent.AppendLine("Timestamp,LogLevel,Message");
 
         foreach (var logEntry in LogMessages)
         {
-            logContent.AppendLine($"{logEntry.Timestamp},{logEntry.Message}");
+            logContent.AppendLine($"{logEntry.Timestamp},{logEntry.LogLevel},{logEntry.Message}");
         }
 
-        var logFileName = $"logs_{DateTime.UtcNow:yyyyMMdd_HHmmss}.txt";
+        var logFileName = $"logs_{workerId}_{DateTime.UtcNow:yyyyMMdd_HHmmss}.txt";
         await TriggerFileDownload(logFileName, logContent.ToString());
     }
 

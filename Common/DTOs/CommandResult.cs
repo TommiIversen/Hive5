@@ -1,4 +1,4 @@
-﻿namespace Common.Models;
+﻿namespace Common.DTOs;
 
 public class CommandResult(bool success, string message)
 {
