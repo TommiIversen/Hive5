@@ -15,7 +15,8 @@ public class EngineHub(
     public async Task<bool> RegisterEngineConnection(EngineBaseInfo engineInfo)
     {
         // Tjek om engine allerede er forbundet
-        if (engineManager.TryGetEngine(engineInfo.EngineId, out var existingEngine) && 
+        if (engineManager.TryGetEngine(engineInfo.EngineId, out var existingEngine) &&
+            existingEngine != null &&
             !string.IsNullOrEmpty(existingEngine.ConnectionId))
         {
             Console.WriteLine($"RegisterEngineConnection Engine {engineInfo.EngineId} is already connected. Rejecting new connection.");
@@ -55,7 +56,7 @@ public class EngineHub(
         
         // Tjek om engine allerede er forbundet
         if (engineManager.TryGetEngine(engineId, out var existingEngine) && 
-            string.IsNullOrEmpty(existingEngine.ConnectionId))
+            string.IsNullOrEmpty(existingEngine?.ConnectionId))
         {
             Console.WriteLine($"Engine is not connected.");
             //return new CommandResult(false, "Engine is not connected");
@@ -65,12 +66,13 @@ public class EngineHub(
         using var linkedCts =
             CancellationTokenSource.CreateLinkedTokenSource(cancellationService.Token, timeoutCts.Token);
         
-        if (existingEngine != null)
+        if (existingEngine is {ConnectionId: not null})
         {
             CommandResult result;
             result = await hubContext.Clients.Client(existingEngine.ConnectionId)
-                .InvokeAsync<CommandResult>("RemoveHubConnection", hubUrl , linkedCts.Token);
+                .InvokeAsync<CommandResult>("RemoveHubConnection", hubUrl, linkedCts.Token);
             Console.WriteLine($"RemoveHubUrlRemoveHubUrlRemoveHubUrlRemoveHubUrl Result: {result.Message}");
+                
         }
 
         await hubContext.Clients.Group("frontendClients").SendAsync("EngineChange", cancellationService.Token);

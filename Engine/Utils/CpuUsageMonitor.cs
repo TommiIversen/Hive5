@@ -118,8 +118,10 @@ public class CpuUsageMonitor : IDisposable
     private async Task<double> GetLinuxTotalCpuUsageAsync(CancellationToken cancellationToken)
     {
         var cpuLine = await ReadProcStatLineAsync(cancellationToken);
-        var cpuValues = ParseCpuStat(cpuLine);
-        return CalculateCpuUsage(cpuValues);
+
+            var cpuValues = ParseCpuStat(cpuLine);
+            return CalculateCpuUsage(cpuValues);
+        
     }
 
     private async Task<double[]> GetLinuxPerCoreCpuUsageAsync(CancellationToken cancellationToken)

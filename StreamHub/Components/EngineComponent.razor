@@ -19,8 +19,8 @@
     }
 
     <div class="bg-slate-950 p-4 rounded-lg md:col-span-1">
-        <h2 class="text-xl font-semibold">@Engine.BaseInfo.EngineName</h2>
-        <div class="text-gray-400">@Engine.BaseInfo.EngineDescription</div>
+        <h2 class="text-xl font-semibold">@Engine?.BaseInfo.EngineName</h2>
+        <div class="text-gray-400">@Engine?.BaseInfo.EngineDescription</div>
         <EngineConnectionInfoComponent Engine="@Engine"/>
         <MetricExpandPanelComponent EngineId="@Engine.BaseInfo.EngineId" />
         <EngineCreateWorker EngineId="@Engine.BaseInfo.EngineId"/>

@@ -8,11 +8,10 @@ public class FakeStreamerRunner : IStreamerRunner
 {
     private readonly Timer _logTimer;
     private readonly Timer _imageTimer;
-    private int _logCounter = 0;
     private int _imageCounter = 0;
     private bool _isPauseActive = false;
 
-    public string WorkerId { get; set; }
+    public required string WorkerId { get; set; }
 
     private readonly ImageGenerator _generator = new();
     private WorkerState _state = WorkerState.Idle;
@@ -31,7 +30,7 @@ public class FakeStreamerRunner : IStreamerRunner
 
     public async Task<(WorkerState, string)> StartAsync()
     {
-        string msg = "";
+        string msg;
 
         if (_state == WorkerState.Running || _state == WorkerState.Starting)
         {

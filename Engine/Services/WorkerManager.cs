@@ -30,8 +30,11 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
                 continue;
             }
 
-            // Hvis arbejderen ikke findes i _workers, opret en ny service for arbejderen
-            IStreamerRunner streamerRunner = new FakeStreamerRunner();
+            // Hvis workeren ikke findes i _workers, opret en ny service for arbejderen
+            IStreamerRunner streamerRunner = new FakeStreamerRunner
+            {
+                WorkerId = workerEntity.WorkerId
+            };
             var workerService = new WorkerService(this, messageQueue, streamerRunner, workerEntity.WorkerId,
                 repositoryFactory);
             _workers[workerEntity.WorkerId] = workerService;
@@ -67,7 +70,10 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
             workerCreate.WorkerId = Guid.NewGuid().ToString();
         }
 
-        IStreamerRunner streamerRunner = new FakeStreamerRunner();
+        IStreamerRunner streamerRunner = new FakeStreamerRunner
+        {
+            WorkerId = workerCreate.WorkerId
+        };
         var workerService = GetOrCreateWorkerService(workerCreate, streamerRunner);
 
         Log.Information($"Adding worker to database.. {workerCreate.WorkerId}");
@@ -194,7 +200,7 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
         return new CommandResult(true, $"Worker {workerId} {(enable ? "enabled" : "disabled")} successfully");
     }
 
-    public async Task<CommandResult> EditWorkerAsync(string workerId, string? newName, string? newDescription,
+    public async Task<CommandResult> EditWorkerAsync(string workerId, string newName, string newDescription,
         string? newCommand)
     {
         Log.Information($"Editing worker: {workerId}");

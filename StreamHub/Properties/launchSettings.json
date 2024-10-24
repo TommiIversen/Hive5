@@ -1,19 +1,21 @@
 {
   "$schema": "https://json.schemastore.org/launchsettings.json",
     "profiles": {
-      "streamhub http 9000": {
+      "streamhub_http_9000": {
         "commandName": "Project",
         "dotnetRunMessages": true,
         "launchBrowser": true,
+        "hotReloadEnabled": true,
         "applicationUrl": "http://localhost:9000",
         "environmentVariables": {
           "ASPNETCORE_ENVIRONMENT": "Development"
         }
       },
-      "streamhub http 8999": {
+      "streamhub_http_8999": {
         "commandName": "Project",
         "dotnetRunMessages": true,
         "launchBrowser": true,
+        "hotReloadEnabled": true,
         "applicationUrl": "http://localhost:8999",
         "environmentVariables": {
           "ASPNETCORE_ENVIRONMENT": "Development"
@@ -27,6 +29,12 @@
         "environmentVariables": {
           "ASPNETCORE_ENVIRONMENT": "Development"
         }
+      },
+      "Watch 8999": {
+        "commandName": "Executable",
+        "workingDirectory": "$(ProjectDir)",
+        "executablePath": "dotnet",
+        "commandLineArgs": "watch run debug --launch-profile streamhub_http_8999"
       }
     }
   }

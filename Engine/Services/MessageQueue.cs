@@ -54,7 +54,6 @@ public class MultiQueue
     private readonly ConcurrentDictionary<string, ConcurrentQueue<BaseMessage>> _uniqueQueues = new();
     private readonly int _defaultQueueLimit;
     private readonly SemaphoreSlim _messageAvailable = new(0); // Semaphore til at signalere nye beskeder
-    private const bool DebugFlag = false;
 
     public MultiQueue(ILogger<MultiQueue> logger, int defaultQueueLimit = 20)
     {
@@ -82,12 +81,6 @@ public class MultiQueue
                 }
 
                 uniqueQueue.Enqueue(baseMessage); // Tilføj den nye besked
-
-                if (DebugFlag)
-                {
-                    _logger.LogInformation("Message for UniqueID: {UniqueId} enqueued. Queue size: {QueueSize}",
-                        uniqueId, uniqueQueue.Count);
-                }
             }
         }
         else
@@ -110,12 +103,6 @@ public class MultiQueue
                 if (queue.Count > _defaultQueueLimit)
                 {
                     queue.TryDequeue(out _); // Fjern ældste besked, hvis køen overskrider grænsen
-                }
-
-                if (DebugFlag)
-                {
-                    _logger.LogInformation("{MessageType} enqueued. Queue size: {QueueSize}", messageType.Name,
-                        queue.Count);
                 }
             }
         }

@@ -7,6 +7,8 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <PackageReference Include="MessagePack" Version="3.0.238-rc.1" />
+      <PackageReference Include="MessagePack.Annotations" Version="3.0.238-rc.1" />
       <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="9.0.0-rc.2.24474.3" />
       <PackageReference Include="Microsoft.AspNetCore.SignalR.Protocols.MessagePack" Version="9.0.0-rc.2.24474.3" />
     </ItemGroup>

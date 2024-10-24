@@ -39,9 +39,9 @@
         {
             EngineId = EngineId,
             WorkerId = Worker.Worker.WorkerId,
-            Name = _workerName,
-            Description = _workerDescription,
-            Command = _workerCommand
+            Name = _workerName ?? string.Empty,
+            Description = _workerDescription?? string.Empty,
+            Command = _workerCommand?? string.Empty
         };
 
         // Kald EditWorkerAsync metoden for at gemme ændringerne

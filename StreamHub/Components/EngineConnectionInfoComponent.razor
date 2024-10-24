@@ -90,9 +90,10 @@
     [Parameter] public required EngineViewModel Engine { get; set; }
 
     
-    protected override async Task OnInitializedAsync()
+    protected override Task OnInitializedAsync()
     {
         SignalRService.HubConnection.On("EngineChange", async () => { await InvokeAsync(StateHasChanged); });
+        return Task.CompletedTask;
     }
     
     private void EditUrl(HubUrlInfo url)

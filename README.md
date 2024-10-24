@@ -6,5 +6,5 @@ Set data path via env: HIVE_BASE_PATH
 dotnet list package
 
 # EF core
-dotnet ef migrations add addUri
+dotnet ef migrations add setUrlRequered
 
