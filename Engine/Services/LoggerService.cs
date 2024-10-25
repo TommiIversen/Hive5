@@ -1,11 +1,13 @@
 ﻿using Common.DTOs;
 using Serilog;
+using System.Collections.Concurrent;
 
 namespace Engine.Services;
 
 public class LoggerService(Guid engineId, MessageQueue messageQueue)
 {
-    private int _workerLogCounter = 0;
+    // Ordbog til at holde logsekvens for hver WorkerId
+    private readonly ConcurrentDictionary<string, int> _workerLogCounters = new();
     private int _engineLogCounter = 0;
 
     public void LogMessage(BaseLogEntry logEntry)
@@ -15,21 +17,30 @@ public class LoggerService(Guid engineId, MessageQueue messageQueue)
         logEntry.Timestamp = DateTime.UtcNow;
 
         // Sæt sekvensnummer afhængigt af logtypen
-        if (logEntry is WorkerLogEntry)
+        if (logEntry is WorkerLogEntry workerLogEntry)
         {
-            Console.WriteLine("ÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆÆ WorkerLogEntry");
-            Console.WriteLine($"logEntry.EngineId: {logEntry.EngineId}");
-            logEntry.LogSequenceNumber = Interlocked.Increment(ref _workerLogCounter);
+            // Initialiser tælleren for denne WorkerId, hvis den ikke allerede findes
+            _workerLogCounters.TryAdd(workerLogEntry.WorkerId, 0);
+
+            // Opdater tælleren i en løkke for at sikre thread-sikker opdatering
+            int currentCount;
+            int newCount;
+            do
+            {
+                currentCount = _workerLogCounters[workerLogEntry.WorkerId];
+                newCount = currentCount + 1;
+            }
+            while (!_workerLogCounters.TryUpdate(workerLogEntry.WorkerId, newCount, currentCount));
+
+            // Tildel det nye sekvensnummer
+            workerLogEntry.LogSequenceNumber = newCount;
         }
         else if (logEntry is EngineLogEntry)
         {
             logEntry.SequenceNumber = Interlocked.Increment(ref _engineLogCounter);
         }
 
-        // Tilføj til køen
         messageQueue.EnqueueMessage(logEntry);
-
-        // Log til Serilog baseret på logniveau
         LogToSerilog(logEntry);
     }
 

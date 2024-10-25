@@ -26,7 +26,8 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
             // Tjek om arbejderen allerede findes i in-memory _workers
             if (_workers.ContainsKey(workerEntity.WorkerId))
             {
-                Log.Information($"Worker with ID {workerEntity.WorkerId} already exists in memory.");
+                LogInfo($"Worker with ID {workerEntity.WorkerId} already exists in memory.", workerEntity.WorkerId, LogLevel.Warning);
+                
                 continue;
             }
 
@@ -51,7 +52,8 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
 
     public async Task<WorkerService?> AddWorkerAsync(Guid engineId, WorkerCreate workerCreate)
     {
-        Log.Information($"Adding worker... {workerCreate.Name}");
+        LogInfo($"Adding worker... {workerCreate.Name}", workerCreate.WorkerId);
+        
         IWorkerRepository workerRepository = repositoryFactory.CreateWorkerRepository();
 
         // Tjek, om WorkerId allerede findes i databasen asynkront
@@ -60,7 +62,7 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
         // Hvis arbejderen allerede findes i databasen, returnér null
         if (existingWorker != null)
         {
-            Log.Warning($"Worker with ID {workerCreate.WorkerId} already exists in database.");
+            LogInfo($"Worker with ID {workerCreate.WorkerId} already exists in database.", workerCreate.WorkerId, LogLevel.Warning);
             return null;
         }
 
@@ -76,7 +78,7 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
         };
         var workerService = GetOrCreateWorkerService(workerCreate, streamerRunner);
 
-        Log.Information($"Adding worker to database.. {workerCreate.WorkerId}");
+        LogInfo($"Adding worker to database.. {workerCreate.WorkerId}", workerCreate.WorkerId);
 
         var workerEntity = new WorkerEntity
         {
@@ -100,8 +102,9 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
         // Hvis arbejderen allerede findes i databasen og i _workers, returner den eksisterende service
         if (_workers.ContainsKey(workerCreate.WorkerId))
         {
-            Log.Information(
-                $"Worker with ID {workerCreate.WorkerId} already exists in memory. Returning existing service.");
+            var logmessage =
+                $"Worker with ID {workerCreate.WorkerId} already exists in memory. Returning existing service.";
+            LogInfo(logmessage, workerCreate.WorkerId, LogLevel.Warning);
             return _workers[workerCreate.WorkerId];
         }
 
@@ -115,7 +118,8 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
 
     public async Task<CommandResult> StartWorkerAsync(string workerId)
     {
-        Log.Information($"Starting worker: {workerId}");
+        LogInfo($"Starting worker: {workerId}", workerId);
+        
         var worker = GetWorkerService(workerId);
 
         if (worker != null)
@@ -124,13 +128,13 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
             return result;
         }
 
-        Log.Warning($"Worker with ID {workerId} not found.");
+        LogInfo($"Worker with ID {workerId} not found.", workerId, LogLevel.Warning);
         return new CommandResult(false, "Worker not found");
     }
 
     public async Task<CommandResult> StopWorkerAsync(string workerId)
     {
-        Log.Information($"Stopping worker: {workerId}");
+        LogInfo($"Stopping worker: {workerId}", workerId);
         var worker = GetWorkerService(workerId);
 
         if (worker != null)
@@ -139,13 +143,13 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
             return result;
         }
 
-        Log.Warning($"Worker with ID {workerId} not found.");
+        LogInfo($"Worker with ID {workerId} not found.", workerId, LogLevel.Warning);
         return new CommandResult(false, "Worker not found");
     }
 
     public async Task<CommandResult> EnableDisableWorkerAsync(string workerId, bool enable)
     {
-        Log.Information($"{(enable ? "Enabling" : "Disabling")} worker: {workerId}");
+        LogInfo($"{(enable ? "Enabling" : "Disabling")} worker: {workerId}", workerId);
 
         // Tjek om arbejderen eksisterer
         var worker = GetWorkerService(workerId);
@@ -160,11 +164,11 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
         {
             if (worker.GetState() != WorkerState.Idle)
             {
-                Log.Information($"Stopping worker {workerId} before disabling...");
+                LogInfo($"Stopping worker {workerId} before disabling...", workerId);
                 var stopResult = await worker.StopAsync();
                 if (!stopResult.Success)
                 {
-                    Log.Warning($"Failed to stop worker {workerId}: {stopResult.Message}");
+                    LogInfo($"Failed to stop worker {workerId}: {stopResult.Message}", workerId, LogLevel.Error);
                     return new CommandResult(false, $"Failed to stop worker: {stopResult.Message}");
                 }
             }
@@ -175,7 +179,7 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
         var workerEntity = await workerRepository.GetWorkerByIdAsync(workerId);
         if (workerEntity == null)
         {
-            Log.Warning($"Worker entity with ID {workerId} not found in database.");
+            LogInfo($"Worker entity with ID {workerId} not found in database.", workerId, LogLevel.Warning);
             return new CommandResult(false, "Worker not found in database");
         }
 
@@ -188,7 +192,7 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
             var startResult = await worker.StartAsync();
             if (!startResult.Success)
             {
-                Log.Warning($"Failed to start worker {workerId} after enabling: {startResult.Message}");
+                LogInfo($"Failed to start worker {workerId} after enabling: {startResult.Message}", workerId, LogLevel.Error);
                 return new CommandResult(false, $"Worker enabled, but failed to start: {startResult.Message}");
             }
         }
@@ -196,14 +200,14 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
         // Send event om at arbejderen er blevet enabled/disabled
         await SendWorkerEvent(workerId, EventType.Updated);
 
-        Log.Information($"Worker {workerId} has been successfully {(enable ? "enabled" : "disabled")}.");
+        LogInfo($"Worker {workerId} has been successfully {(enable ? "enabled" : "disabled")}.", workerId);
         return new CommandResult(true, $"Worker {workerId} {(enable ? "enabled" : "disabled")} successfully");
     }
 
     public async Task<CommandResult> EditWorkerAsync(string workerId, string newName, string newDescription,
         string? newCommand)
     {
-        Log.Information($"Editing worker: {workerId}");
+        LogInfo($"Editing worker: {workerId}", workerId);
 
         // Hent arbejderen fra databasen
         var workerRepository = repositoryFactory.CreateWorkerRepository();
@@ -211,7 +215,7 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
 
         if (workerEntity == null)
         {
-            Log.Warning($"Worker with ID {workerId} not found in database.");
+            LogInfo($"Worker with ID {workerId} not found in database.", workerId, LogLevel.Warning);
             return new CommandResult(false, "Worker not found in database");
         }
 
@@ -239,7 +243,7 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
 
         if (string.IsNullOrEmpty(isModified))
         {
-            Log.Information($"No changes detected for worker {workerId}.");
+            LogInfo("No changes detected", workerId);
             return new CommandResult(true, "No changes detected");
         }
 
@@ -253,12 +257,12 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
             var workerService = GetWorkerService(workerId);
             if (workerService != null)
             {
-                Log.Information($"Restarting worker {workerId} due to command change.");
+                LogInfo($"Restarting worker {workerId} due to command change.", workerId);
                 await workerService.StopAsync(); // Stop arbejderen
                 var result = await workerService.StartAsync(); // Genstart med den nye kommando
                 if (!result.Success)
                 {
-                    Log.Warning($"Failed to restart worker {workerId}: {result.Message}");
+                    LogInfo($"Failed to restart worker {workerId}: {result.Message}", workerId, LogLevel.Error);
                     return new CommandResult(false, $"Worker updated but failed to restart: {result.Message}");
                 }
             }
@@ -267,7 +271,7 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
         // Send en event om at arbejderen er blevet opdateret
         await SendWorkerEvent(workerId, EventType.Updated);
 
-        Log.Information($"Worker {workerId} updated successfully.");
+        LogInfo($"Worker updated successfully: {isModified}", workerId);
         return new CommandResult(true, $"Worker updated successfully: {isModified}");
     }
 
@@ -304,12 +308,12 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
 
     public async Task<CommandResult> RemoveWorkerAsync(string workerId)
     {
-        Log.Information($"Removing worker: {workerId}");
+        LogInfo($"Removing worker: {workerId}", workerId);
         var worker = GetWorkerService(workerId);
 
         if (worker == null)
         {
-            Log.Warning($"Worker with ID {workerId} not found.");
+            LogInfo($"Worker with ID {workerId} not found.", workerId, LogLevel.Warning);
             return new CommandResult(false, "Worker not found");
         }
 
@@ -317,11 +321,12 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
         if (worker.GetState() != WorkerState.Idle)
         {
             Log.Information($"Worker {workerId} is not idle. Attempting to stop before removal...");
+            LogInfo($"Stopping worker {workerId} before removal...", workerId, LogLevel.Warning);
             var stopResult = await worker.StopAsync(); // Delegér stop-logikken til `WorkerService`
 
             if (!stopResult.Success)
             {
-                Log.Warning($"Failed to stop worker {workerId} before removal: {stopResult.Message}");
+                LogInfo($"Failed to stop worker before removal: {stopResult.Message}", workerId, LogLevel.Error);
                 return new CommandResult(false, $"Failed to stop worker before removal: {stopResult.Message}");
             }
         }
@@ -350,13 +355,13 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
             // Nulstil tælleren
             workerEntity.WatchdogEventCount = 0;
             await workerRepository.UpdateWorkerAsync(workerEntity);
-            Log.Information($"Watchdog event count reset for worker {workerId}.");
+            LogInfo($"Watchdog event count reset for worker {workerId}.", workerId);
             await SendWorkerEvent(workerId, EventType.Updated);
             return new CommandResult(true, "Watchdog event count reset successfully.");
         }
         else
         {
-            Log.Warning($"Worker with ID {workerId} not found.");
+            LogInfo($"Worker with ID {workerId} not found.", workerId, LogLevel.Warning);
             return new CommandResult(false, "Worker not found.");
         }
     }
@@ -380,9 +385,8 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
 
     private async Task SendWorkerEvent(string workerId, EventType eventType)
     {
-        Console.WriteLine($"SendWorkerEvent: Sending worker event: {eventType} - {workerId}");
+        LogInfo($"SendWorkerEvent: Sending worker event: {eventType}", workerId);
         var workerService = GetWorkerService(workerId);
-
 
         if (workerService != null)
         {
@@ -396,7 +400,7 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
         }
         else
         {
-            Log.Warning($"SendWorkerEvent: Worker not found for WorkerId: {workerId}");
+            LogInfo($"Worker with ID {workerId} not found.", workerId, LogLevel.Warning);
         }
     }
 
@@ -417,12 +421,22 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
         }
         else
         {
-            Log.Warning($"Worker with ID {workerService.WorkerId} not found in database.");
+            LogInfo($"Worker with ID {workerService.WorkerId} not found.", workerService.WorkerId, LogLevel.Warning);
         }
     }
 
     private WorkerService? GetWorkerService(string workerId)
     {
         return _workers.TryGetValue(workerId, out var worker) ? worker : null;
+    }
+    
+    private void LogInfo(string message, string workerId, LogLevel logLevel = LogLevel.Information)
+    {
+        loggerService.LogMessage(new WorkerLogEntry
+        {
+            WorkerId = workerId,
+            Message = $"WorkerManager: {message}",
+            LogLevel = logLevel
+        });
     }
 }

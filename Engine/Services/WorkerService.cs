@@ -220,8 +220,7 @@ public class WorkerService
 
     private void OnLogGenerated(object? sender, WorkerLogEntry workerLog)
     {
-        workerLog.LogSequenceNumber = Interlocked.Increment(ref _logCounter);
-        _messageQueue.EnqueueMessage(workerLog);
+        _loggerService.LogMessage(workerLog);
     }
 
     private void OnImageGenerated(object? sender, ImageData image)
