@@ -110,10 +110,10 @@ public class RunnerWatchdog
         }
     }
 
-    public void OnRunnerLogGenerated(object? sender, LogEntry log)
+    public void OnRunnerLogGenerated(object? sender, WorkerLogEntry workerLog)
     {
         // Tilføj log fra runneren til logbufferen
-        AddLog($"{log.Timestamp}: {log.Message}");
+        AddLog($"{workerLog.Timestamp}: {workerLog.Message}");
     }
 
     private void OnStateChanged(string message)

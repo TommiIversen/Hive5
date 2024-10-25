@@ -6,24 +6,21 @@ using Serilog;
 namespace Engine.Services;
 
 public class WorkerService
-
 {
     private readonly WorkerManager _workerManager;
     private readonly MessageQueue _messageQueue;
+    private readonly LoggerService _loggerService;
     private readonly IStreamerRunner _streamerRunner;
     private readonly RepositoryFactory _repositoryFactory; // Nyt felt til RepositoryFactory
-
-
     private readonly RunnerWatchdog _watchdog;
     private WorkerState _desiredState;
     private DateTime _lastImageUpdate;
 
     public string WorkerId { set; get; }
-
     private int _logCounter = 0;
     private int _imageCounter = 0;
-
-    public WorkerService(WorkerManager workerManager, MessageQueue messageQueue, IStreamerRunner streamerRunner,
+    
+    public WorkerService(WorkerManager workerManager, LoggerService loggerService, MessageQueue messageQueue, IStreamerRunner streamerRunner,
         string workerCreateWorkerId, RepositoryFactory repositoryFactory)
     {
         _workerManager = workerManager;
@@ -31,6 +28,7 @@ public class WorkerService
         _streamerRunner = streamerRunner;
         _streamerRunner.WorkerId = workerCreateWorkerId;
         _repositoryFactory = repositoryFactory; // Gem den som et felt i klassen
+        _loggerService = loggerService;
 
         WorkerId = workerCreateWorkerId;
 
@@ -57,7 +55,7 @@ public class WorkerService
 
     public async Task<CommandResult> StartAsync()
     {
-        Log.Information($"Starting worker {WorkerId}");
+        LogInfo($"Starting worker {WorkerId}");
         _desiredState = WorkerState.Running;
 
         int maxRetries = 3;
@@ -68,8 +66,8 @@ public class WorkerService
                 _streamerRunner.GetState() == WorkerState.Stopping ||
                 _streamerRunner.GetState() == WorkerState.Restarting) && retryCount < maxRetries)
         {
-            Log.Information(
-                $"Worker {WorkerId} is in a transitional state ({_streamerRunner.GetState()}). Waiting... (Attempt {retryCount + 1}/{maxRetries})");
+
+            LogInfo($"Worker {WorkerId} is in a transitional state ({_streamerRunner.GetState()}). Waiting... (Attempt {retryCount + 1}/{maxRetries})", LogLevel.Warning);
             await Task.Delay(500);
             retryCount++;
         }
@@ -78,15 +76,17 @@ public class WorkerService
             _streamerRunner.GetState() == WorkerState.Stopping ||
             _streamerRunner.GetState() == WorkerState.Restarting)
         {
-            Log.Warning(
-                $"Worker {WorkerId} is still in a transitional state ({_streamerRunner.GetState()}) after {maxRetries} attempts.");
+
+            LogInfo($"Worker {WorkerId} is still in a transitional state ({_streamerRunner.GetState()}) after {maxRetries} attempts.", LogLevel.Error);
+            
             return new CommandResult(false,
                 $"Worker is still in a transitional state after {maxRetries} attempts. Please try again later.");
         }
 
         if (_streamerRunner.GetState() == WorkerState.Running)
         {
-            Log.Information($"Worker {WorkerId} is already running.");
+            LogInfo($"Worker {WorkerId} is already running.", LogLevel.Warning);
+            
             return new CommandResult(true, "Worker is already running");
         }
 
@@ -101,7 +101,8 @@ public class WorkerService
 
     public async Task<CommandResult> StopAsync()
     {
-        Log.Information($"Stopping worker {WorkerId}");
+        LogInfo($"Stopping worker {WorkerId}");
+        
         _desiredState = WorkerState.Idle;
 
         int maxRetries = 3;
@@ -112,8 +113,7 @@ public class WorkerService
                 _streamerRunner.GetState() == WorkerState.Stopping ||
                 _streamerRunner.GetState() == WorkerState.Restarting) && retryCount < maxRetries)
         {
-            Log.Information(
-                $"Worker {WorkerId} is in a transitional state ({_streamerRunner.GetState()}). Waiting... (Attempt {retryCount + 1}/{maxRetries})");
+            LogInfo($"Worker {WorkerId} is in a transitional state ({_streamerRunner.GetState()}). Waiting... (Attempt {retryCount + 1}/{maxRetries})", LogLevel.Warning);
             await Task.Delay(500);
             retryCount++;
         }
@@ -122,15 +122,15 @@ public class WorkerService
             _streamerRunner.GetState() == WorkerState.Stopping ||
             _streamerRunner.GetState() == WorkerState.Restarting)
         {
-            Log.Warning(
-                $"Worker {WorkerId} is still in a transitional state ({_streamerRunner.GetState()}) after {maxRetries} attempts.");
+            LogInfo($"Worker {WorkerId} is still in a transitional state ({_streamerRunner.GetState()}) after {maxRetries} attempts.", LogLevel.Error);
+            
             return new CommandResult(false,
                 $"Worker is still in a transitional state after {maxRetries} attempts. Please try again later.");
         }
 
         if (_streamerRunner.GetState() == WorkerState.Idle)
         {
-            Log.Information($"Worker {WorkerId} is already idle.");
+            LogInfo($"Worker {WorkerId} is already idle.", LogLevel.Warning);
             return new CommandResult(true, "Worker is already idle");
         }
 
@@ -172,8 +172,7 @@ public class WorkerService
     private async void RestartWorker(string reason)
     {
         string logMessage = $"Restarting worker {WorkerId} due to: {reason}";
-        Log.Information(logMessage);
-        Log.Information($"Restarting worker {WorkerId} due to: {reason}");
+        LogInfo(logMessage, LogLevel.Error);
 
         // Sæt desired state til Restarting
         _desiredState = WorkerState.Restarting;
@@ -182,7 +181,8 @@ public class WorkerService
         var stopResult = await StopAsync();
         if (!stopResult.Success)
         {
-            Log.Warning($"Failed to stop worker {WorkerId} during restart. Reason: {stopResult.Message}");
+            logMessage = $"Failed to stop worker {WorkerId} during restart. Reason: {stopResult.Message}";
+            LogInfo(logMessage, LogLevel.Error);
             return;
         }
 
@@ -190,16 +190,16 @@ public class WorkerService
         var startResult = await StartAsync();
         if (!startResult.Success)
         {
-            Log.Warning($"Failed to start worker {WorkerId} during restart. Reason: {startResult.Message}");
+            logMessage = $"Failed to start worker {WorkerId} during restart. Reason: {startResult.Message}";
+            LogInfo(logMessage, LogLevel.Error);
             _desiredState = WorkerState.Idle;
         }
     }
 
     private async Task OnWatchdogStateChanged(object? sender, string message)
     {
-        Console.WriteLine($"-----Watchdog state changed: {message}");
-        CreateAndSendLog(message, "Watchdog", LogLevel.Error);
-        // Find arbejderen, der relaterer til senderen (antagelsen er, at sender kan være WorkerService)
+        LogInfo(message, LogLevel.Error);
+
         var workerRepository = _repositoryFactory.CreateWorkerRepository();
         var workerEntity = await workerRepository.GetWorkerByIdAsync(WorkerId);
 
@@ -209,20 +209,19 @@ public class WorkerService
             workerEntity.WatchdogEventCount++;
             await workerRepository.UpdateWorkerAsync(workerEntity); // Gem ændringerne asynkront
 
-            Log.Information(
-                $"------Watchdog state changed for worker {WorkerId}. Event count: {workerEntity.WatchdogEventCount}");
+            LogInfo($"------Watchdog state changed for worker {WorkerId}. Event count: {workerEntity.WatchdogEventCount}");
         }
         else
         {
-            Log.Warning($"Worker with ID {WorkerId} not found.");
+            LogInfo($"Worker with ID {WorkerId} not found.", LogLevel.Error);
         }
     }
 
 
-    private void OnLogGenerated(object? sender, LogEntry log)
+    private void OnLogGenerated(object? sender, WorkerLogEntry workerLog)
     {
-        log.LogSequenceNumber = Interlocked.Increment(ref _logCounter);
-        _messageQueue.EnqueueMessage(log);
+        workerLog.LogSequenceNumber = Interlocked.Increment(ref _logCounter);
+        _messageQueue.EnqueueMessage(workerLog);
     }
 
     private void OnImageGenerated(object? sender, ImageData image)
@@ -236,46 +235,15 @@ public class WorkerService
     {
         return _streamerRunner.GetState();
     }
-
-    private void CreateAndSendLog(string message, string service, LogLevel logLevel)
+    
+    private void LogInfo(string message, LogLevel logLevel = LogLevel.Information)
     {
-        var log = new LogEntry
+        _loggerService.LogMessage(new WorkerLogEntry
         {
             WorkerId = WorkerId,
-            Timestamp = DateTime.UtcNow,
-            Message = $"{service}: {message}",
-            LogLevel = logLevel,
-            LogSequenceNumber = Interlocked.Increment(ref _logCounter)
-        };
-    
-        // Enqueue log to the message queue
-        _messageQueue.EnqueueMessage(log);
-
-        // Dynamisk logning baseret på logLevel
-        switch (logLevel)
-        {
-            case LogLevel.Trace:
-                Log.Verbose($"Worker with ID {WorkerId}: {message}");
-                break;
-            case LogLevel.Debug:
-                Log.Debug($"Worker with ID {WorkerId}: {message}");
-                break;
-            case LogLevel.Information:
-                Log.Information($"Worker with ID {WorkerId}: {message}");
-                break;
-            case LogLevel.Warning:
-                Log.Warning($"Worker with ID {WorkerId}: {message}");
-                break;
-            case LogLevel.Error:
-                Log.Error($"Worker with ID {WorkerId}: {message}");
-                break;
-            case LogLevel.Critical:
-                Log.Fatal($"Worker with ID {WorkerId}: {message}");
-                break;
-            default:
-                Log.Information($"Worker with ID {WorkerId}: {message}");
-                break;
-        }
+            Message = $"WorkerService: {message}",
+            LogLevel = logLevel
+        });
     }
 
 }

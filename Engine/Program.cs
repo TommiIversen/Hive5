@@ -55,22 +55,21 @@ builder.Services.AddDbContextFactory<ApplicationDbContext>(options =>
 
 int maxQueueSize = 10;
 builder.Services.AddSingleton<MessageQueue>(provider => new MessageQueue(maxQueueSize));
-builder.Services.AddSingleton<WorkerManager>();
 builder.Services.AddScoped<IEngineRepository, EngineRepository>();
 builder.Services.AddSingleton<IEngineService, EngineService>();
-builder.Services.AddSingleton<StreamHub>();
 
 // Registrer den konkrete implementering af INetworkInterfaceProvider til brug i MetricsService
 builder.Services.AddSingleton<INetworkInterfaceProvider, NetworkInterfaceProvider>(); 
 builder.Services.AddSingleton<MetricsService>();
 
-var app = builder.Build();
 
 
 // Opret database og seed data, hvis nødvendigt
-using (var scope = app.Services.CreateScope())
+using (var tempScope = builder.Services.BuildServiceProvider().CreateScope())
 {
-    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    var dbContext = tempScope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    var engineRepository = tempScope.ServiceProvider.GetRequiredService<IEngineRepository>();
+
 
     // Ryd eventuelt eksisterende låse før migrering
     try
@@ -93,7 +92,28 @@ using (var scope = app.Services.CreateScope())
         Log.Error(ex, "Migration failed.");
         throw;
     }
-}
+    
+    // Hent EngineId fra databasen
+    var engineEntity = await engineRepository.GetEngineAsync();
+    if (engineEntity == null)
+    {
+        Log.Fatal("EngineId kunne ikke hentes fra databasen.");
+        throw new InvalidOperationException("EngineId mangler i databasen.");
+    }
+    var engineId = engineEntity.EngineId;
+
+    // Registrer LoggerService som singleton med EngineId og MessageQueue
+    // Registrer LoggerService som singleton og injicer MessageQueue
+    builder.Services.AddSingleton<LoggerService>(provider =>
+    {
+        var messageQueue = provider.GetRequiredService<MessageQueue>();
+        return new LoggerService(engineId, messageQueue);
+    });}
+
+builder.Services.AddSingleton<WorkerManager>();
+builder.Services.AddSingleton<StreamHub>();
+
+var app = builder.Build();
 
 // Retrieve the StreamHub instance and initialize it
 app.Services.GetRequiredService<StreamHub>();

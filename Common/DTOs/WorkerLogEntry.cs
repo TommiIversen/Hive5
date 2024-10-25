@@ -2,11 +2,24 @@
 
 namespace Common.DTOs;
 
-public class LogEntry : BaseMessage
+
+public class BaseLogEntry : BaseMessage
 {
-    public required string WorkerId { get; set; }
     public required string Message { get; set; }
     public int LogSequenceNumber { get; set; }
-    
     public LogLevel LogLevel { get; set; } = LogLevel.Information;
 }
+
+
+public class WorkerLogEntry : BaseLogEntry
+{
+    public required string WorkerId { get; set; }
+    
+}
+
+public class EngineLogEntry : BaseLogEntry
+{
+    
+}
+
+

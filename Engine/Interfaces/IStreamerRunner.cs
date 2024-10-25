@@ -9,7 +9,7 @@ public interface IStreamerRunner
     Task<(WorkerState, string)> StartAsync();
     Task<(WorkerState, string)> StopAsync();
 
-    event EventHandler<LogEntry> LogGenerated;
+    event EventHandler<WorkerLogEntry> LogGenerated;
     event EventHandler<ImageData> ImageGenerated;
     Func<WorkerState, Task>? StateChangedAsync { get; set; } // Async event for state changes
 

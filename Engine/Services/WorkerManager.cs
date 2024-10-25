@@ -8,7 +8,7 @@ using Serilog;
 
 namespace Engine.Services;
 
-public class WorkerManager(MessageQueue messageQueue, RepositoryFactory repositoryFactory)
+public class WorkerManager(MessageQueue messageQueue, RepositoryFactory repositoryFactory, LoggerService loggerService)
 {
     private readonly Dictionary<string, WorkerService> _workers = new();
     public IReadOnlyDictionary<string, WorkerService> Workers => _workers;
@@ -35,8 +35,8 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
             {
                 WorkerId = workerEntity.WorkerId
             };
-            var workerService = new WorkerService(this, messageQueue, streamerRunner, workerEntity.WorkerId,
-                repositoryFactory);
+            var workerService = new WorkerService(this, loggerService, messageQueue, streamerRunner,
+                workerEntity.WorkerId, repositoryFactory);
             _workers[workerEntity.WorkerId] = workerService;
 
             // Start arbejderen if enabled
@@ -106,8 +106,8 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
         }
 
         // Ellers opret en ny service for arbejderen
-        var workerService =
-            new WorkerService(this, messageQueue, streamerRunner, workerCreate.WorkerId, repositoryFactory);
+        var workerService = new WorkerService(this, loggerService, messageQueue, streamerRunner,
+            workerCreate.WorkerId, repositoryFactory);
         _workers[workerCreate.WorkerId] = workerService;
 
         return workerService;

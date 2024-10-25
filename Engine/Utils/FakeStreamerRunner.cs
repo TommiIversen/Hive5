@@ -16,7 +16,7 @@ public class FakeStreamerRunner : IStreamerRunner
     private readonly ImageGenerator _generator = new();
     private WorkerState _state = WorkerState.Idle;
 
-    public event EventHandler<LogEntry>? LogGenerated;
+    public event EventHandler<WorkerLogEntry>? LogGenerated;
     public event EventHandler<ImageData>? ImageGenerated;
     public Func<WorkerState, Task>? StateChangedAsync { get; set; }
 
@@ -79,6 +79,8 @@ public class FakeStreamerRunner : IStreamerRunner
         
         _state = WorkerState.Stopping;
         await OnStateChangedAsync(_state); // Trigger state change
+        CreateAndSendLog("Streamer stopping", LogLevel.Critical);
+
         
         Console.WriteLine("Stopping streamer...");
 
@@ -109,7 +111,7 @@ public class FakeStreamerRunner : IStreamerRunner
 
     private void CreateAndSendLog(string message, LogLevel logLevel = LogLevel.Information)
     {
-        var log = new LogEntry
+        var log = new WorkerLogEntry
         {
             WorkerId = WorkerId,
             Timestamp = DateTime.UtcNow,

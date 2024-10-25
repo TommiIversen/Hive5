@@ -171,29 +171,37 @@ public class EngineHub(
     }
 
     // SignalR message fra klient microservice
-    public async Task ReceiveLog(LogEntry logMessage)
+    public async Task ReceiveWorkerLog(WorkerLogEntry workerLogMessage)
     {
-        if (engineManager.TryGetEngine(logMessage.EngineId, out var engine))
+        if (engineManager.TryGetEngine(workerLogMessage.EngineId, out var engine))
         {
             // For debugging msg sequence + delay in the system
             //TimeSpan delay = DateTime.UtcNow - logMessage.Timestamp;
             //Console.WriteLine($"Time delay: {delay.TotalMilliseconds} Milliseconds - {logMessage.Timestamp} - {DateTime.UtcNow} - {logMessage.LogSequenceNumber}");
-            var wasAdded = engine != null && engine.AddWorkerLog(logMessage.WorkerId, logMessage);
+            var wasAdded = engine != null && engine.AddWorkerLog(workerLogMessage.WorkerId, workerLogMessage);
 
             if (wasAdded)
             {
-                await hubContext.Clients.Group($"worker-{logMessage.EngineId}-{logMessage.WorkerId}").SendAsync("ReceiveLog", logMessage);
+                await hubContext.Clients.Group($"worker-{workerLogMessage.EngineId}-{workerLogMessage.WorkerId}").SendAsync("ReceiveLog", workerLogMessage);
             }
             else
             {
-                Console.WriteLine($"ReceiveLog: Worker {logMessage.WorkerId} not found");
+                Console.WriteLine($"ReceiveLog: Worker {workerLogMessage.WorkerId} not found");
             }
         }
         else
         {
-            Console.WriteLine($"ReceiveLog: Engine {logMessage.EngineId} not found");
+            Console.WriteLine($"ReceiveLog: Engine {workerLogMessage.EngineId} not found");
         }
     }
+    
+    public async Task ReceiveEngineLog(EngineLogEntry engineLog)
+    {
+        // Håndter logik for Engine-log
+
+        Console.WriteLine($"ReceiveEngineLog: {engineLog.Message}");
+    }
+    
 
     // SignalR message fra klient microservice
     public async Task ReceiveImage(ImageData imageData)
@@ -213,10 +221,9 @@ public class EngineHub(
     }
 
     // SignalR unhandlede message fra klient microservice
-    public Task ReceiveDeadLetter(object deadLetter)
+    public async Task ReceiveDeadLetter(string deadLetter)
     {
         Console.WriteLine($"Dead letter received: {deadLetter}");
-        return Task.CompletedTask;
     }
 
     // Invoke SignalR fra blazor frontend

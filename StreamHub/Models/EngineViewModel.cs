@@ -24,7 +24,7 @@ public class EngineViewModel
     public int LocalPort { get; set; }
 
 
-    public bool AddWorkerLog(string workerId, LogEntry message)
+    public bool AddWorkerLog(string workerId, WorkerLogEntry message)
     {
         if (!Workers.TryGetValue(workerId, out var worker)) return false;
 

@@ -44,7 +44,7 @@ else
 }
 
 @code {
-    [Parameter] public ConcurrentQueue<LogEntry> LogMessages { get; set; } = new();
+    [Parameter] public ConcurrentQueue<WorkerLogEntry> LogMessages { get; set; } = new();
     [Parameter] public required string WorkerId { get; init; }
     [Parameter] public required string EngineId { get; init; }
 
@@ -54,20 +54,20 @@ else
 
     private int? _previousSequenceNumber = null;
 
-    private bool IsOutOfSequence(LogEntry logMessage)
+    private bool IsOutOfSequence(WorkerLogEntry workerLogMessage)
     {
         if (_previousSequenceNumber == null)
         {
-            _previousSequenceNumber = logMessage.LogSequenceNumber;
+            _previousSequenceNumber = workerLogMessage.LogSequenceNumber;
             return false;
         }
-        if (logMessage.LogSequenceNumber != _previousSequenceNumber - 1)
+        if (workerLogMessage.LogSequenceNumber != _previousSequenceNumber - 1)
         {
-            _previousSequenceNumber = logMessage.LogSequenceNumber; // Opdater for næste tjek
+            _previousSequenceNumber = workerLogMessage.LogSequenceNumber; // Opdater for næste tjek
             return true; // Ude af rækkefølge
         }
 
-        _previousSequenceNumber = logMessage.LogSequenceNumber; // Opdater for næste tjek
+        _previousSequenceNumber = workerLogMessage.LogSequenceNumber; // Opdater for næste tjek
         return false; // Sekvensen er i orden
     }
     
@@ -76,7 +76,7 @@ else
     {
         await SubscribeToLogs();
 
-        SignalRService.HubConnection.On<LogEntry>("ReceiveLog", async logLine =>
+        SignalRService.HubConnection.On<WorkerLogEntry>("ReceiveLog", async logLine =>
         {
             if (WorkerId == logLine.WorkerId)
             {
