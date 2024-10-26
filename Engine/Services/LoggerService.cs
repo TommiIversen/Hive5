@@ -4,16 +4,16 @@ using System.Collections.Concurrent;
 
 namespace Engine.Services;
 
-public class LoggerService(Guid engineId, MessageQueue messageQueue)
+public class LoggerService(IEngineIdProvider engineIdProvider, MessageQueue messageQueue)
 {
-    // Ordbog til at holde logsekvens for hver WorkerId
+    private readonly Guid _engineId = engineIdProvider.GetEngineId();
     private readonly ConcurrentDictionary<string, int> _workerLogCounters = new();
     private int _engineLogCounter = 0;
 
     public void LogMessage(BaseLogEntry logEntry)
     {
         // Sæt EngineId og Timestamp automatisk
-        logEntry.EngineId = engineId;
+        logEntry.EngineId = _engineId;
         logEntry.Timestamp = DateTime.UtcNow;
 
         // Sæt sekvensnummer afhængigt af logtypen
@@ -46,7 +46,7 @@ public class LoggerService(Guid engineId, MessageQueue messageQueue)
 
     private void LogToSerilog(BaseLogEntry logEntry)
     {
-        string logMessage = $"{logEntry.GetType().Name} - Engine ID: {engineId}, Message: {logEntry.Message}";
+        var logMessage = $"{logEntry.GetType().Name} - Engine ID: {_engineId}, Message: {logEntry.Message}";
 
         switch (logEntry.LogLevel)
         {
@@ -68,6 +68,7 @@ public class LoggerService(Guid engineId, MessageQueue messageQueue)
             case LogLevel.Critical:
                 Log.Fatal(logMessage);
                 break;
+            case LogLevel.None:
             default:
                 Log.Information(logMessage);
                 break;

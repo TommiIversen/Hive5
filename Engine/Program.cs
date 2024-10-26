@@ -101,15 +101,10 @@ using (var tempScope = builder.Services.BuildServiceProvider().CreateScope())
         throw new InvalidOperationException("EngineId mangler i databasen.");
     }
     var engineId = engineEntity.EngineId;
+    builder.Services.AddSingleton<IEngineIdProvider>(new EngineIdProvider(engineId));
+}
 
-    // Registrer LoggerService som singleton med EngineId og MessageQueue
-    // Registrer LoggerService som singleton og injicer MessageQueue
-    builder.Services.AddSingleton<LoggerService>(provider =>
-    {
-        var messageQueue = provider.GetRequiredService<MessageQueue>();
-        return new LoggerService(engineId, messageQueue);
-    });}
-
+builder.Services.AddSingleton<LoggerService>();
 builder.Services.AddSingleton<WorkerManager>();
 builder.Services.AddSingleton<StreamHub>();
 

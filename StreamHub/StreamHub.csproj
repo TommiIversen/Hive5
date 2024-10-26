@@ -6,6 +6,10 @@
         <ImplicitUsings>enable</ImplicitUsings>
     </PropertyGroup>
 
+    <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+      <OutputPath>bin\Debug\Streamhub</OutputPath>
+    </PropertyGroup>
+
     <ItemGroup>
       <PackageReference Include="MessagePack" Version="3.0.238-rc.1" />
       <PackageReference Include="MessagePack.Annotations" Version="3.0.238-rc.1" />

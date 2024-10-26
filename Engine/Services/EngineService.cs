@@ -77,7 +77,7 @@ public class EngineService : IEngineService
         {
             hubUrl.HubUrl = newHubUrl;
             hubUrl.ApiKey = newApiKey;
-            await _engineRepository.SaveEngineAsync(engine);
+            if (engine != null) await _engineRepository.SaveEngineAsync(engine);
         }
     }
 }
