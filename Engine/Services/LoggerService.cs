@@ -1,6 +1,6 @@
-﻿using Common.DTOs;
+﻿using System.Collections.Concurrent;
+using Common.DTOs;
 using Serilog;
-using System.Collections.Concurrent;
 
 namespace Engine.Services;
 
@@ -13,7 +13,7 @@ public class LoggerService(IEngineIdProvider engineIdProvider, MessageQueue mess
 {
     private readonly Guid _engineId = engineIdProvider.GetEngineId();
     private readonly ConcurrentDictionary<string, int> _workerLogCounters = new();
-    private int _engineLogCounter = 0;
+    private int _engineLogCounter;
 
     public void LogMessage(BaseLogEntry logEntry)
     {
@@ -34,8 +34,7 @@ public class LoggerService(IEngineIdProvider engineIdProvider, MessageQueue mess
             {
                 currentCount = _workerLogCounters[workerLogEntry.WorkerId];
                 newCount = currentCount + 1;
-            }
-            while (!_workerLogCounters.TryUpdate(workerLogEntry.WorkerId, newCount, currentCount));
+            } while (!_workerLogCounters.TryUpdate(workerLogEntry.WorkerId, newCount, currentCount));
 
             // Tildel det nye sekvensnummer
             workerLogEntry.LogSequenceNumber = newCount;

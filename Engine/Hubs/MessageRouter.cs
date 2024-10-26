@@ -7,7 +7,6 @@ namespace Engine.Hubs;
 
 public static class MessageRouter
 {
-
     public static async Task RouteMessageToClientAsync(HubConnection hubConnection, BaseMessage baseMessage)
     {
         try
@@ -39,8 +38,9 @@ public static class MessageRouter
         }
         catch (HubException ex) when (ex.Message.Contains("Method does not exist"))
         {
-            Log.Warning($"Method does not exist for message type: {baseMessage.GetType().Name}, redirecting to HandleUnknownMessage.");
-            await HandleUnknownMessage(hubConnection, baseMessage);  // Redirect til ukendt beskedhåndtering
+            Log.Warning(
+                $"Method does not exist for message type: {baseMessage.GetType().Name}, redirecting to HandleUnknownMessage.");
+            await HandleUnknownMessage(hubConnection, baseMessage); // Redirect til ukendt beskedhåndtering
         }
         catch (Exception ex)
         {
@@ -50,7 +50,7 @@ public static class MessageRouter
 
     private static async Task HandleUnknownMessage(HubConnection hubConnection, BaseMessage baseMessage)
     {
-        string message = $"Unknown message type received: {baseMessage.GetType().Name}, WorkerId: {baseMessage.EngineId}";
+        var message = $"Unknown message type received: {baseMessage.GetType().Name}, WorkerId: {baseMessage.EngineId}";
         Log.Warning(message);
         try
         {

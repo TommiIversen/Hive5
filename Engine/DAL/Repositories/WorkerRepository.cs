@@ -1,9 +1,8 @@
 ﻿using Engine.DAL.Entities;
 using Engine.Database;
+using Microsoft.EntityFrameworkCore;
 
 namespace Engine.DAL.Repositories;
-
-using Microsoft.EntityFrameworkCore;
 
 public interface IWorkerRepository
 {
@@ -34,7 +33,7 @@ public class WorkerRepository(ApplicationDbContext context) : IWorkerRepository
         await context.SaveChangesAsync();
     }
 
-    
+
     public async Task UpdateWorkerAsync(WorkerEntity worker)
     {
         await using var transaction = await context.Database.BeginTransactionAsync();

@@ -1,12 +1,11 @@
-﻿namespace Engine.Utils;
+﻿using System.Net.NetworkInformation;
 
-using System.Net.NetworkInformation;
+namespace Engine.Utils;
 
 public interface INetworkInterfaceProvider
 {
     NetworkInterface[] GetAllNetworkInterfaces();
 }
-
 
 public class NetworkInterfaceProvider : INetworkInterfaceProvider
 {
@@ -22,16 +21,6 @@ public class NetworkUsageMonitor(INetworkInterfaceProvider networkInterfaceProvi
     private readonly Dictionary<string, long> _lastBytesSent = new();
     private DateTime _lastChecked = DateTime.UtcNow;
 
-    public class NetworkInterfaceUsage
-    {
-        public string InterfaceName { get; set; }
-        public double LinkSpeedGbps { get; set; }
-        public double RxMbps { get; set; }
-        public double TxMbps { get; set; }
-        public double RxUsagePercent { get; set; }
-        public double TxUsagePercent { get; set; }
-    }
-
     public List<NetworkInterfaceUsage> GetNetworkUsage()
     {
         var interfaces = networkInterfaceProvider.GetAllNetworkInterfaces();
@@ -43,8 +32,10 @@ public class NetworkUsageMonitor(INetworkInterfaceProvider networkInterfaceProvi
         foreach (var netInterface in interfaces)
         {
             if (netInterface.OperationalStatus != OperationalStatus.Up) continue;
-            if (netInterface.NetworkInterfaceType is NetworkInterfaceType.Loopback or NetworkInterfaceType.Tunnel) continue;
-            if (netInterface.Name.Contains("WSL") || netInterface.Description.Contains("WSL") || netInterface.Name.Contains("vEthernet")) continue;
+            if (netInterface.NetworkInterfaceType is NetworkInterfaceType.Loopback or NetworkInterfaceType.Tunnel)
+                continue;
+            if (netInterface.Name.Contains("WSL") || netInterface.Description.Contains("WSL") ||
+                netInterface.Name.Contains("vEthernet")) continue;
 
             var statistics = netInterface.GetIPv4Statistics();
             var bytesReceived = statistics.BytesReceived;
@@ -61,13 +52,13 @@ public class NetworkUsageMonitor(INetworkInterfaceProvider networkInterfaceProvi
                 var deltaBytesReceived = bytesReceived - _lastBytesReceived[netInterface.Id];
                 var deltaBytesSent = bytesSent - _lastBytesSent[netInterface.Id];
 
-                rxMbps = (deltaBytesReceived * 8) / (elapsedSeconds * 1_000_000);
-                txMbps = (deltaBytesSent * 8) / (elapsedSeconds * 1_000_000);
+                rxMbps = deltaBytesReceived * 8 / (elapsedSeconds * 1_000_000);
+                txMbps = deltaBytesSent * 8 / (elapsedSeconds * 1_000_000);
 
                 if (interfaceSpeed > 0)
                 {
-                    rxUsagePercent = (rxMbps * 1_000_000) / interfaceSpeed * 100;
-                    txUsagePercent = (txMbps * 1_000_000) / interfaceSpeed * 100;
+                    rxUsagePercent = rxMbps * 1_000_000 / interfaceSpeed * 100;
+                    txUsagePercent = txMbps * 1_000_000 / interfaceSpeed * 100;
                 }
             }
 
@@ -87,5 +78,15 @@ public class NetworkUsageMonitor(INetworkInterfaceProvider networkInterfaceProvi
 
         _lastChecked = currentTime;
         return networkUsageList;
+    }
+
+    public class NetworkInterfaceUsage
+    {
+        public string InterfaceName { get; set; }
+        public double LinkSpeedGbps { get; set; }
+        public double RxMbps { get; set; }
+        public double TxMbps { get; set; }
+        public double RxUsagePercent { get; set; }
+        public double TxUsagePercent { get; set; }
     }
 }

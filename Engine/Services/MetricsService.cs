@@ -6,8 +6,8 @@ namespace Engine.Services;
 public class MetricsService(MessageQueue messageQueue, INetworkInterfaceProvider networkInterfaceProvider)
 {
     private readonly CancellationTokenSource _cancellationTokenSource = new();
-    private readonly TimeSpan _interval = TimeSpan.FromSeconds(2);
     private readonly CpuUsageMonitor _cpuUsageMonitor = new();
+    private readonly TimeSpan _interval = TimeSpan.FromSeconds(2);
     private readonly MemoryUsageMonitor _memoryUsageMonitor = new();
     private readonly NetworkUsageMonitor _networkUsageMonitor = new(networkInterfaceProvider);
 
@@ -29,12 +29,12 @@ public class MetricsService(MessageQueue messageQueue, INetworkInterfaceProvider
             var totalMemory = await _memoryUsageMonitor.GetTotalMemoryAsync(cancellationToken);
             var availableMemory = await _memoryUsageMonitor.GetAvailableMemoryAsync(cancellationToken);
             var currentProcessMemoryUsage = _memoryUsageMonitor.GetCurrentProcessMemoryUsage();
-            
+
             var networkUsageList = _networkUsageMonitor.GetNetworkUsage();
             var primaryNetworkUsage = networkUsageList.FirstOrDefault();
 
             double rxMbps = 0, txMbps = 0, rxUsagePercent = 0, txUsagePercent = 0;
-            string interfaceName = "";
+            var interfaceName = "";
             double linkSpeedGbps = 0;
 
             if (primaryNetworkUsage != null)
@@ -46,7 +46,7 @@ public class MetricsService(MessageQueue messageQueue, INetworkInterfaceProvider
                 interfaceName = primaryNetworkUsage.InterfaceName;
                 linkSpeedGbps = primaryNetworkUsage.LinkSpeedGbps;
             }
-            
+
             // Generate and enqueue a new metric
             var metric = new Metric
             {
@@ -62,7 +62,7 @@ public class MetricsService(MessageQueue messageQueue, INetworkInterfaceProvider
                 TxMbps = txMbps,
                 RxUsagePercent = rxUsagePercent,
                 TxUsagePercent = txUsagePercent,
-                NetworkInterfaceName = interfaceName, 
+                NetworkInterfaceName = interfaceName,
                 LinkSpeedGbps = linkSpeedGbps // Link hastighed i Gbps
             };
 
@@ -99,7 +99,7 @@ public class MetricsService(MessageQueue messageQueue, INetworkInterfaceProvider
             return 0.0; // Returner 0 i tilfælde af fejl
         }
     }
-        
+
     private async Task<List<double>> GetPerCoreCpuUsageAsync(CancellationToken cancellationToken)
     {
         try

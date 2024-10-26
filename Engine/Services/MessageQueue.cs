@@ -1,7 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using System.Threading.Channels;
 using Common.DTOs;
-
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Engine.Services;
@@ -24,9 +23,7 @@ public class MessageQueue
     {
         // Vi bruger TryWrite for synkron håndtering. Returnerer false, hvis køen er fuld
         if (!_messageChannel.Writer.TryWrite(baseMessage))
-        {
             Console.WriteLine("MessageQueue: Queue is full, dropping oldest message.");
-        }
     }
 
     public async Task EnqueueMessageAsync(BaseMessage baseMessage, CancellationToken cancellationToken)
@@ -50,11 +47,11 @@ public class MessageQueue
 
 public class MultiQueue
 {
+    private readonly int _defaultQueueLimit;
     private readonly ILogger<MultiQueue> _logger;
+    private readonly SemaphoreSlim _messageAvailable = new(0); // Semaphore til at signalere nye beskeder
     private readonly ConcurrentDictionary<Type, ConcurrentQueue<BaseMessage>> _queues = new();
     private readonly ConcurrentDictionary<string, ConcurrentQueue<BaseMessage>> _uniqueQueues = new();
-    private readonly int _defaultQueueLimit;
-    private readonly SemaphoreSlim _messageAvailable = new(0); // Semaphore til at signalere nye beskeder
 
     public MultiQueue(ILogger<MultiQueue> logger, int defaultQueueLimit = 20)
     {
@@ -62,7 +59,7 @@ public class MultiQueue
         _defaultQueueLimit = defaultQueueLimit;
     }
 
-    public MultiQueue() : this(new NullLogger<MultiQueue>(), 20)
+    public MultiQueue() : this(new NullLogger<MultiQueue>())
     {
     }
 
@@ -76,10 +73,7 @@ public class MultiQueue
 
             lock (uniqueQueue) // Brug lock her for at sikre trådsikkerhed ved begrænsning af køstørrelse
             {
-                if (uniqueQueue.Count >= 1)
-                {
-                    uniqueQueue.TryDequeue(out _); // Fjern ældste besked, så vi kun beholder én
-                }
+                if (uniqueQueue.Count >= 1) uniqueQueue.TryDequeue(out _); // Fjern ældste besked, så vi kun beholder én
 
                 uniqueQueue.Enqueue(baseMessage); // Tilføj den nye besked
             }
@@ -102,9 +96,7 @@ public class MultiQueue
                 if (baseMessage != null) queue.Enqueue(baseMessage);
 
                 if (queue.Count > _defaultQueueLimit)
-                {
                     queue.TryDequeue(out _); // Fjern ældste besked, hvis køen overskrider grænsen
-                }
             }
         }
 
@@ -118,20 +110,12 @@ public class MultiQueue
             await _messageAvailable.WaitAsync(cancellationToken); // Vent på, at der er en besked tilgængelig
 
             foreach (var uniqueQueue in _uniqueQueues.Values)
-            {
                 if (uniqueQueue.TryDequeue(out var uniqueMessage))
-                {
                     return uniqueMessage; // Returner unik besked fra uniqueId-kø
-                }
-            }
 
             foreach (var queue in _queues.Values)
-            {
                 if (queue.TryDequeue(out var message))
-                {
                     return message; // Returner besked fra FIFO-kø
-                }
-            }
         }
     }
 
@@ -140,15 +124,9 @@ public class MultiQueue
     {
         var report = new Dictionary<string, int>();
 
-        foreach (var queue in _queues)
-        {
-            report[queue.Key.Name] = queue.Value.Count;
-        }
+        foreach (var queue in _queues) report[queue.Key.Name] = queue.Value.Count;
 
-        foreach (var uniqueQueue in _uniqueQueues)
-        {
-            report[$"Unique-{uniqueQueue.Key}"] = uniqueQueue.Value.Count;
-        }
+        foreach (var uniqueQueue in _uniqueQueues) report[$"Unique-{uniqueQueue.Key}"] = uniqueQueue.Value.Count;
 
         return report;
     }

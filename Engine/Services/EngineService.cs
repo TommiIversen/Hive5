@@ -13,6 +13,7 @@ public interface IEngineService
     Task RemoveHubUrlAsync(int hubUrlId);
     Task EditHubUrlAsync(int hubUrlId, string newHubUrl, string newApiKey);
 }
+
 public class EngineService : IEngineService
 {
     private readonly IDbContextFactory<ApplicationDbContext> _contextFactory;
@@ -37,7 +38,7 @@ public class EngineService : IEngineService
         {
             engine.Name = name;
             engine.Description = description;
-            await _engineRepository.SaveEngineAsync(engine); 
+            await _engineRepository.SaveEngineAsync(engine);
         }
     }
 
@@ -46,7 +47,7 @@ public class EngineService : IEngineService
         var engine = await _engineRepository.GetEngineAsync();
         if (engine != null)
         {
-            engine.HubUrls.Add(new HubUrlEntity { HubUrl = hubUrl, ApiKey = apiKey });
+            engine.HubUrls.Add(new HubUrlEntity {HubUrl = hubUrl, ApiKey = apiKey});
             await _engineRepository.SaveEngineAsync(engine);
         }
     }
@@ -55,12 +56,12 @@ public class EngineService : IEngineService
     {
         await using var dbContext = await _contextFactory.CreateDbContextAsync();
         var hubUrl = await dbContext.Set<HubUrlEntity>().FindAsync(hubUrlId);
-    
+
         if (hubUrl != null)
         {
             dbContext.Set<HubUrlEntity>().Remove(hubUrl);
             await dbContext.SaveChangesAsync();
-        Console.WriteLine($"Successfully removed HubUrlEntity with Id {hubUrlId}");
+            Console.WriteLine($"Successfully removed HubUrlEntity with Id {hubUrlId}");
         }
         else
         {

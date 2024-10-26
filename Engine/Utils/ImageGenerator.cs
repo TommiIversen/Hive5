@@ -11,11 +11,11 @@ public class ImageGenerator
 {
     private const int Width = 300;
     private const int Height = 220;
-    private readonly Font _font;
-    private readonly Brush _brush;
-    private readonly StringFormat _format;
-    private readonly ArrayPool<byte> _arrayPool;
     private const int BufferSize = 32 * 1024;
+    private readonly ArrayPool<byte> _arrayPool;
+    private readonly Brush _brush;
+    private readonly Font _font;
+    private readonly StringFormat _format;
 
     [SupportedOSPlatform("windows")]
     public ImageGenerator()
@@ -31,22 +31,19 @@ public class ImageGenerator
         _arrayPool = ArrayPool<byte>.Shared; // Genbrug array pool
     }
 
-        public byte[] GenerateImageWithNumber(int number, string extraText = "")
+    public byte[] GenerateImageWithNumber(int number, string extraText = "")
     {
         // Hvis vi ikke er på Windows, returner en fake bytearray
-        if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-        {
-            return GenerateFakeImage();
-        }
+        if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) return GenerateFakeImage();
 
         // Beregn farver baseret på nummeret ved hjælp af modulus 255
-        int r1 = number % 255;
-        int g1 = (number * 2) % 255;
-        int b1 = (number * 3) % 255;
+        var r1 = number % 255;
+        var g1 = number * 2 % 255;
+        var b1 = number * 3 % 255;
 
-        int r2 = (number + 100) % 255;
-        int g2 = (number + 150) % 255;
-        int b2 = (number + 200) % 255;
+        var r2 = (number + 100) % 255;
+        var g2 = (number + 150) % 255;
+        var b2 = (number + 200) % 255;
 
         using var bitmap = new Bitmap(Width, Height);
         using (var graphics = Graphics.FromImage(bitmap))
@@ -76,14 +73,14 @@ public class ImageGenerator
         }
 
         // Brug en buffer fra poolen til at undgå gentagne allokeringer
-        byte[] buffer = _arrayPool.Rent(BufferSize);
+        var buffer = _arrayPool.Rent(BufferSize);
 
         try
         {
-            using MemoryStream memoryStream = new MemoryStream(buffer);
+            using var memoryStream = new MemoryStream(buffer);
             bitmap.Save(memoryStream, ImageFormat.Jpeg);
 
-            int lengthUsed = (int)memoryStream.Position;
+            var lengthUsed = (int) memoryStream.Position;
             var result = new byte[lengthUsed];
             Array.Copy(buffer, result, lengthUsed);
 
@@ -98,6 +95,6 @@ public class ImageGenerator
     private byte[] GenerateFakeImage()
     {
         // Returner en simpel fake bytearray som placeholder på ikke-Windows platforme
-        return new byte[] { 0, 0, 0 };
+        return new byte[] {0, 0, 0};
     }
 }

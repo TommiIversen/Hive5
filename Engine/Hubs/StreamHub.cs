@@ -1,6 +1,5 @@
 ﻿using System.Collections.Concurrent;
 using Common.DTOs;
-
 using Engine.Services;
 using Engine.Utils;
 using Microsoft.AspNetCore.Http.Connections;
@@ -11,21 +10,21 @@ namespace Engine.Hubs;
 
 public class StreamHub
 {
-    private readonly ConcurrentDictionary<string, HubConnectionInfo> _hubConnections = new();
-
-    private readonly MessageQueue _globalMessageQueue;
     private readonly CancellationTokenSource _cancellationTokenSource = new();
 
-    private readonly ILogger<StreamHub> _logger;
-    private readonly IWorkerManager _workerManager;
-    private readonly int _maxQueueSize = 20;
-    private readonly ILoggerFactory _loggerFactory;
-
     private readonly IEngineService _engineService;
-    private Guid _engineId;
+
+    private readonly MessageQueue _globalMessageQueue;
+    private readonly ConcurrentDictionary<string, HubConnectionInfo> _hubConnections = new();
 
     // fild to init date time
     private readonly DateTime _initDateTime = DateTime.UtcNow;
+
+    private readonly ILogger<StreamHub> _logger;
+    private readonly ILoggerFactory _loggerFactory;
+    private readonly int _maxQueueSize = 20;
+    private readonly IWorkerManager _workerManager;
+    private readonly Guid _engineId;
 
     public StreamHub(
         MessageQueue globalMessageQueue,
@@ -42,10 +41,7 @@ public class StreamHub
 
         var engineInfo = GetEngineBaseInfo().Result;
         _engineId = engineInfo.EngineId;
-        foreach (var hubUrl in engineInfo.HubUrls.Select(h => h.HubUrl))
-        {
-            StartHubConnection(hubUrl);
-        }
+        foreach (var hubUrl in engineInfo.HubUrls.Select(h => h.HubUrl)) StartHubConnection(hubUrl);
 
         _ = Task.Run(async () => await RouteMessagesToClientQueuesAsync(_cancellationTokenSource.Token));
     }
@@ -75,7 +71,6 @@ public class StreamHub
 
         // Hvis forbindelsen findes, skal vi stoppe den og fjerne den fra hubConnections
         if (_hubConnections.TryGetValue(hubUrlToRemove, out var connectionInfo))
-        {
             try
             {
                 // Annullér retry-loopet ved at annullere token source
@@ -91,12 +86,9 @@ public class StreamHub
                 _logger.LogError(ex, "Failed to stop and remove hub connection for {Url}", hubUrlToRemove);
                 return new CommandResult(false, $"Failed to stop hub connection: {ex.Message}");
             }
-        }
         else
-        {
             _logger.LogWarning("No active connection found for {Url}, proceeding to remove it from database.",
                 hubUrlToRemove);
-        }
 
         // Uanset om forbindelsen var aktiv eller ej, skal vi stadig fjerne URL'en fra databasen
         try
@@ -211,18 +203,19 @@ public class StreamHub
                     _logger.LogWarning("Worker with ID {WorkerId} already exists.", workerCreate.WorkerId);
                     return new CommandResult(false, $"Worker with ID {workerCreate.WorkerId} already exists.");
                 }
+
                 var result = await _workerManager.StartWorkerAsync(workerService.WorkerId);
                 return result;
             });
 
-            hubConnection.Reconnected += async (_) =>
+            hubConnection.Reconnected += async _ =>
             {
                 _logger.LogInformation("hubConnection:: Reconnected to streamhub {url} - {ConnectionId}", hubUrl,
                     hubConnection.ConnectionId);
                 await SendEngineConnectedAsync(hubConnection, hubUrl);
             };
 
-            hubConnection.Closed += async (error) =>
+            hubConnection.Closed += async error =>
             {
                 _logger.LogWarning("Connection closed: {Error}", error?.Message);
                 await Task.Delay(5000); // Vent før næste forsøg
@@ -252,7 +245,6 @@ public class StreamHub
     private async Task TryReconnect(HubConnection hubConnection, string url, CancellationToken token)
     {
         while (true)
-        {
             try
             {
                 await hubConnection.StartAsync(token);
@@ -270,7 +262,6 @@ public class StreamHub
                 _logger.LogWarning("TryReconnect: Failed to connect to {url}. Retrying in 5 seconds...", url);
                 await Task.Delay(5000, token); // Vent før næste forsøg
             }
-        }
     }
 
 
@@ -282,17 +273,18 @@ public class StreamHub
             Console.WriteLine($"----------Sending engine Init messages to streamHub on: {streamhubUrl}");
 
             var engineModel = await GetEngineBaseInfo();
-            bool connectedAndAccepted = await hubConnection.InvokeAsync<bool>("RegisterEngineConnection", engineModel);
+            var connectedAndAccepted = await hubConnection.InvokeAsync<bool>("RegisterEngineConnection", engineModel);
 
             if (connectedAndAccepted)
             {
                 Console.WriteLine(" ---------- Connection to StreamHub acknowledged, synchronizing workers...");
-                
+
                 var systemInfoCollector = new SystemInfoCollector();
                 var systemInfo = systemInfoCollector.GetSystemInfo();
                 systemInfo.EngineId = _engineId;
-                Console.WriteLine($"SystemInfo: {systemInfo.OsName} {systemInfo.OSVersion} {systemInfo.Architecture} {systemInfo.Uptime} {systemInfo.ProcessCount} {systemInfo.Platform}");
-                
+                Console.WriteLine(
+                    $"SystemInfo: {systemInfo.OsName} {systemInfo.OSVersion} {systemInfo.Architecture} {systemInfo.Uptime} {systemInfo.ProcessCount} {systemInfo.Platform}");
+
                 try
                 {
                     await hubConnection.InvokeAsync("SendSystemInfo", systemInfo);
@@ -302,7 +294,7 @@ public class StreamHub
                 {
                     Log.Error(ex, "Fejl opstod under forsøget på at sende systeminformation via SignalR.");
                 }
-                
+
                 var workers = await _workerManager.GetAllWorkers(_engineId);
                 await hubConnection.InvokeAsync("SynchronizeWorkers", workers, _engineId);
                 await ProcessClientMessagesAsync(hubConnection, streamhubUrl, _cancellationTokenSource.Token);
@@ -349,10 +341,10 @@ public class StreamHub
     // Global processing of messages from main queue to per-connection queue
     private async Task RouteMessagesToClientQueuesAsync(CancellationToken cancellationToken)
     {
-        Console.WriteLine($"Start RouteMessagesToClientQueuesAsync ------Processing global queue to clients");
+        Console.WriteLine("Start RouteMessagesToClientQueuesAsync ------Processing global queue to clients");
         while (!cancellationToken.IsCancellationRequested)
         {
-            BaseMessage baseMessage = await _globalMessageQueue.DequeueMessageAsync(cancellationToken);
+            var baseMessage = await _globalMessageQueue.DequeueMessageAsync(cancellationToken);
             foreach (var connectionInfo in _hubConnections.Values)
             {
                 if (baseMessage is ImageData imageMessage)
@@ -382,7 +374,7 @@ public class StreamHub
 
             while (!cancellationToken.IsCancellationRequested)
             {
-                BaseMessage baseMessage = await queue.DequeueMessageAsync(cancellationToken);
+                var baseMessage = await queue.DequeueMessageAsync(cancellationToken);
 
                 // Filtrer forældede WorkerEvent-beskeder baseret på syncTimestamp
                 if (baseMessage is WorkerEvent workerEvent && workerEvent.Timestamp < syncTimestamp)

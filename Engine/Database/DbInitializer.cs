@@ -1,7 +1,6 @@
 ﻿using Engine.DAL.Entities;
 using Microsoft.EntityFrameworkCore;
 
-
 namespace Engine.Database;
 
 public static class DbInitializer
@@ -29,7 +28,7 @@ public static class DbInitializer
         else if (!engineEntity.HubUrls.Any())
         {
             // Hvis der ikke er nogen HubUrls, tilføjes en default
-            engineEntity.HubUrls.Add(new HubUrlEntity { HubUrl = "http://127.0.0.1:9000/streamhub" });
+            engineEntity.HubUrls.Add(new HubUrlEntity {HubUrl = "http://127.0.0.1:9000/streamhub"});
             context.SaveChanges();
         }
     }

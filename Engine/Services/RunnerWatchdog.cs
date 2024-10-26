@@ -2,27 +2,21 @@
 
 namespace Engine.Services;
 
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-
 public class RunnerWatchdog
 {
-    private readonly string _workerId;
-    private readonly Func<(bool, string)> _checkRestartCallback;
-    private readonly Action<string> _restartCallback;
-    private readonly TimeSpan _graceTime;
     private readonly TimeSpan _checkInterval;
+    private readonly Func<(bool, string)> _checkRestartCallback;
+    private readonly TimeSpan _graceTime;
     private readonly List<string> _logLines = new();
     private readonly int _maxLogLines = 20;
+    private readonly Action<string> _restartCallback;
+    private readonly string _workerId;
     private CancellationTokenSource _cancellationTokenSource;
-    private Task? _watchdogTask;
     private bool _running;
+    private Task? _watchdogTask;
 
-    public event EventHandler<string>? StateChanged;
-
-    public RunnerWatchdog(string workerId, Func<(bool, string)> checkRestartCallback, Action<string> restartCallback, TimeSpan graceTime, TimeSpan checkInterval)
+    public RunnerWatchdog(string workerId, Func<(bool, string)> checkRestartCallback, Action<string> restartCallback,
+        TimeSpan graceTime, TimeSpan checkInterval)
     {
         _workerId = workerId;
         _checkRestartCallback = checkRestartCallback;
@@ -32,12 +26,11 @@ public class RunnerWatchdog
         _cancellationTokenSource = new CancellationTokenSource();
     }
 
+    public event EventHandler<string>? StateChanged;
+
     public async Task StartAsync()
     {
-        if (_running)
-        {
-            await StopAsync();
-        }
+        if (_running) await StopAsync();
 
         _running = true;
         _cancellationTokenSource = new CancellationTokenSource();
@@ -52,7 +45,6 @@ public class RunnerWatchdog
         _cancellationTokenSource.Cancel();
 
         if (_watchdogTask != null)
-        {
             try
             {
                 // Vent på, at tasken afsluttes
@@ -62,7 +54,6 @@ public class RunnerWatchdog
             {
                 AddLog("Watchdog task was cancelled.");
             }
-        }
 
         AddLog($"RunnerWatchdog: {_workerId} stopped.");
     }
@@ -85,7 +76,6 @@ public class RunnerWatchdog
         AddLog($"RunnerWatchdog: {_workerId} finished grace time and is now monitoring every {_checkInterval}.");
 
         while (!cancellationToken.IsCancellationRequested)
-        {
             try
             {
                 await Task.Delay(_checkInterval, cancellationToken);
@@ -107,7 +97,6 @@ public class RunnerWatchdog
                 AddLog("Watchdog task was cancelled.");
                 break;
             }
-        }
     }
 
     public void OnRunnerLogGenerated(object? sender, WorkerLogEntry workerLog)
@@ -124,10 +113,7 @@ public class RunnerWatchdog
     private void AddLog(string message)
     {
         _logLines.Add($"{DateTime.UtcNow}: {message}");
-        if (_logLines.Count > _maxLogLines)
-        {
-            _logLines.RemoveAt(0);
-        }
+        if (_logLines.Count > _maxLogLines) _logLines.RemoveAt(0);
     }
 
     public List<string> GetLogLines()

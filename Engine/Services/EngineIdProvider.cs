@@ -7,5 +7,8 @@ public interface IEngineIdProvider
 
 public class EngineIdProvider(Guid engineId) : IEngineIdProvider
 {
-    public Guid GetEngineId() => engineId;
+    public Guid GetEngineId()
+    {
+        return engineId;
+    }
 }

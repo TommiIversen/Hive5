@@ -1,9 +1,8 @@
-﻿using Common.DTOs;
-namespace Engine.Utils;
-
-using System;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Runtime.InteropServices;
+using Common.DTOs;
+
+namespace Engine.Utils;
 
 public class SystemInfoCollector
 {

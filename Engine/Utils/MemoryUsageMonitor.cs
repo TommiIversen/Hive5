@@ -5,39 +5,14 @@ namespace Engine.Utils;
 
 public class MemoryUsageMonitor
 {
-    // Struct til at holde hukommelsesstatus fra Windows API
-    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
-    private class MEMORYSTATUSEX
-    {
-        public uint dwLength;
-        public uint dwMemoryLoad;
-        public ulong ullTotalPhys;
-        public ulong ullAvailPhys;
-        public ulong ullTotalPageFile;
-        public ulong ullAvailPageFile;
-        public ulong ullTotalVirtual;
-        public ulong ullAvailVirtual;
-        public ulong ullAvailExtendedVirtual;
-
-        public MEMORYSTATUSEX()
-        {
-            dwLength = (uint)Marshal.SizeOf(typeof(MEMORYSTATUSEX));
-        }
-    }
-
     [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
-    private static extern bool GlobalMemoryStatusEx([In, Out] MEMORYSTATUSEX lpBuffer);
+    private static extern bool GlobalMemoryStatusEx([In] [Out] MEMORYSTATUSEX lpBuffer);
 
     public async Task<double> GetTotalMemoryAsync(CancellationToken cancellationToken)
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-        {
             return await GetWindowsTotalMemoryAsync(cancellationToken);
-        }
-        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-        {
-            return await GetLinuxTotalMemoryAsync(cancellationToken);
-        }
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) return await GetLinuxTotalMemoryAsync(cancellationToken);
 
         throw new PlatformNotSupportedException("Unsupported operating system");
     }
@@ -45,20 +20,16 @@ public class MemoryUsageMonitor
     public async Task<double> GetAvailableMemoryAsync(CancellationToken cancellationToken)
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-        {
             return await GetWindowsAvailableMemoryAsync(cancellationToken);
-        }
-        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-        {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             return await GetLinuxAvailableMemoryAsync(cancellationToken);
-        }
 
         throw new PlatformNotSupportedException("Unsupported operating system");
     }
 
     public double GetCurrentProcessMemoryUsage()
     {
-        Process process = Process.GetCurrentProcess();
+        var process = Process.GetCurrentProcess();
         return process.WorkingSet64 / (1024.0 * 1024.0); // Returnerer i MB  TODO: SOH issue
     }
 
@@ -67,12 +38,10 @@ public class MemoryUsageMonitor
     {
         return Task.Run(() =>
         {
-            MEMORYSTATUSEX memStatus = new MEMORYSTATUSEX();
+            var memStatus = new MEMORYSTATUSEX();
             if (GlobalMemoryStatusEx(memStatus))
-            {
                 // Returner samlet hukommelse i MB
                 return memStatus.ullTotalPhys / (1024.0 * 1024.0);
-            }
 
             throw new InvalidOperationException("Unable to get total memory");
         }, cancellationToken);
@@ -82,12 +51,10 @@ public class MemoryUsageMonitor
     {
         return Task.Run(() =>
         {
-            MEMORYSTATUSEX memStatus = new MEMORYSTATUSEX();
+            var memStatus = new MEMORYSTATUSEX();
             if (GlobalMemoryStatusEx(memStatus))
-            {
                 // Returner tilgængelig hukommelse i MB
                 return memStatus.ullAvailPhys / (1024.0 * 1024.0);
-            }
 
             throw new InvalidOperationException("Unable to get available memory");
         }, cancellationToken);
@@ -107,14 +74,33 @@ public class MemoryUsageMonitor
         var availableMemoryLine = Array.Find(memInfo, line => line.StartsWith("MemAvailable"));
         if (availableMemoryLine != null)
             return ParseMemoryValue(availableMemoryLine) / 1024.0; // Returner MB
-        else
-            return 0.0;
+        return 0.0;
     }
 
     // Helper method to parse memory values in /proc/meminfo on Linux
     private double ParseMemoryValue(string memInfoLine)
     {
-        var parts = memInfoLine.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+        var parts = memInfoLine.Split(new[] {' '}, StringSplitOptions.RemoveEmptyEntries);
         return double.Parse(parts[1]); // Memory is in KB in /proc/meminfo
+    }
+
+    // Struct til at holde hukommelsesstatus fra Windows API
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
+    private class MEMORYSTATUSEX
+    {
+        public uint dwLength;
+        public uint dwMemoryLoad;
+        public ulong ullTotalPhys;
+        public ulong ullAvailPhys;
+        public ulong ullTotalPageFile;
+        public ulong ullAvailPageFile;
+        public ulong ullTotalVirtual;
+        public ulong ullAvailVirtual;
+        public ulong ullAvailExtendedVirtual;
+
+        public MEMORYSTATUSEX()
+        {
+            dwLength = (uint) Marshal.SizeOf(typeof(MEMORYSTATUSEX));
+        }
     }
 }

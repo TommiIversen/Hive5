@@ -5,7 +5,7 @@ namespace Engine.Models;
 
 public static class WorkerOutExtensions
 {
-    public static WorkerEvent ToWorkerEvent(this WorkerEntity workerEntity, Guid engineId, 
+    public static WorkerEvent ToWorkerEvent(this WorkerEntity workerEntity, Guid engineId,
         WorkerState state, EventType eventType = EventType.Updated)
     {
         return new WorkerEvent
@@ -23,9 +23,9 @@ public static class WorkerOutExtensions
             WatchdogEventCount = workerEntity.WatchdogEventCount
         };
     }
-    
-    
-    public static WorkerEvent ToWorkerEvent(this WorkerEntity workerEntity, 
+
+
+    public static WorkerEvent ToWorkerEvent(this WorkerEntity workerEntity,
         WorkerState state, EventType eventType = EventType.Updated)
     {
         return new WorkerEvent

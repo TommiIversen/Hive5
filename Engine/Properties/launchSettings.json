@@ -9,7 +9,6 @@
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
         "HIVE_BASE_PATH": "C:\\temp\\hive9001"
-
       }
     },
     "Engine http 9002": {

@@ -6,24 +6,26 @@ namespace Engine.Utils;
 
 public class CpuUsageMonitor : IDisposable
 {
-    private TimeSpan _lastTotalProcessorTime = TimeSpan.Zero;
+    private bool _disposed;
     private DateTime _lastMeasurementTime = DateTime.UtcNow;
+    private TimeSpan _lastTotalProcessorTime = TimeSpan.Zero;
+    private PerformanceCounter[]? _perCoreCpuCounters;
 
     private PerformanceCounter? _totalCpuCounter;
-    private PerformanceCounter[]? _perCoreCpuCounters;
-    private bool _disposed;
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
 
 
     public async Task<double> GetTotalCpuUsageAsync(CancellationToken cancellationToken)
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-        {
             return await GetWindowsTotalCpuUsageAsync(cancellationToken);
-        }
-        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-        {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             return await GetLinuxTotalCpuUsageAsync(cancellationToken);
-        }
 
         throw new PlatformNotSupportedException("Unsupported operating system");
     }
@@ -31,28 +33,24 @@ public class CpuUsageMonitor : IDisposable
     public async Task<double[]> GetPerCoreCpuUsageAsync(CancellationToken cancellationToken)
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-        {
             return await GetWindowsPerCoreCpuUsageAsync(cancellationToken);
-        }
-        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-        {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             return await GetLinuxPerCoreCpuUsageAsync(cancellationToken);
-        }
 
         throw new PlatformNotSupportedException("Unsupported operating system");
     }
 
     public double GetCurrentProcessCpuUsage()
     {
-        Process process = Process.GetCurrentProcess();
+        var process = Process.GetCurrentProcess();
 
         // Hent CPU-tid for processen og den aktuelle tid
-        TimeSpan currentTotalProcessorTime = process.TotalProcessorTime;
-        DateTime currentMeasurementTime = DateTime.UtcNow;
+        var currentTotalProcessorTime = process.TotalProcessorTime;
+        var currentMeasurementTime = DateTime.UtcNow;
 
         // Beregn forskel i CPU-tid og tid mellem to målinger
-        TimeSpan cpuTimeElapsed = currentTotalProcessorTime - _lastTotalProcessorTime;
-        TimeSpan timeElapsed = currentMeasurementTime - _lastMeasurementTime;
+        var cpuTimeElapsed = currentTotalProcessorTime - _lastTotalProcessorTime;
+        var timeElapsed = currentMeasurementTime - _lastMeasurementTime;
 
         // Opdater de sidste målinger for fremtidige beregninger
         _lastTotalProcessorTime = currentTotalProcessorTime;
@@ -63,8 +61,8 @@ public class CpuUsageMonitor : IDisposable
             return 0;
 
         // Beregn CPU-forbrug som en procentdel over det forløbne tidsinterval
-        double cpuUsage =
-            (cpuTimeElapsed.TotalMilliseconds / (timeElapsed.TotalMilliseconds * Environment.ProcessorCount)) * 100;
+        var cpuUsage =
+            cpuTimeElapsed.TotalMilliseconds / (timeElapsed.TotalMilliseconds * Environment.ProcessorCount) * 100;
 
         return cpuUsage;
     }
@@ -81,7 +79,7 @@ public class CpuUsageMonitor : IDisposable
         return Task.Run(() =>
         {
             Thread.Sleep(1000);
-            return (double)_totalCpuCounter.NextValue();
+            return (double) _totalCpuCounter.NextValue();
         }, cancellationToken);
     }
 
@@ -90,10 +88,10 @@ public class CpuUsageMonitor : IDisposable
     {
         if (_perCoreCpuCounters == null)
         {
-            int coreCount = Environment.ProcessorCount;
+            var coreCount = Environment.ProcessorCount;
             _perCoreCpuCounters = new PerformanceCounter[coreCount];
 
-            for (int i = 0; i < coreCount; i++)
+            for (var i = 0; i < coreCount; i++)
             {
                 _perCoreCpuCounters[i] = new PerformanceCounter("Processor", "% Processor Time", i.ToString());
                 _perCoreCpuCounters[i].NextValue();
@@ -104,11 +102,8 @@ public class CpuUsageMonitor : IDisposable
         {
             Thread.Sleep(1000);
 
-            double[] cpuUsages = new double[_perCoreCpuCounters.Length];
-            for (int i = 0; i < _perCoreCpuCounters.Length; i++)
-            {
-                cpuUsages[i] = _perCoreCpuCounters[i].NextValue();
-            }
+            var cpuUsages = new double[_perCoreCpuCounters.Length];
+            for (var i = 0; i < _perCoreCpuCounters.Length; i++) cpuUsages[i] = _perCoreCpuCounters[i].NextValue();
 
             return cpuUsages;
         }, cancellationToken);
@@ -119,9 +114,8 @@ public class CpuUsageMonitor : IDisposable
     {
         var cpuLine = await ReadProcStatLineAsync(cancellationToken);
 
-            var cpuValues = ParseCpuStat(cpuLine);
-            return CalculateCpuUsage(cpuValues);
-        
+        var cpuValues = ParseCpuStat(cpuLine);
+        return CalculateCpuUsage(cpuValues);
     }
 
     private async Task<double[]> GetLinuxPerCoreCpuUsageAsync(CancellationToken cancellationToken)
@@ -130,8 +124,8 @@ public class CpuUsageMonitor : IDisposable
         var coreLines =
             lines.Where(line => line.StartsWith("cpu") && line.Length > 3).ToArray(); // "cpu0", "cpu1", etc.
 
-        double[] usages = new double[coreLines.Length];
-        for (int i = 0; i < coreLines.Length; i++)
+        var usages = new double[coreLines.Length];
+        for (var i = 0; i < coreLines.Length; i++)
         {
             var coreValues = ParseCpuStat(coreLines[i]);
             usages[i] = CalculateCpuUsage(coreValues);
@@ -149,7 +143,7 @@ public class CpuUsageMonitor : IDisposable
     private long[] ParseCpuStat(string cpuStatLine)
     {
         var cpuStats = cpuStatLine.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        return new long[]
+        return new[]
         {
             long.Parse(cpuStats[1]), // user
             long.Parse(cpuStats[2]), // nice
@@ -157,14 +151,14 @@ public class CpuUsageMonitor : IDisposable
             long.Parse(cpuStats[4]), // idle
             long.Parse(cpuStats[5]), // iowait
             long.Parse(cpuStats[6]), // irq
-            long.Parse(cpuStats[7]), // softirq
+            long.Parse(cpuStats[7]) // softirq
         };
     }
 
     private double CalculateCpuUsage(long[] cpuValues)
     {
-        long idleTime = cpuValues[3];
-        long totalTime = cpuValues.Sum();
+        var idleTime = cpuValues[3];
+        var totalTime = cpuValues.Sum();
 
         return 100.0 * (totalTime - idleTime) / totalTime;
     }
@@ -179,21 +173,11 @@ public class CpuUsageMonitor : IDisposable
                 _totalCpuCounter?.Dispose();
 
                 if (_perCoreCpuCounters != null)
-                {
                     foreach (var counter in _perCoreCpuCounters)
-                    {
                         counter?.Dispose();
-                    }
-                }
             }
 
             _disposed = true;
         }
-    }
-
-    public void Dispose()
-    {
-        Dispose(true);
-        GC.SuppressFinalize(this);
     }
 }

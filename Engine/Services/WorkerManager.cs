@@ -28,7 +28,8 @@ public interface IWorkerManager
         EventType eventType = EventType.Updated, string reason = "");
 }
 
-public class WorkerManager(MessageQueue messageQueue, RepositoryFactory repositoryFactory, ILoggerService loggerService) : IWorkerManager
+public class WorkerManager(MessageQueue messageQueue, RepositoryFactory repositoryFactory, ILoggerService loggerService)
+    : IWorkerManager
 {
     private readonly Dictionary<string, WorkerService> _workers = new();
     public IReadOnlyDictionary<string, WorkerService> Workers => _workers;
@@ -46,8 +47,9 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
             // Tjek om arbejderen allerede findes i in-memory _workers
             if (_workers.ContainsKey(workerEntity.WorkerId))
             {
-                LogInfo($"Worker with ID {workerEntity.WorkerId} already exists in memory.", workerEntity.WorkerId, LogLevel.Warning);
-                
+                LogInfo($"Worker with ID {workerEntity.WorkerId} already exists in memory.", workerEntity.WorkerId,
+                    LogLevel.Warning);
+
                 continue;
             }
 
@@ -61,10 +63,7 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
             _workers[workerEntity.WorkerId] = workerService;
 
             // Start arbejderen if enabled
-            if (workerEntity.IsEnabled)
-            {
-                await StartWorkerAsync(workerService.WorkerId);
-            }
+            if (workerEntity.IsEnabled) await StartWorkerAsync(workerService.WorkerId);
         }
 
         Log.Information("Workers initialized successfully.");
@@ -73,8 +72,8 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
     public async Task<WorkerService?> AddWorkerAsync(Guid engineId, WorkerCreate workerCreate)
     {
         LogInfo($"Adding worker... {workerCreate.Name}", workerCreate.WorkerId);
-        
-        IWorkerRepository workerRepository = repositoryFactory.CreateWorkerRepository();
+
+        var workerRepository = repositoryFactory.CreateWorkerRepository();
 
         // Tjek, om WorkerId allerede findes i databasen asynkront
         var existingWorker = await workerRepository.GetWorkerByIdAsync(workerCreate.WorkerId);
@@ -82,15 +81,13 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
         // Hvis arbejderen allerede findes i databasen, returnér null
         if (existingWorker != null)
         {
-            LogInfo($"Worker with ID {workerCreate.WorkerId} already exists in database.", workerCreate.WorkerId, LogLevel.Warning);
+            LogInfo($"Worker with ID {workerCreate.WorkerId} already exists in database.", workerCreate.WorkerId,
+                LogLevel.Warning);
             return null;
         }
 
         // Hvis WorkerId ikke er angivet, generer et random ID
-        if (string.IsNullOrWhiteSpace(workerCreate.WorkerId))
-        {
-            workerCreate.WorkerId = Guid.NewGuid().ToString();
-        }
+        if (string.IsNullOrWhiteSpace(workerCreate.WorkerId)) workerCreate.WorkerId = Guid.NewGuid().ToString();
 
         IStreamerRunner streamerRunner = new FakeStreamerRunner
         {
@@ -116,30 +113,11 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
         await SendWorkerEvent(workerCreate.WorkerId, EventType.Created);
         return workerService;
     }
-    
-    private WorkerService GetOrCreateWorkerService(WorkerCreate workerCreate, IStreamerRunner streamerRunner)
-    {
-        // Hvis arbejderen allerede findes i databasen og i _workers, returner den eksisterende service
-        if (_workers.ContainsKey(workerCreate.WorkerId))
-        {
-            var logmessage =
-                $"Worker with ID {workerCreate.WorkerId} already exists in memory. Returning existing service.";
-            LogInfo(logmessage, workerCreate.WorkerId, LogLevel.Warning);
-            return _workers[workerCreate.WorkerId];
-        }
-
-        // Ellers opret en ny service for arbejderen
-        var workerService = new WorkerService(this, loggerService, messageQueue, streamerRunner,
-            workerCreate.WorkerId, repositoryFactory);
-        _workers[workerCreate.WorkerId] = workerService;
-
-        return workerService;
-    }
 
     public async Task<CommandResult> StartWorkerAsync(string workerId)
     {
         LogInfo($"Starting worker: {workerId}", workerId);
-        
+
         var worker = GetWorkerService(workerId);
 
         if (worker != null)
@@ -181,7 +159,6 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
 
         // Hvis vi skal disable arbejderen, stop den først, hvis den er i gang
         if (!enable)
-        {
             if (worker.GetState() != WorkerState.Idle)
             {
                 LogInfo($"Stopping worker {workerId} before disabling...", workerId);
@@ -192,7 +169,6 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
                     return new CommandResult(false, $"Failed to stop worker: {stopResult.Message}");
                 }
             }
-        }
 
         // Opdater databasen for at sætte IsEnabled
         var workerRepository = repositoryFactory.CreateWorkerRepository();
@@ -212,7 +188,8 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
             var startResult = await worker.StartAsync();
             if (!startResult.Success)
             {
-                LogInfo($"Failed to start worker {workerId} after enabling: {startResult.Message}", workerId, LogLevel.Error);
+                LogInfo($"Failed to start worker {workerId} after enabling: {startResult.Message}", workerId,
+                    LogLevel.Error);
                 return new CommandResult(false, $"Worker enabled, but failed to start: {startResult.Message}");
             }
         }
@@ -240,7 +217,7 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
         }
 
         // Tjek om der er ændringer i Name, Description eller Command
-        string isModified = "";
+        var isModified = "";
 
         if (workerEntity.Name != newName)
         {
@@ -298,7 +275,7 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
 
     public async Task<List<WorkerEvent>> GetAllWorkers(Guid engineId)
     {
-        Log.Information($"Getting all workers from database...");
+        Log.Information("Getting all workers from database...");
 
         var workerRepository = repositoryFactory.CreateWorkerRepository();
         var workerEntities = await workerRepository.GetAllWorkersAsync();
@@ -313,17 +290,6 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
             .ToList();
 
         return workerEvents;
-    }
-
-    private WorkerState GetWorkerState(string workerId)
-    {
-        var workerService = GetWorkerService(workerId);
-        if (workerService != null)
-        {
-            return workerService.GetState();
-        }
-
-        return WorkerState.Idle;
     }
 
     public async Task<CommandResult> RemoveWorkerAsync(string workerId)
@@ -379,11 +345,57 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
             await SendWorkerEvent(workerId, EventType.Updated);
             return new CommandResult(true, "Watchdog event count reset successfully.");
         }
+
+        LogInfo($"Worker with ID {workerId} not found.", workerId, LogLevel.Warning);
+        return new CommandResult(false, "Worker not found.");
+    }
+
+    public async Task HandleStateChange(WorkerService workerService, WorkerState newState,
+        EventType eventType = EventType.Updated, string reason = "")
+    {
+        var logMessage = $"Worker {workerService.WorkerId} state changed to {newState}: {reason}";
+        Log.Information(logMessage);
+
+        var workerRepository = repositoryFactory.CreateWorkerRepository();
+        var workerEntity = await workerRepository.GetWorkerByIdAsync(workerService.WorkerId);
+
+        if (workerEntity != null)
+        {
+            var workerEvent = workerEntity.ToWorkerEvent(newState, eventType);
+            //workerEvent.Reason = reason; // Tilføj årsag hvis relevant
+            messageQueue.EnqueueMessage(workerEvent);
+        }
         else
         {
-            LogInfo($"Worker with ID {workerId} not found.", workerId, LogLevel.Warning);
-            return new CommandResult(false, "Worker not found.");
+            LogInfo($"Worker with ID {workerService.WorkerId} not found.", workerService.WorkerId, LogLevel.Warning);
         }
+    }
+
+    private WorkerService GetOrCreateWorkerService(WorkerCreate workerCreate, IStreamerRunner streamerRunner)
+    {
+        // Hvis arbejderen allerede findes i databasen og i _workers, returner den eksisterende service
+        if (_workers.ContainsKey(workerCreate.WorkerId))
+        {
+            var logmessage =
+                $"Worker with ID {workerCreate.WorkerId} already exists in memory. Returning existing service.";
+            LogInfo(logmessage, workerCreate.WorkerId, LogLevel.Warning);
+            return _workers[workerCreate.WorkerId];
+        }
+
+        // Ellers opret en ny service for arbejderen
+        var workerService = new WorkerService(this, loggerService, messageQueue, streamerRunner,
+            workerCreate.WorkerId, repositoryFactory);
+        _workers[workerCreate.WorkerId] = workerService;
+
+        return workerService;
+    }
+
+    private WorkerState GetWorkerState(string workerId)
+    {
+        var workerService = GetWorkerService(workerId);
+        if (workerService != null) return workerService.GetState();
+
+        return WorkerState.Idle;
     }
 
     private void SendWorkerDeletedEvent(string workerId)
@@ -424,32 +436,11 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
         }
     }
 
-    public async Task HandleStateChange(WorkerService workerService, WorkerState newState,
-        EventType eventType = EventType.Updated, string reason = "")
-    {
-        var logMessage = $"Worker {workerService.WorkerId} state changed to {newState}: {reason}";
-        Log.Information(logMessage);
-
-        var workerRepository = repositoryFactory.CreateWorkerRepository();
-        var workerEntity = await workerRepository.GetWorkerByIdAsync(workerService.WorkerId);
-
-        if (workerEntity != null)
-        {
-            var workerEvent = workerEntity.ToWorkerEvent(newState, eventType);
-            //workerEvent.Reason = reason; // Tilføj årsag hvis relevant
-            messageQueue.EnqueueMessage(workerEvent);
-        }
-        else
-        {
-            LogInfo($"Worker with ID {workerService.WorkerId} not found.", workerService.WorkerId, LogLevel.Warning);
-        }
-    }
-
     private WorkerService? GetWorkerService(string workerId)
     {
         return _workers.TryGetValue(workerId, out var worker) ? worker : null;
     }
-    
+
     private void LogInfo(string message, string workerId, LogLevel logLevel = LogLevel.Information)
     {
         loggerService.LogMessage(new WorkerLogEntry
