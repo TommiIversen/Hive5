@@ -9,14 +9,6 @@ using Serilog;
 
 namespace Engine.Hubs;
 
-public class HubConnectionInfo
-{
-    public required HubConnection HubConnection { get; set; }
-    public required MultiQueue MessageQueue { get; set; }
-    public DateTime SyncTimestamp { get; set; } = DateTime.MinValue;
-    public CancellationTokenSource ReconnectTokenSource { get; set; } = new();
-}
-
 public class StreamHub
 {
     private readonly ConcurrentDictionary<string, HubConnectionInfo> _hubConnections = new();
@@ -112,30 +104,20 @@ public class StreamHub
             var engine = await _engineService.GetEngineAsync();
             var hubUrlEntity = engine?.HubUrls.FirstOrDefault(h => h.HubUrl == hubUrlToRemove);
 
-            if (hubUrlEntity != null)
-            {
-                await _engineService.RemoveHubUrlAsync(hubUrlEntity
-                    .Id); // Brug EngineService til at fjerne URL'en fra databasen
-                _logger.LogInformation("Successfully removed hub URL {Url} from database via EngineService",
-                    hubUrlToRemove);
-
-                var engineUpdateEvent = await GetEngineBaseInfo(); // Opdateret engine data til event
-
-                // loop over urls in engineInfo
-                foreach (var hubUrl in engineUpdateEvent.HubUrls.Select(h => h.HubUrl))
-                {
-                    Console.WriteLine($"Updated URL: {hubUrl}");
-                }
-
-                _globalMessageQueue.EnqueueMessage(engineUpdateEvent); // Send opdatering til alle forbindelser
-
-                return new CommandResult(true, $"Successfully removed hub URL {hubUrlToRemove} from database.");
-            }
-            else
+            if (hubUrlEntity == null)
             {
                 _logger.LogWarning("Hub URL {Url} not found in the database.", hubUrlToRemove);
                 return new CommandResult(false, $"Hub URL {hubUrlToRemove} not found in the database.");
             }
+
+            await _engineService.RemoveHubUrlAsync(hubUrlEntity.Id);
+            _logger.LogInformation("Successfully removed hub URL {Url} from database via EngineService",
+                hubUrlToRemove);
+
+            var engineUpdateEvent = await GetEngineBaseInfo();
+            _globalMessageQueue.EnqueueMessage(engineUpdateEvent);
+
+            return new CommandResult(true, $"Successfully removed hub URL {hubUrlToRemove} from database.");
         }
         catch (Exception ex)
         {
