@@ -99,7 +99,7 @@ using (var tempScope = builder.Services.BuildServiceProvider().CreateScope())
 }
 
 builder.Services.AddSingleton<ILoggerService, LoggerService>();
-builder.Services.AddSingleton<WorkerManager>();
+builder.Services.AddSingleton<IWorkerManager, WorkerManager>();
 builder.Services.AddSingleton<StreamHub>();
 
 var app = builder.Build();
@@ -110,7 +110,7 @@ app.Services.GetRequiredService<StreamHub>();
 var metricsService = app.Services.GetRequiredService<MetricsService>();
 metricsService.Start();
 
-var workerManager = app.Services.GetRequiredService<WorkerManager>();
+var workerManager = app.Services.GetRequiredService<IWorkerManager>();
 await workerManager.InitializeWorkersAsync();
 
 // Configure the HTTP request pipeline.

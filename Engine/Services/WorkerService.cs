@@ -7,7 +7,7 @@ namespace Engine.Services;
 
 public class WorkerService
 {
-    private readonly WorkerManager _workerManager;
+    private readonly IWorkerManager _workerManager;
     private readonly MessageQueue _messageQueue;
     private readonly ILoggerService _loggerService;
     private readonly IStreamerRunner _streamerRunner;
@@ -20,7 +20,7 @@ public class WorkerService
     private int _logCounter = 0;
     private int _imageCounter = 0;
     
-    public WorkerService(WorkerManager workerManager, ILoggerService loggerService, MessageQueue messageQueue, IStreamerRunner streamerRunner,
+    public WorkerService(IWorkerManager workerManager, ILoggerService loggerService, MessageQueue messageQueue, IStreamerRunner streamerRunner,
         string workerCreateWorkerId, RepositoryFactory repositoryFactory)
     {
         _workerManager = workerManager;

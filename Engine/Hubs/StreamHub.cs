@@ -25,7 +25,7 @@ public class StreamHub
     private readonly CancellationTokenSource _cancellationTokenSource = new();
 
     private readonly ILogger<StreamHub> _logger;
-    private readonly WorkerManager _workerManager;
+    private readonly IWorkerManager _workerManager;
     private readonly int _maxQueueSize = 20;
     private readonly ILoggerFactory _loggerFactory;
 
@@ -39,7 +39,7 @@ public class StreamHub
         MessageQueue globalMessageQueue,
         ILogger<StreamHub> logger,
         ILoggerFactory loggerFactory,
-        WorkerManager workerManager,
+        IWorkerManager workerManager,
         IEngineService engineService)
     {
         _logger = logger;

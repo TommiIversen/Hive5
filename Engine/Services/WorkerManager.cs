@@ -8,7 +8,27 @@ using Serilog;
 
 namespace Engine.Services;
 
-public class WorkerManager(MessageQueue messageQueue, RepositoryFactory repositoryFactory, ILoggerService loggerService)
+public interface IWorkerManager
+{
+    IReadOnlyDictionary<string, WorkerService> Workers { get; }
+    Task InitializeWorkersAsync();
+    Task<WorkerService?> AddWorkerAsync(Guid engineId, WorkerCreate workerCreate);
+    Task<CommandResult> StartWorkerAsync(string workerId);
+    Task<CommandResult> StopWorkerAsync(string workerId);
+    Task<CommandResult> EnableDisableWorkerAsync(string workerId, bool enable);
+
+    Task<CommandResult> EditWorkerAsync(string workerId, string newName, string newDescription,
+        string? newCommand);
+
+    Task<List<WorkerEvent>> GetAllWorkers(Guid engineId);
+    Task<CommandResult> RemoveWorkerAsync(string workerId);
+    Task<CommandResult> ResetWatchdogEventCountAsync(string workerId);
+
+    Task HandleStateChange(WorkerService workerService, WorkerState newState,
+        EventType eventType = EventType.Updated, string reason = "");
+}
+
+public class WorkerManager(MessageQueue messageQueue, RepositoryFactory repositoryFactory, ILoggerService loggerService) : IWorkerManager
 {
     private readonly Dictionary<string, WorkerService> _workers = new();
     public IReadOnlyDictionary<string, WorkerService> Workers => _workers;
