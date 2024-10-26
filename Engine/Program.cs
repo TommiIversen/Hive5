@@ -42,12 +42,9 @@ builder.Services.AddRazorComponents()
 
 builder.Services.AddSingleton<RepositoryFactory>();
 
-
 // Hent maskinens navn og brug det til databasefilen, og gem den i basePath
 var machineName = Environment.MachineName;
 var dbFileName = Path.Combine(basePath, $"{machineName}.db"); // Brug basePath til databasefilen
-
-// Registrer DbContext med maskinens navn som databasefilnavn
 builder.Services.AddDbContextFactory<ApplicationDbContext>(options =>
     options.UseSqlite($"Data Source={dbFileName}"));
 
@@ -62,15 +59,12 @@ builder.Services.AddSingleton<IEngineService, EngineService>();
 builder.Services.AddSingleton<INetworkInterfaceProvider, NetworkInterfaceProvider>(); 
 builder.Services.AddSingleton<MetricsService>();
 
-
-
 // Opret database og seed data, hvis nødvendigt
 using (var tempScope = builder.Services.BuildServiceProvider().CreateScope())
 {
     var dbContext = tempScope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     var engineRepository = tempScope.ServiceProvider.GetRequiredService<IEngineRepository>();
-
-
+    
     // Ryd eventuelt eksisterende låse før migrering
     try
     {
@@ -104,7 +98,7 @@ using (var tempScope = builder.Services.BuildServiceProvider().CreateScope())
     builder.Services.AddSingleton<IEngineIdProvider>(new EngineIdProvider(engineId));
 }
 
-builder.Services.AddSingleton<LoggerService>();
+builder.Services.AddSingleton<ILoggerService, LoggerService>();
 builder.Services.AddSingleton<WorkerManager>();
 builder.Services.AddSingleton<StreamHub>();
 

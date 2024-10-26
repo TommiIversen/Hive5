@@ -8,7 +8,7 @@ using Serilog;
 
 namespace Engine.Services;
 
-public class WorkerManager(MessageQueue messageQueue, RepositoryFactory repositoryFactory, LoggerService loggerService)
+public class WorkerManager(MessageQueue messageQueue, RepositoryFactory repositoryFactory, ILoggerService loggerService)
 {
     private readonly Dictionary<string, WorkerService> _workers = new();
     public IReadOnlyDictionary<string, WorkerService> Workers => _workers;

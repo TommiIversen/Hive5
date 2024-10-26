@@ -5,14 +5,7 @@ public interface IEngineIdProvider
     Guid GetEngineId();
 }
 
-public class EngineIdProvider : IEngineIdProvider
+public class EngineIdProvider(Guid engineId) : IEngineIdProvider
 {
-    private readonly Guid _engineId;
-
-    public EngineIdProvider(Guid engineId)
-    {
-        _engineId = engineId;
-    }
-
-    public Guid GetEngineId() => _engineId;
+    public Guid GetEngineId() => engineId;
 }

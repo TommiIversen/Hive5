@@ -9,7 +9,7 @@ public class WorkerService
 {
     private readonly WorkerManager _workerManager;
     private readonly MessageQueue _messageQueue;
-    private readonly LoggerService _loggerService;
+    private readonly ILoggerService _loggerService;
     private readonly IStreamerRunner _streamerRunner;
     private readonly RepositoryFactory _repositoryFactory; // Nyt felt til RepositoryFactory
     private readonly RunnerWatchdog _watchdog;
@@ -20,7 +20,7 @@ public class WorkerService
     private int _logCounter = 0;
     private int _imageCounter = 0;
     
-    public WorkerService(WorkerManager workerManager, LoggerService loggerService, MessageQueue messageQueue, IStreamerRunner streamerRunner,
+    public WorkerService(WorkerManager workerManager, ILoggerService loggerService, MessageQueue messageQueue, IStreamerRunner streamerRunner,
         string workerCreateWorkerId, RepositoryFactory repositoryFactory)
     {
         _workerManager = workerManager;

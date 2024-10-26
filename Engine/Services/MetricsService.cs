@@ -66,7 +66,7 @@ public class MetricsService(MessageQueue messageQueue, INetworkInterfaceProvider
                 LinkSpeedGbps = linkSpeedGbps // Link hastighed i Gbps
             };
 
-            messageQueue.EnqueueMessage(metric);
+            await messageQueue.EnqueueMessageAsync(metric, cancellationToken);
 
             try
             {

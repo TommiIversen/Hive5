@@ -4,7 +4,12 @@ using System.Collections.Concurrent;
 
 namespace Engine.Services;
 
-public class LoggerService(IEngineIdProvider engineIdProvider, MessageQueue messageQueue)
+public interface ILoggerService
+{
+    void LogMessage(BaseLogEntry logEntry);
+}
+
+public class LoggerService(IEngineIdProvider engineIdProvider, MessageQueue messageQueue) : ILoggerService
 {
     private readonly Guid _engineId = engineIdProvider.GetEngineId();
     private readonly ConcurrentDictionary<string, int> _workerLogCounters = new();
