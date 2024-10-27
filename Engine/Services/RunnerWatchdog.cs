@@ -9,13 +9,13 @@ public class RunnerWatchdog
     private readonly TimeSpan _graceTime;
     private readonly List<string> _logLines = new();
     private readonly int _maxLogLines = 20;
-    private readonly Action<string> _restartCallback;
+    private readonly Func<string, Task> _restartCallback; // Asynkron callback
     private readonly string _workerId;
     private CancellationTokenSource _cancellationTokenSource;
     private bool _running;
     private Task? _watchdogTask;
 
-    public RunnerWatchdog(string workerId, Func<(bool, string)> checkRestartCallback, Action<string> restartCallback,
+    public RunnerWatchdog(string workerId, Func<(bool, string)> checkRestartCallback, Func<string, Task> restartCallback,
         TimeSpan graceTime, TimeSpan checkInterval)
     {
         _workerId = workerId;
@@ -26,7 +26,8 @@ public class RunnerWatchdog
         _cancellationTokenSource = new CancellationTokenSource();
     }
 
-    public event EventHandler<string>? StateChanged;
+    public delegate Task AsyncEventHandler<TEventArgs>(object sender, TEventArgs e);
+    public event AsyncEventHandler<string>? StateChanged;
 
     public async Task StartAsync()
     {
@@ -42,18 +43,19 @@ public class RunnerWatchdog
         if (!_running) return;
 
         _running = false;
-        _cancellationTokenSource.Cancel();
+        await _cancellationTokenSource.CancelAsync();
 
         if (_watchdogTask != null)
+        {
             try
             {
-                // Vent på, at tasken afsluttes
                 await _watchdogTask;
             }
             catch (OperationCanceledException)
             {
                 AddLog("Watchdog task was cancelled.");
             }
+        }
 
         AddLog($"RunnerWatchdog: {_workerId} stopped.");
     }
@@ -76,6 +78,7 @@ public class RunnerWatchdog
         AddLog($"RunnerWatchdog: {_workerId} finished grace time and is now monitoring every {_checkInterval}.");
 
         while (!cancellationToken.IsCancellationRequested)
+        {
             try
             {
                 await Task.Delay(_checkInterval, cancellationToken);
@@ -84,8 +87,11 @@ public class RunnerWatchdog
                 if (needRestart)
                 {
                     AddLog($"Watchdog detected a need for restart: {message}");
-                    _restartCallback(message);
-                    OnStateChanged($"Worker {_workerId} is restarting due to: {message}");
+
+                    // Tilføj logging før og efter kaldet til _restartCallback for at diagnosticere problemet
+                    AddLog("Calling _restartCallback...");
+                    await ExecuteRestartCallbackAsync(message);
+                    AddLog("Finished _restartCallback.");
                 }
                 else
                 {
@@ -97,17 +103,45 @@ public class RunnerWatchdog
                 AddLog("Watchdog task was cancelled.");
                 break;
             }
+        }
+    }
+
+    private async Task ExecuteRestartCallbackAsync(string message)
+    {
+        try
+        {
+            // Udfør _restartCallback og håndter eventuelle undtagelser
+            await _restartCallback(message);
+            await OnStateChangedAsync($"Worker {_workerId} is restarting due to: {message}");
+        }
+        catch (Exception ex)
+        {
+            AddLog($"Error during _restartCallback: {ex.Message}");
+        }
+    }
+
+    private async Task OnStateChangedAsync(string message)
+    {
+        if (StateChanged != null)
+        {
+            var handlers = StateChanged.GetInvocationList();
+            var tasks = new List<Task>();
+
+            foreach (var handler in handlers)
+            {
+                if (handler is AsyncEventHandler<string> asyncHandler)
+                {
+                    tasks.Add(asyncHandler(this, message));
+                }
+            }
+
+            await Task.WhenAll(tasks);
+        }
     }
 
     public void OnRunnerLogGenerated(object? sender, WorkerLogEntry workerLog)
     {
-        // Tilføj log fra runneren til logbufferen
         AddLog($"{workerLog.Timestamp}: {workerLog.Message}");
-    }
-
-    private void OnStateChanged(string message)
-    {
-        StateChanged?.Invoke(this, message);
     }
 
     private void AddLog(string message)

@@ -35,7 +35,7 @@ public class WorkerService
         _streamerRunner.StateChangedAsync = async newState => { await HandleStateChangeAsync(newState); };
 
         // Initialiser watchdog med callbacks
-        _watchdog = new RunnerWatchdog(workerCreateWorkerId, ShouldRestart, RestartWorker, TimeSpan.FromSeconds(6),
+        _watchdog = new RunnerWatchdog(workerCreateWorkerId, ShouldRestart, WatchdogRestartCallback, TimeSpan.FromSeconds(6),
             TimeSpan.FromSeconds(1));
         _watchdog.StateChanged += async (sender, message) => await OnWatchdogStateChanged(sender, message);
         _streamerRunner.LogGenerated += _watchdog.OnRunnerLogGenerated;
@@ -137,7 +137,9 @@ public class WorkerService
         }
 
         // Stop watchdog før streameren stoppes
+        LogInfo("Stopping watchdog");
         await _watchdog.StopAsync();
+        LogInfo("Watchdog stopped");
         var (state, message) = await _streamerRunner.StopAsync();
 
         var success = state == WorkerState.Idle;
@@ -163,8 +165,16 @@ public class WorkerService
         return (false, string.Empty);
     }
 
-    private async void RestartWorker(string reason)
+    private Task WatchdogRestartCallback(string reason)
     {
+        _ = Task.Run(async () => await RestartWorkerAsync(reason));
+        return Task.CompletedTask;
+    }
+
+    
+    private async Task RestartWorkerAsync(string reason)
+    {
+        Console.WriteLine("--------------------------------------------------");
         var logMessage = $"Restarting worker {WorkerId} due to: {reason}";
         LogInfo(logMessage, LogLevel.Error);
 
