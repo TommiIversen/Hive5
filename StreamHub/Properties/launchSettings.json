@@ -34,13 +34,12 @@
         "commandName": "Executable",
         "workingDirectory": "$(ProjectDir)",
         "executablePath": "dotnet",
-        "commandLineArgs": "watch run debug --launch-profile streamhub_http_8999"
+        "commandLineArgs": "watch --project StreamHub.csproj  run debug --launch-profile streamhub_http_8999"
       },
       "Watch 9000": {
         "commandName": "Executable",
         "workingDirectory": "$(ProjectDir)",
         "executablePath": "dotnet",
-        "commandLineArgs": "watch run debug --launch-profile streamhub_http_9000"
-      }
+        "commandLineArgs": "watch --project StreamHub.csproj run debug --launch-profile streamhub_http_9000"      }
     }
   }

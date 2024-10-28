@@ -40,7 +40,7 @@
         <!-- Worker Image container placeret til højre -->
         <div class="flex-none">
             <div class="relative w-[300px] h-[168.75px] overflow-hidden rounded">
-                <WorkerImageComponent @key="@($"WorkerImageComponent-{EngineId}-{Worker.WorkerId}")" WorkerId="@Worker.WorkerId" EngineId="@EngineId" InitialImageData="@Worker.LastImage"/>
+                <WorkerImageComponent @key="@($"WorkerImageComponent-{EngineId}-{Worker.WorkerId}")" Worker="@Worker" EngineId="@EngineId"/>
             </div>
         </div>
     </div>

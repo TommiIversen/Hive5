@@ -1,30 +1,32 @@
 ﻿@using Common.DTOs
 @using Microsoft.AspNetCore.SignalR.Client
+@using StreamHub.Models
 @using StreamHub.Services
 @inject BlazorSignalRService SignalRService
 
-<div class="image-container" @key="@(EngineId.ToString() + WorkerId)" style="position: relative;">
-    @if (!string.IsNullOrEmpty(_imageData))
+<div class="image-container" @key="@(EngineId + Worker.WorkerId)" style="position: relative;">
+    @if (!string.IsNullOrEmpty(_imageData) && Worker.Worker.State == WorkerState.Running)
     {
-        <img src="@_imageData" alt="Worker Image" style="max-width: 260px; height: auto;"/>
-        <div class="latency-overlay" style="position: absolute; top: 3px; left: 3px; color: white; background-color: rgba(0, 0, 0, 0.5); padding: 2px 4px; border-radius: 3px; font-size: 12px;">
-            Latency: @(_latencyMs) ms
-            @if (_imageLost)
-            {
-                <span style="color: red; margin-left: 5px;">⚠️</span>
-            }
-        </div>
+    <img src="@_imageData" alt="Worker Image" class="w-[300px] h-[168.75px] rounded"/>
+    <div class="latency-overlay" style="position: absolute; top: 3px; left: 3px; color: white; background-color: rgba(0, 0, 0, 0.5); padding: 2px 4px; border-radius: 3px; font-size: 12px;">
+        Latency: @(_latencyMs) ms
+        @if (_imageLost)
+        {
+        <span style="color: red; margin-left: 5px;">⚠️</span>
+        }
+    </div>
     }
     else
     {
-        <p>No image available.</p>
+    <img src="/img/hive.jpg" alt="Default Image" class="w-[300px] h-[168.75px] rounded" />
     }
 </div>
 
 
+
 @code {
     [Parameter] public Guid EngineId { get; set; }
-    [Parameter] public string WorkerId { get; set; } = "";
+    [Parameter] public required WorkerViewModel Worker { get; set; }
     [Parameter] public string InitialImageData { get; set; } = "";
 
     private string? _imageData;
@@ -35,7 +37,7 @@
     protected override Task OnInitializedAsync()
     {
         _imageData = InitialImageData;
-        SignalRService.HubConnection.On<ImageData>($"ReceiveImage-{EngineId}-{WorkerId}", async imageData =>
+        SignalRService.HubConnection.On<ImageData>($"ReceiveImage-{EngineId}-{Worker.WorkerId}", async imageData =>
         {
             _latencyMs = (long)(DateTime.UtcNow - imageData.Timestamp).TotalMilliseconds;
             _imageLost = _previousImageSequenceNumber != -1 && imageData.ImageSequenceNumber != _previousImageSequenceNumber + 1;
@@ -48,7 +50,7 @@
 
     public void Dispose()
     {
-        Console.WriteLine($"Disposing Image component for worker {WorkerId}");
+        Console.WriteLine($"Disposing Image component for worker {Worker.WorkerId}");
         SignalRService.HubConnection.Remove($"ReceiveImage-{EngineId}");
     }
 }

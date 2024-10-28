@@ -31,7 +31,7 @@
     <div class="md:col-span-3">
         @if (Engine.Workers?.Any() == true)
         {
-            <div class="grid grid-cols-1 gap-4">
+            <div class="grid grid-cols-1">
                 @foreach (var worker in Engine.Workers.Values)
                 {
                     <WorkerComponent EngineId="Engine.BaseInfo.EngineId" Worker="worker"/>

@@ -10,7 +10,7 @@ namespace Engine.Utils;
 public class ImageGenerator
 {
     private const int Width = 300;
-    private const int Height = 220;
+    private const int Height = 168;
     private const int BufferSize = 32 * 1024;
     private readonly ArrayPool<byte> _arrayPool;
     private readonly Brush _brush;
@@ -74,7 +74,6 @@ public class ImageGenerator
 
         // Brug en buffer fra poolen til at undgå gentagne allokeringer
         var buffer = _arrayPool.Rent(BufferSize);
-
         try
         {
             using var memoryStream = new MemoryStream(buffer);
