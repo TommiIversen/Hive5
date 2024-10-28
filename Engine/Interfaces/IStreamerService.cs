@@ -2,7 +2,7 @@
 
 namespace Engine.Interfaces;
 
-public interface IStreamerRunner
+public interface IStreamerService
 {
     string WorkerId { get; set; }
     Func<WorkerState, Task>? StateChangedAsync { get; set; } // Async event for state changes

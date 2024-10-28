@@ -139,7 +139,7 @@ public class RunnerWatchdog
         }
     }
 
-    public void OnRunnerLogGenerated(object? sender, WorkerLogEntry workerLog)
+    public void OnServiceLogGenerated(object? sender, WorkerLogEntry workerLog)
     {
         AddLog($"{workerLog.Timestamp}: {workerLog.Message}");
     }

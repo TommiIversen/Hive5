@@ -4,7 +4,7 @@ using Engine.Interfaces;
 
 namespace Engine.Utils;
 
-public class FakeStreamerRunner : IStreamerRunner
+public class FakeStreamerService : IStreamerService
 {
     private readonly ImageGenerator _generator = new();
     private readonly Timer _imageTimer;
@@ -14,7 +14,7 @@ public class FakeStreamerRunner : IStreamerRunner
     private WorkerState _state = WorkerState.Idle;
 
 
-    public FakeStreamerRunner()
+    public FakeStreamerService()
     {
         _logTimer = new Timer(AutoLog, null, Timeout.Infinite, 300);
         _imageTimer = new Timer(SendImage, null, Timeout.Infinite, 1000);

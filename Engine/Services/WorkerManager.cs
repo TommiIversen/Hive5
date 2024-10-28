@@ -10,9 +10,9 @@ namespace Engine.Services;
 
 public interface IWorkerManager
 {
-    IReadOnlyDictionary<string, WorkerService> Workers { get; }
+    IReadOnlyDictionary<string, IWorkerService> Workers { get; }
     Task InitializeWorkersAsync();
-    Task<WorkerService?> AddWorkerAsync(Guid engineId, WorkerCreate workerCreate);
+    Task<IWorkerService?> AddWorkerAsync(Guid engineId, WorkerCreate workerCreate);
     Task<CommandResult> StartWorkerAsync(string workerId);
     Task<CommandResult> StopWorkerAsync(string workerId);
     Task<CommandResult> EnableDisableWorkerAsync(string workerId, bool enable);
@@ -24,15 +24,13 @@ public interface IWorkerManager
     Task<CommandResult> RemoveWorkerAsync(string workerId);
     Task<CommandResult> ResetWatchdogEventCountAsync(string workerId);
 
-    Task HandleStateChange(WorkerService workerService, WorkerState newState,
-        EventType eventType = EventType.Updated, string reason = "");
 }
 
 public class WorkerManager(MessageQueue messageQueue, RepositoryFactory repositoryFactory, ILoggerService loggerService)
     : IWorkerManager
 {
-    private readonly Dictionary<string, WorkerService> _workers = new();
-    public IReadOnlyDictionary<string, WorkerService> Workers => _workers;
+    private readonly Dictionary<string, IWorkerService> _workers = new();
+    public IReadOnlyDictionary<string, IWorkerService> Workers => _workers;
 
     public async Task InitializeWorkersAsync()
     {
@@ -54,22 +52,26 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
             }
 
             // Hvis workeren ikke findes i _workers, opret en ny service for arbejderen
-            IStreamerRunner streamerRunner = new FakeStreamerRunner
+            IStreamerService streamerService = new FakeStreamerService
             {
                 WorkerId = workerEntity.WorkerId
             };
-            var workerService = new WorkerService(this, loggerService, messageQueue, streamerRunner,
-                workerEntity.WorkerId, repositoryFactory);
+            var workerService = new WorkerService(
+                loggerService, 
+                messageQueue, 
+                streamerService, 
+                workerEntity.WorkerId, 
+                repositoryFactory);
             _workers[workerEntity.WorkerId] = workerService;
 
             // Start arbejderen if enabled
-            if (workerEntity.IsEnabled) await StartWorkerAsync(workerService.WorkerId);
+            if (workerEntity.IsEnabled) await StartWorkerAsync(workerEntity.WorkerId);
         }
 
         Log.Information("Workers initialized successfully.");
     }
 
-    public async Task<WorkerService?> AddWorkerAsync(Guid engineId, WorkerCreate workerCreate)
+    public async Task<IWorkerService?> AddWorkerAsync(Guid engineId, WorkerCreate workerCreate)
     {
         LogInfo($"Adding worker... {workerCreate.Name}", workerCreate.WorkerId);
 
@@ -88,15 +90,30 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
 
         // Hvis WorkerId ikke er angivet, generer et random ID
         if (string.IsNullOrWhiteSpace(workerCreate.WorkerId)) workerCreate.WorkerId = Guid.NewGuid().ToString();
+        
+        // Hvis arbejderen allerede findes i databasen og i _workers, returner den eksisterende service
+        if (_workers.TryGetValue(workerCreate.WorkerId, out var async))
+        {
+            var logmessage =
+                $"Worker with ID {workerCreate.WorkerId} already exists in memory. Returning existing service.";
+            LogInfo(logmessage, workerCreate.WorkerId, LogLevel.Warning);
+            return async;
+        }
 
-        IStreamerRunner streamerRunner = new FakeStreamerRunner
+        IStreamerService streamerService = new FakeStreamerService
         {
             WorkerId = workerCreate.WorkerId
         };
-        var workerService = GetOrCreateWorkerService(workerCreate, streamerRunner);
+        // opret en ny service for workeren
+        var workerService = new WorkerService(
+            loggerService, 
+            messageQueue, 
+            streamerService, 
+            workerCreate.WorkerId, 
+            repositoryFactory);
+        _workers[workerCreate.WorkerId] = workerService;
 
         LogInfo($"Adding worker to database.. {workerCreate.WorkerId}", workerCreate.WorkerId);
-
         var workerEntity = new WorkerEntity
         {
             WorkerId = workerCreate.WorkerId,
@@ -108,7 +125,7 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
             UpdatedAt = DateTime.UtcNow
         };
 
-        // Tilføj arbejderen til databasen asynkront
+        // Tilføj worker til databasen asynkront
         await workerRepository.AddWorkerAsync(workerEntity);
         await SendWorkerEvent(workerCreate.WorkerId, EventType.Created);
         return workerService;
@@ -350,45 +367,8 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
         return new CommandResult(false, "Worker not found.");
     }
 
-    public async Task HandleStateChange(WorkerService workerService, WorkerState newState,
-        EventType eventType = EventType.Updated, string reason = "")
-    {
-        var logMessage = $"Worker {workerService.WorkerId} state changed to {newState}: {reason}";
-        Log.Information(logMessage);
 
-        var workerRepository = repositoryFactory.CreateWorkerRepository();
-        var workerEntity = await workerRepository.GetWorkerByIdAsync(workerService.WorkerId);
 
-        if (workerEntity != null)
-        {
-            var workerEvent = workerEntity.ToWorkerEvent(newState, eventType);
-            //workerEvent.Reason = reason; // Tilføj årsag hvis relevant
-            messageQueue.EnqueueMessage(workerEvent);
-        }
-        else
-        {
-            LogInfo($"Worker with ID {workerService.WorkerId} not found.", workerService.WorkerId, LogLevel.Warning);
-        }
-    }
-
-    private WorkerService GetOrCreateWorkerService(WorkerCreate workerCreate, IStreamerRunner streamerRunner)
-    {
-        // Hvis arbejderen allerede findes i databasen og i _workers, returner den eksisterende service
-        if (_workers.ContainsKey(workerCreate.WorkerId))
-        {
-            var logmessage =
-                $"Worker with ID {workerCreate.WorkerId} already exists in memory. Returning existing service.";
-            LogInfo(logmessage, workerCreate.WorkerId, LogLevel.Warning);
-            return _workers[workerCreate.WorkerId];
-        }
-
-        // Ellers opret en ny service for arbejderen
-        var workerService = new WorkerService(this, loggerService, messageQueue, streamerRunner,
-            workerCreate.WorkerId, repositoryFactory);
-        _workers[workerCreate.WorkerId] = workerService;
-
-        return workerService;
-    }
 
     private WorkerState GetWorkerState(string workerId)
     {
@@ -436,7 +416,7 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
         }
     }
 
-    private WorkerService? GetWorkerService(string workerId)
+    private IWorkerService? GetWorkerService(string workerId)
     {
         return _workers.TryGetValue(workerId, out var worker) ? worker : null;
     }
