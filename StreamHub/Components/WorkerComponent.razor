@@ -32,7 +32,9 @@
                 </span>
             </div>
 
-            <div class="text-gray-400">Last Updated: @Worker.Worker.Timestamp</div>
+            <div class="text-gray-400">
+                Sidst opdateret: @Worker.Worker.Timestamp.ToLocalTime().ToString("dd.MM.yyyy HH:mm:ss")
+            </div>
         </div>
 
         <!-- Worker Image container placeret til højre -->
