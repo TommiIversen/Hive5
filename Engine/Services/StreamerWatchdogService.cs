@@ -2,7 +2,7 @@
 
 namespace Engine.Services;
 
-public class RunnerWatchdog
+public class StreamerWatchdogService
 {
     private readonly TimeSpan _checkInterval;
     private readonly Func<(bool, string)> _checkRestartCallback;
@@ -15,7 +15,7 @@ public class RunnerWatchdog
     private bool _running;
     private Task? _watchdogTask;
 
-    public RunnerWatchdog(string workerId, Func<(bool, string)> checkRestartCallback, Func<string, Task> restartCallback,
+    public StreamerWatchdogService(string workerId, Func<(bool, string)> checkRestartCallback, Func<string, Task> restartCallback,
         TimeSpan graceTime, TimeSpan checkInterval)
     {
         _workerId = workerId;

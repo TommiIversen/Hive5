@@ -1,8 +1,9 @@
 ﻿using System.Runtime.InteropServices;
 using Common.DTOs;
 using Engine.Interfaces;
+using Engine.Utils;
 
-namespace Engine.Utils;
+namespace Engine.Services;
 
 public class FakeStreamerService : IStreamerService
 {
@@ -21,6 +22,7 @@ public class FakeStreamerService : IStreamerService
     }
 
     public required string WorkerId { get; set; }
+    public required string GstCommand { get; set; }
 
     public event EventHandler<WorkerLogEntry>? LogGenerated;
     public event EventHandler<ImageData>? ImageGenerated;
@@ -48,9 +50,8 @@ public class FakeStreamerService : IStreamerService
         _state = WorkerState.Starting;
         await OnStateChangedAsync(_state); // Trigger state change
 
-
-        msg = "Starting streamer...";
-        Console.WriteLine(msg);
+        msg = $"Starting streamer... with command: {GstCommand}";
+        SendLog(msg);
 
         await Task.Delay(1000); // Simuleret forsinkelse på 1 sekund
         _imageCounter = 0;
@@ -141,7 +142,6 @@ public class FakeStreamerService : IStreamerService
                 ImageBytes = GenerateFakeImage("Crashed")
             };
             ImageGenerated?.Invoke(this, imageData);
-            //SendLog(" - Streamer paused for 4 seconds");
             CreateAndSendLog("Streamer paused for 4 seconds", LogLevel.Warning);
             Task.Delay(4000).ContinueWith(_ => { _isPauseActive = false; });
             return; // Skip image generation under pause

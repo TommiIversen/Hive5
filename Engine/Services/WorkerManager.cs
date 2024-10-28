@@ -51,10 +51,10 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
                 continue;
             }
 
-            // Hvis workeren ikke findes i _workers, opret en ny service for arbejderen
             IStreamerService streamerService = new FakeStreamerService
             {
-                WorkerId = workerEntity.WorkerId
+                WorkerId = workerEntity.WorkerId,
+                GstCommand = workerEntity.Command
             };
             var workerService = new WorkerService(
                 loggerService, 
@@ -102,7 +102,8 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
 
         IStreamerService streamerService = new FakeStreamerService
         {
-            WorkerId = workerCreate.WorkerId
+            WorkerId = workerCreate.WorkerId,
+            GstCommand = workerCreate.Command
         };
         // opret en ny service for workeren
         var workerService = new WorkerService(
@@ -273,6 +274,7 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
             {
                 LogInfo($"Restarting worker {workerId} due to command change.", workerId);
                 await workerService.StopAsync(); // Stop arbejderen
+                workerService.SetGstCommand(newCommand ?? string.Empty); // Opdater kommandoen
                 var result = await workerService.StartAsync(); // Genstart med den nye kommando
                 if (!result.Success)
                 {

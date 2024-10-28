@@ -12,6 +12,8 @@ public interface IWorkerService
     Task<CommandResult> StopAsync();
     WorkerState GetState();
     string WorkerId { get;  }
+    void SetGstCommand(string gstCommand);
+
 }
 
 public class WorkerService : IWorkerService
@@ -20,7 +22,7 @@ public class WorkerService : IWorkerService
     private readonly MessageQueue _messageQueue;
     private readonly RepositoryFactory _repositoryFactory;
     private readonly IStreamerService _streamerService;
-    private readonly RunnerWatchdog _watchdog;
+    private readonly StreamerWatchdogService _watchdogService;
     private WorkerState _desiredState;
     private int _imageCounter;
     private DateTime _lastImageUpdate;
@@ -46,14 +48,19 @@ public class WorkerService : IWorkerService
         _streamerService.StateChangedAsync = async newState => { await HandleStateChangeAsync(newState); };
 
         // Initialiser watchdog med callbacks
-        _watchdog = new RunnerWatchdog(workerCreateWorkerId, ShouldRestart, WatchdogRestartCallback, TimeSpan.FromSeconds(6),
+        _watchdogService = new StreamerWatchdogService(workerCreateWorkerId, ShouldRestart, WatchdogRestartCallback, TimeSpan.FromSeconds(6),
             TimeSpan.FromSeconds(1));
-        _watchdog.StateChanged += async (sender, message) => await OnWatchdogStateChanged(sender, message);
-        _streamerService.LogGenerated += _watchdog.OnServiceLogGenerated;
+        _watchdogService.StateChanged += async (sender, message) => await OnWatchdogStateChanged(sender, message);
+        _streamerService.LogGenerated += _watchdogService.OnServiceLogGenerated;
         _desiredState = WorkerState.Idle;
     }
 
     public string WorkerId { set; get; }
+    
+    public void SetGstCommand(string gstCommand)
+    {
+        _streamerService.GstCommand = gstCommand;
+    }
 
     private async Task HandleStateChangeAsync(WorkerState newState)
     {
@@ -103,7 +110,7 @@ public class WorkerService : IWorkerService
         var success = state == WorkerState.Running;
 
         // Start watchdog hvis streameren er startet korrekt
-        await _watchdog.StartAsync();
+        await _watchdogService.StartAsync();
         return new CommandResult(success, message);
     }
 
@@ -149,12 +156,10 @@ public class WorkerService : IWorkerService
 
         // Stop watchdog før streameren stoppes
         LogInfo("Stopping watchdog");
-        await _watchdog.StopAsync();
+        await _watchdogService.StopAsync();
         LogInfo("Watchdog stopped");
         var (state, message) = await _streamerService.StopAsync();
-
         var success = state == WorkerState.Idle;
-
         return new CommandResult(success, message);
     }
 
@@ -185,7 +190,6 @@ public class WorkerService : IWorkerService
     
     private async Task RestartWorkerAsync(string reason)
     {
-        Console.WriteLine("--------------------------------------------------");
         var logMessage = $"Restarting worker {WorkerId} due to: {reason}";
         LogInfo(logMessage, LogLevel.Error);
 
