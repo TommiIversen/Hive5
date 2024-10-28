@@ -20,8 +20,8 @@ namespace Engine.DependencyInjection
             
             services.AddSingleton<RepositoryFactory>();
             services.AddSingleton<INetworkInterfaceProvider, NetworkInterfaceProvider>();
-            services.AddSingleton<MetricsService>();
             
+            services.AddHostedService<MetricsService>();
             services.AddSingleton<ILoggerService, LoggerService>();
             services.AddSingleton<IWorkerManager, WorkerManager>();
             services.AddSingleton<StreamHub>();

@@ -14,9 +14,6 @@ if (!Directory.Exists(basePath)) Directory.CreateDirectory(basePath);
 var builder = WebApplication.CreateBuilder(args);
 builder.ConfigureSerilogLogging(basePath);
 
-// Initialiser SQLite
-//Batteries.Init();
-
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
@@ -25,13 +22,9 @@ builder.Services.AddDatabase(basePath);
 builder.Services.AddApplicationServices();
 
 var app = builder.Build();
-
 app.InitializeDatabase();
 
 app.Services.GetRequiredService<StreamHub>();
-
-var metricsService = app.Services.GetRequiredService<MetricsService>();
-metricsService.Start();
 
 var workerManager = app.Services.GetRequiredService<IWorkerManager>();
 await workerManager.InitializeWorkersAsync();

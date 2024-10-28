@@ -4,6 +4,7 @@ using Engine.Utils;
 namespace Engine.Services;
 
 public class MetricsService(MessageQueue messageQueue, INetworkInterfaceProvider networkInterfaceProvider)
+    : IHostedService, IDisposable
 {
     private readonly CancellationTokenSource _cancellationTokenSource = new();
     private readonly CpuUsageMonitor _cpuUsageMonitor = new();
@@ -11,9 +12,11 @@ public class MetricsService(MessageQueue messageQueue, INetworkInterfaceProvider
     private readonly MemoryUsageMonitor _memoryUsageMonitor = new();
     private readonly NetworkUsageMonitor _networkUsageMonitor = new(networkInterfaceProvider);
 
-    public void Start()
+    public Task StartAsync(CancellationToken cancellationToken)
     {
-        _ = Task.Run(async () => await GenerateMetricsAsync(_cancellationTokenSource.Token));
+        Console.WriteLine("Metrics generation task started.");
+        _ = Task.Run(async () => await GenerateMetricsAsync(_cancellationTokenSource.Token), cancellationToken);
+        return Task.CompletedTask;
     }
 
     // Asynchronous loop that generates metrics every 10 seconds
@@ -80,10 +83,18 @@ public class MetricsService(MessageQueue messageQueue, INetworkInterfaceProvider
         }
     }
 
-    // Cancel the task if needed
-    public void Stop()
+
+    public Task StopAsync(CancellationToken cancellationToken)
     {
+        Console.WriteLine("Metrics generation task stopped.");
         _cancellationTokenSource.Cancel();
+        return Task.CompletedTask;
+    }
+
+    public void Dispose()
+    {
+        Console.WriteLine("Metrics service disposed.");
+        _cancellationTokenSource.Dispose();
     }
 
     private async Task<double> GetCpuUsageAsync(CancellationToken cancellationToken)
