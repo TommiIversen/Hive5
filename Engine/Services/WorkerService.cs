@@ -22,7 +22,7 @@ public class WorkerService : IWorkerService
     private readonly MessageQueue _messageQueue;
     private readonly RepositoryFactory _repositoryFactory;
     private readonly IStreamerService _streamerService;
-    private readonly StreamerWatchdogService _watchdogService;
+    private readonly IStreamerWatchdogService _watchdogService;
     private WorkerState _desiredState;
     private int _imageCounter;
     private DateTime _lastImageUpdate;

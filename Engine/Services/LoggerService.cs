@@ -50,7 +50,7 @@ public class LoggerService(IEngineIdProvider engineIdProvider, MessageQueue mess
 
     private void LogToSerilog(BaseLogEntry logEntry)
     {
-        var logMessage = $"{logEntry.GetType().Name} - Engine ID: {_engineId}, Message: {logEntry.Message}";
+        var logMessage = $"{logEntry.GetType().Name} - Message: {logEntry.Message}";
 
         switch (logEntry.LogLevel)
         {

@@ -2,7 +2,16 @@
 
 namespace Engine.Services;
 
-public class StreamerWatchdogService
+public interface IStreamerWatchdogService
+{
+    event StreamerWatchdogService.AsyncEventHandler<string>? StateChanged;
+    Task StartAsync();
+    Task StopAsync();
+    void OnServiceLogGenerated(object? sender, WorkerLogEntry workerLog);
+    List<string> GetLogLines();
+}
+
+public class StreamerWatchdogService : IStreamerWatchdogService
 {
     private readonly TimeSpan _checkInterval;
     private readonly Func<(bool, string)> _checkRestartCallback;
