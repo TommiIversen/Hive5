@@ -3,6 +3,7 @@
 @using StreamHub.Services
 @inject EngineManager EngineManager
 @inject BlazorSignalRService SignalRService
+
 @if (!EngineManager.GetAllEngines().Any())
 {
     <p>Ingen engines forbundet.</p>

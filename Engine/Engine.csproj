@@ -6,8 +6,8 @@
         <ImplicitUsings>enable</ImplicitUsings>
     </PropertyGroup>
 
-    <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
-      <OutputPath>bin\Debug\Engine</OutputPath>
+    <PropertyGroup>
+        <OutputPath>$(SolutionDir)\bin\Engine\</OutputPath>
     </PropertyGroup>
 
     <ItemGroup>
@@ -34,9 +34,5 @@
         <ProjectReference Include="..\Common\Common.csproj"/>
     </ItemGroup>
 
-    <ItemGroup>
-        <WatchExclude Include="bin\**\*" />
-        <WatchExclude Include="obj\**\*" />
-    </ItemGroup>
 
 </Project>
