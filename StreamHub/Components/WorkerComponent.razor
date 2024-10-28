@@ -11,27 +11,44 @@
         <!-- Worker Info -->
         <div class="flex-1 pr-4">
             <div class="font-bold text-lg">@Worker.Worker.Name</div>
-            <div class="text-gray-400">@Worker.Worker.Description</div>
+            <div class="text-gray-400">Description: @Worker.Worker.Description</div>
             <div class="text-gray-400">ID: @Worker.WorkerId</div>
-            <div class="text-gray-400">IsRunning: @(Worker.Worker.State )</div>
-            <div class="text-gray-400">IsEnabled: @(Worker.Worker.IsEnabled ? "Yes" : "No")</div>
-            <div class="text-gray-400">WatchdogEventCount: @Worker.Worker.WatchdogEventCount</div>
+            <div>
+                IsRunning:
+                <span class="font-bold @(Worker.Worker.IsEnabled ? (Worker.Worker.State != WorkerState.Running ? "text-red-500" : "text-green-500") : "text-gray-400")">
+                    @(Worker.Worker.State)
+                </span>
+            </div>
+            <div>
+                IsEnabled:
+                <span class="font-bold @(Worker.Worker.IsEnabled ? "text-green-500" : "text-red-500")">
+                    @(Worker.Worker.IsEnabled ? "Yes" : "No")
+                </span>
+            </div>
+            <div>
+                WatchdogEventCount:
+                <span class="font-bold @(Worker.Worker.WatchdogEventCount > 0 ? "text-red-500" : "text-green-500")">
+                    @Worker.Worker.WatchdogEventCount
+                </span>
+            </div>
+
             <div class="text-gray-400">Last Updated: @Worker.Worker.Timestamp</div>
         </div>
 
         <!-- Worker Image container placeret til højre -->
         <div class="flex-none">
             <div class="relative w-[300px] h-[168.75px] overflow-hidden rounded">
-                <WorkerImageComponent @key="@( $"WorkerImageComponent-{EngineId}-{Worker.WorkerId}" )" WorkerId="@Worker.WorkerId" EngineId="@EngineId" InitialImageData="@Worker.LastImage" />
+                <WorkerImageComponent @key="@($"WorkerImageComponent-{EngineId}-{Worker.WorkerId}")" WorkerId="@Worker.WorkerId" EngineId="@EngineId" InitialImageData="@Worker.LastImage"/>
             </div>
         </div>
     </div>
 
     <!-- TabPanel placeret i bunden og fylder hele bredden -->
     <div class="mt-4">
-        <TabPanelComponent @key="@( $"WorkerTabpanelComponent-{EngineId}-{Worker.WorkerId}" )" EngineId="@EngineId" Worker="Worker" />
+        <TabPanelComponent @key="@($"WorkerTabpanelComponent-{EngineId}-{Worker.WorkerId}")" EngineId="@EngineId" Worker="Worker"/>
     </div>
 </div>
+
 @code {
     [Parameter] public Guid EngineId { get; set; }
     [Parameter] public required WorkerViewModel Worker { get; init; }
@@ -42,9 +59,10 @@
         SignalRService.HubConnection.On<WorkerEvent>(workerEventTopic, async (_) => { await InvokeAsync(StateHasChanged); });
         return Task.CompletedTask;
     }
-    
+
     protected override async Task OnParametersSetAsync()
     {
         await base.OnParametersSetAsync();
     }
+
 }
