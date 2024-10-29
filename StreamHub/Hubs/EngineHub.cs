@@ -182,7 +182,7 @@ public class EngineHub(
 
             if (wasAdded)
             {
-                await hubContext.Clients.Group($"worker-{workerLogMessage.EngineId}-{workerLogMessage.WorkerId}").SendAsync("ReceiveLog", workerLogMessage);
+                await hubContext.Clients.Group($"worker-{workerLogMessage.EngineId}-{workerLogMessage.WorkerId}").SendAsync("ReceiveWorkerLog", workerLogMessage);
             }
             else
             {
@@ -197,9 +197,16 @@ public class EngineHub(
     
     public async Task ReceiveEngineLog(EngineLogEntry engineLog)
     {
-        // Håndter logik for Engine-log
-
         Console.WriteLine($"ReceiveEngineLog: {engineLog.Message}");
+        if (engineManager.TryGetEngine(engineLog.EngineId, out var engine))
+        {
+            engine?.AddEngineLog(engineLog);
+            await hubContext.Clients.Group($"enginelog-{engineLog.EngineId}").SendAsync("ReceiveEngineLog", engineLog);
+        }
+        else
+        {
+            Console.WriteLine($"ReceiveLog: Engine {engineLog.EngineId} not found");
+        }
     }
     
 
@@ -227,14 +234,27 @@ public class EngineHub(
     }
 
     // Invoke SignalR fra blazor frontend
-    public async Task SubscribeToLogs(string workerId, string engineId)
+    public async Task SubscribeToWorkerLogs(string workerId, string engineId)
     {
         Console.WriteLine($"Subscribing to logs for worker {workerId}");
         await Groups.AddToGroupAsync(Context.ConnectionId, $"worker-{engineId}-{workerId}");
     }
+    
+
+    public async Task SubscribeToEngineLogs(Guid engineId)
+    {
+        Console.WriteLine($"Subscribing to logs for engine {engineId}");
+        await Groups.AddToGroupAsync(Context.ConnectionId, $"enginelog-{engineId}");
+    }
+    
+    public async Task UnsubscribeFromEngineLogs(Guid engineId)
+    {
+        Console.WriteLine($"Unsubscribing to logs for engine {engineId}");
+        await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"enginelog-{engineId}");
+    }
 
     // Invoke SignalR fra blazor frontend
-    public async Task UnsubscribeFromLogs(string workerId, string engineId)
+    public async Task UnsubscribeFromWorkerLogs(string workerId, string engineId)
     {
         Console.WriteLine($"Unsubscribing from logs for worker {workerId}");
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"worker-{engineId}-{workerId}");

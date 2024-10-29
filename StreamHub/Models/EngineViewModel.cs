@@ -11,6 +11,9 @@ public class EngineViewModel
     public Metric? LastMetric { get; set; }
     public ConcurrentDictionary<string, WorkerViewModel> Workers { get; } = new();
     
+    public ConcurrentQueue<EngineLogEntry> EngineLogMessages { get; set; } = new();
+
+    
     // New fields
     public string? IpAddress { get; set; }
     public int? Port { get; set; }
@@ -32,6 +35,17 @@ public class EngineViewModel
         return true;
 
     }
+    
+    public void AddEngineLog(EngineLogEntry message)
+    {
+        EngineLogMessages.Enqueue(message);
+        if (EngineLogMessages.Count > 50)
+        {
+            EngineLogMessages.TryDequeue(out _); // Remove the oldest message
+        }
+    }
+
+    
     
     public void AddMetric(Metric metric)
     {

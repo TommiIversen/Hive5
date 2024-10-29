@@ -22,6 +22,7 @@
         <div class="text-gray-400">@Engine?.BaseInfo.EngineDescription</div>
         <EngineConnectionInfoComponent Engine="@Engine"/>
         <MetricExpandPanelComponent EngineId="@Engine.BaseInfo.EngineId" />
+        <EngineLogPanel LogMessages="Engine.EngineLogMessages" EngineId="@Engine.BaseInfo.EngineId"></EngineLogPanel>
         <EngineCreateWorker EngineId="@Engine.BaseInfo.EngineId"/>
         <MetricLineChartComponent Engine="@Engine"/>
         <MetricCpuUsageBarChart EngineId="@Engine.BaseInfo.EngineId"/>

@@ -8,7 +8,9 @@ using Serilog;
 
 namespace Engine.Hubs;
 
-public class StreamHub
+
+
+public class StreamHub 
 {
     private readonly CancellationTokenSource _cancellationTokenSource = new();
 
@@ -25,14 +27,20 @@ public class StreamHub
     private readonly int _maxQueueSize = 20;
     private readonly IWorkerManager _workerManager;
     private readonly Guid _engineId;
+    private readonly ILoggerService _loggerService;
+
 
     public StreamHub(
+        ILoggerService loggerService, 
         MessageQueue globalMessageQueue,
         ILogger<StreamHub> logger,
         ILoggerFactory loggerFactory,
         IWorkerManager workerManager,
-        IEngineService engineService)
+        IEngineService engineService
+        )
     {
+        _loggerService = loggerService;
+
         _logger = logger;
         _globalMessageQueue = globalMessageQueue;
         _workerManager = workerManager;
@@ -67,7 +75,8 @@ public class StreamHub
 
     private async Task<CommandResult> RemoveHubUrlAsync(string hubUrlToRemove)
     {
-        Console.WriteLine($"Removing hub connection for URL: {hubUrlToRemove}");
+        //Console.WriteLine($"Removing hub connection for URL: {hubUrlToRemove}");
+        LogInfo($"Removing hub connection for URL: {hubUrlToRemove}");
 
         // Hvis forbindelsen findes, skal vi stoppe den og fjerne den fra hubConnections
         if (_hubConnections.TryGetValue(hubUrlToRemove, out var connectionInfo))
@@ -79,16 +88,16 @@ public class StreamHub
                 // Stop forbindelsen, hvis den er aktiv
                 await connectionInfo.HubConnection.StopAsync();
                 _hubConnections.TryRemove(hubUrlToRemove, out _);
-                _logger.LogInformation("Stopped and removed active hub connection for {Url}", hubUrlToRemove);
+                //_logger.LogInformation("Stopped and removed active hub connection for {Url}", hubUrlToRemove);
+                LogInfo($"Stopped and removed active hub connection for {hubUrlToRemove}");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to stop and remove hub connection for {Url}", hubUrlToRemove);
+                LogInfo($"Failed to stop and remove hub connection for {hubUrlToRemove}", LogLevel.Error);
                 return new CommandResult(false, $"Failed to stop hub connection: {ex.Message}");
             }
         else
-            _logger.LogWarning("No active connection found for {Url}, proceeding to remove it from database.",
-                hubUrlToRemove);
+            LogInfo($"No active connection found for {hubUrlToRemove}, proceeding to remove it from database.", LogLevel.Error);
 
         // Uanset om forbindelsen var aktiv eller ej, skal vi stadig fjerne URL'en fra databasen
         try
@@ -98,13 +107,12 @@ public class StreamHub
 
             if (hubUrlEntity == null)
             {
-                _logger.LogWarning("Hub URL {Url} not found in the database.", hubUrlToRemove);
+                LogInfo($"Hub URL {hubUrlToRemove} not found in the database.", LogLevel.Warning);
                 return new CommandResult(false, $"Hub URL {hubUrlToRemove} not found in the database.");
             }
 
             await _engineService.RemoveHubUrlAsync(hubUrlEntity.Id);
-            _logger.LogInformation("Successfully removed hub URL {Url} from database via EngineService",
-                hubUrlToRemove);
+            LogInfo($"Successfully removed hub URL {hubUrlToRemove} from database via EngineService");
 
             var engineUpdateEvent = await GetEngineBaseInfo();
             _globalMessageQueue.EnqueueMessage(engineUpdateEvent);
@@ -113,7 +121,7 @@ public class StreamHub
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to remove hub URL {Url} from database.", hubUrlToRemove);
+            LogInfo($"Failed to remove hub URL {hubUrlToRemove} from database: {ex.Message}", LogLevel.Error);
             return new CommandResult(false, $"Failed to remove hub URL {hubUrlToRemove} from database: {ex.Message}");
         }
     }
@@ -138,14 +146,14 @@ public class StreamHub
             // Handle StopWorker command asynchronously
             hubConnection.On("StopWorker", async (WorkerOperationMessage message) =>
             {
-                _logger.LogInformation("hubConnection.On: Got StopWorker: {WorkerId}", message.WorkerId);
+                LogInfo($"Got StopWorker: {message.WorkerId}");
                 var commandResult = await _workerManager.StopWorkerAsync(message.WorkerId);
                 return commandResult;
             });
 
             hubConnection.On("StartWorker", async (WorkerOperationMessage message) =>
             {
-                _logger.LogInformation("hubConnection.On: Got StartWorker: {WorkerId}", message.WorkerId);
+                LogInfo($"Got StartWorker: {message.WorkerId}");
                 var commandResult = await _workerManager.StartWorkerAsync(message.WorkerId);
                 return commandResult;
             });
@@ -153,72 +161,63 @@ public class StreamHub
             // Handle RemoveWorker command asynchronously
             hubConnection.On("RemoveWorker", async (WorkerOperationMessage message) =>
             {
-                _logger.LogInformation("hubConnection.On: Got RemoveWorker: {WorkerId}", message.WorkerId);
+                LogInfo($"Got RemoveWorker: {message.WorkerId}");
                 var commandResult = await _workerManager.RemoveWorkerAsync(message.WorkerId);
                 return commandResult;
             });
 
             hubConnection.On("RemoveHubConnection", async (string hubUrlToRemove) =>
             {
-                _logger.LogInformation("hubConnection.On: Got request to remove HubUrl: {HubUrl}", hubUrlToRemove);
+                LogInfo($"Got request to remove HubUrl: {hubUrlToRemove}");
                 var commandResult = await RemoveHubUrlAsync(hubUrlToRemove);
                 return commandResult;
             });
 
-            // Handle ResetWatchdogEventCount command asynchronously
             hubConnection.On("ResetWatchdogEventCount", async (WorkerOperationMessage message) =>
             {
-                _logger.LogInformation("hubConnection.On: Got ResetWatchdogEventCount: {WorkerId}", message.WorkerId);
+                LogInfo($"Got ResetWatchdogEventCount: {message.WorkerId}");
                 var commandResult = await _workerManager.ResetWatchdogEventCountAsync(message.WorkerId);
-                _logger.LogInformation("Reset Watchdog Event Count Result for worker {WorkerId}: {Message}",
-                    message.WorkerId, commandResult.Message);
                 return commandResult;
             });
 
             hubConnection.On("EnableDisableWorker", async (WorkerEnableDisableMessage message) =>
             {
-                _logger.LogInformation("hubConnection.On: Got EnableDisableWorker: {WorkerId}, Enable: {Enable}",
-                    message.WorkerId, message.Enable);
+                LogInfo($"Got EnableDisableWorker: {message.WorkerId}, Enable: {message.Enable}");
                 var commandResult = await _workerManager.EnableDisableWorkerAsync(message.WorkerId, message.Enable);
                 return commandResult;
             });
 
             hubConnection.On("EditWorker", async (WorkerCreate workerEdit) =>
             {
-                _logger.LogInformation("hubConnection.On: Got EditWorker for WorkerId: {WorkerId} - {name}",
-                    workerEdit.WorkerId, workerEdit.Name);
+                LogInfo($"Got EditWorker for WorkerId: {workerEdit.WorkerId} - {workerEdit.Name}");
                 var commandResult = await _workerManager.EditWorkerAsync(workerEdit.WorkerId, workerEdit.Name,
                     workerEdit.Description, workerEdit.Command);
-                _logger.LogInformation("Edit Worker Result for worker {WorkerId}: {Message}", workerEdit.WorkerId,
-                    commandResult.Message);
                 return commandResult;
             });
 
             // Add new SignalR handler for creating workers
             hubConnection.On("CreateWorker", async (WorkerCreate workerCreate) =>
             {
-                _logger.LogInformation("hubConnection.On: Got CreateWorker: {WorkerName}", workerCreate.Name);
+                LogInfo($"Got CreateWorker: {workerCreate.Name}");
                 var workerService = await _workerManager.AddWorkerAsync(_engineId, workerCreate);
                 if (workerService == null)
                 {
-                    _logger.LogWarning("Worker with ID {WorkerId} already exists.", workerCreate.WorkerId);
+                    LogInfo($"Worker with ID {workerCreate.WorkerId} already exists.", LogLevel.Warning);
                     return new CommandResult(false, $"Worker with ID {workerCreate.WorkerId} already exists.");
                 }
-
                 var result = await _workerManager.StartWorkerAsync(workerService.WorkerId);
                 return result;
             });
 
             hubConnection.Reconnected += async _ =>
             {
-                _logger.LogInformation("hubConnection:: Reconnected to streamhub {url} - {ConnectionId}", hubUrl,
-                    hubConnection.ConnectionId);
+                LogInfo($"Reconnected to streamhub {hubUrl} - {hubConnection.ConnectionId}");
                 await SendEngineConnectedAsync(hubConnection, hubUrl);
             };
 
             hubConnection.Closed += async error =>
             {
-                _logger.LogWarning("Connection closed: {Error}", error?.Message);
+                LogInfo($"Connection closed: {error?.Message}", LogLevel.Warning);
                 await Task.Delay(5000); // Vent før næste forsøg
                 await TryReconnect(hubConnection, hubUrl, _cancellationTokenSource.Token);
             };
@@ -239,7 +238,7 @@ public class StreamHub
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to connect to {Url}", hubUrl);
+            LogInfo($"Failed to connect to {hubUrl}", LogLevel.Error);
         }
     }
 
@@ -249,8 +248,7 @@ public class StreamHub
             try
             {
                 await hubConnection.StartAsync(token);
-                _logger.LogInformation("TryReconnect. Connected to {Url} {ConnectionId}", url,
-                    hubConnection.ConnectionId);
+                LogInfo($"Connected to {url} {hubConnection.ConnectionId}");
                 await SendEngineConnectedAsync(hubConnection, url);
                 break; // Stop genforbindelses-loopet, når forbindelsen er oprettet
             }
@@ -260,7 +258,7 @@ public class StreamHub
             }
             catch (Exception)
             {
-                _logger.LogWarning("TryReconnect: Failed to connect to {url}. Retrying in 5 seconds...", url);
+                LogInfo($"Failed to connect to {url}. Retrying in 5 seconds...", LogLevel.Warning);
                 await Task.Delay(5000, token); // Vent før næste forsøg
             }
     }
@@ -271,29 +269,25 @@ public class StreamHub
         if (_hubConnections.TryGetValue(streamhubUrl, out var connectionInfo))
         {
             connectionInfo.SyncTimestamp = DateTime.UtcNow;
-            Console.WriteLine($"----------Sending engine Init messages to streamHub on: {streamhubUrl}");
+            LogInfo($"Sending engine Init messages to streamHub on: {streamhubUrl}");
 
             var engineModel = await GetEngineBaseInfo();
             var connectedAndAccepted = await hubConnection.InvokeAsync<bool>("RegisterEngineConnection", engineModel);
 
             if (connectedAndAccepted)
             {
-                Console.WriteLine(" ---------- Connection to StreamHub acknowledged, synchronizing workers...");
-
+                LogInfo("Connection to StreamHub acknowledged, synchronizing workers...");
                 var systemInfoCollector = new SystemInfoCollector();
                 var systemInfo = systemInfoCollector.GetSystemInfo();
                 systemInfo.EngineId = _engineId;
-                Console.WriteLine(
-                    $"SystemInfo: {systemInfo.OsName} {systemInfo.OSVersion} {systemInfo.Architecture} {systemInfo.Uptime} {systemInfo.ProcessCount} {systemInfo.Platform}");
-
                 try
                 {
                     await hubConnection.InvokeAsync("SendSystemInfo", systemInfo);
-                    Log.Information("System information blev sendt succesfuldt via SignalR.");
+                    LogInfo("System information blev sendt succesfuldt via SignalR.");
                 }
                 catch (Exception ex)
                 {
-                    Log.Error(ex, "Fejl opstod under forsøget på at sende systeminformation via SignalR.");
+                    LogInfo("Fejl opstod under forsøget på at sende systeminformation via SignalR.", LogLevel.Error);
                 }
 
                 var workers = await _workerManager.GetAllWorkers(_engineId);
@@ -302,14 +296,13 @@ public class StreamHub
             }
             else
             {
-                Console.WriteLine("Connection to StreamHub rejected.");
-                // Eventuelt stoppe forbindelsen eller tage anden handling
+                LogInfo("Connection to StreamHub rejected.", LogLevel.Error);
                 await hubConnection.StopAsync();
             }
         }
         else
         {
-            _logger.LogWarning("No connection info found for {streamhubUrl}", streamhubUrl);
+            LogInfo($"No connection info found for {streamhubUrl}", LogLevel.Error);
         }
     }
 
@@ -342,7 +335,7 @@ public class StreamHub
     // Global processing of messages from main queue to per-connection queue
     private async Task RouteMessagesToClientQueuesAsync(CancellationToken cancellationToken)
     {
-        Console.WriteLine("Start RouteMessagesToClientQueuesAsync ------Processing global queue to clients");
+        LogInfo("Start RouteMessagesToClientQueuesAsync - Processing global queue to clients");
         while (!cancellationToken.IsCancellationRequested)
         {
             var baseMessage = await _globalMessageQueue.DequeueMessageAsync(cancellationToken);
@@ -363,8 +356,7 @@ public class StreamHub
     private async Task ProcessClientMessagesAsync(HubConnection hubConnection, string url,
         CancellationToken cancellationToken)
     {
-        Console.WriteLine($"Start ProcessClientMessagesAsync ------Processing hub queue to {_engineId}");
-
+        LogInfo($"Start ProcessClientMessagesAsync - Processing hub queue to {url}");
         if (_hubConnections.TryGetValue(url, out var connectionInfo))
         {
             var queue = connectionInfo.MessageQueue;
@@ -380,8 +372,8 @@ public class StreamHub
                 // Filtrer forældede WorkerEvent-beskeder baseret på syncTimestamp
                 if (baseMessage is WorkerEvent workerEvent && workerEvent.Timestamp < syncTimestamp)
                 {
-                    Console.WriteLine(
-                        $"✂Skipping outdated event for streamHub: {url} - {workerEvent.EventType} {workerEvent.Name}");
+                    LogInfo(
+                        $"Skipping outdated event for streamHub: {url} - {workerEvent.EventType} {workerEvent.Name}");
                     continue;
                 }
 
@@ -392,14 +384,14 @@ public class StreamHub
                 }
                 else
                 {
-                    _logger.LogWarning("Hub {url} is offline, stopping ProcessClientMessagesAsync", url);
+                    LogInfo($"Hub {url} is offline, stopping ProcessClientMessagesAsync", LogLevel.Warning);
                     break;
                 }
             }
         }
         else
         {
-            _logger.LogWarning("No connection info found for {url}", url);
+            LogInfo($"No connection info found for {url}", LogLevel.Error);
         }
     }
 
@@ -408,5 +400,14 @@ public class StreamHub
     {
         baseMessage.EngineId = _engineId;
         baseMessage.SequenceNumber = sequenceNumber;
+    }
+    
+    private void LogInfo(string message, LogLevel logLevel = LogLevel.Information)
+    {
+        _loggerService.LogMessage(new EngineLogEntry()
+        {
+            Message = $"StreamHub: {message}",
+            LogLevel = logLevel
+        });
     }
 }

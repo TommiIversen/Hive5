@@ -6,6 +6,8 @@
 @inject IJSRuntime JsRuntime
 
 <!-- Pause/Unpause Button -->
+
+<ExpandablePanel Title="Engine Logs">
 <button
     @onclick="TogglePauseRendering"
     class="px-4 py-2 rounded 
@@ -43,10 +45,11 @@ else
     <p>Ingen logbeskeder.</p>
 }
 
+</ExpandablePanel>
+
 @code {
-    [Parameter] public ConcurrentQueue<WorkerLogEntry> LogMessages { get; set; } = new();
-    [Parameter] public required string WorkerId { get; init; }
-    [Parameter] public required string EngineId { get; init; }
+    [Parameter] public ConcurrentQueue<EngineLogEntry> LogMessages { get; set; } = new();
+    [Parameter] public required Guid EngineId { get; init; }
 
     private bool _isSubscribed = false;
     private bool _pauseRendering = false;
@@ -54,20 +57,20 @@ else
 
     private int? _previousSequenceNumber = null;
 
-    private bool IsOutOfSequence(WorkerLogEntry workerLogMessage)
+    private bool IsOutOfSequence(EngineLogEntry engineLogMessage)
     {
         if (_previousSequenceNumber == null)
         {
-            _previousSequenceNumber = workerLogMessage.LogSequenceNumber;
+            _previousSequenceNumber = engineLogMessage.LogSequenceNumber;
             return false;
         }
-        if (workerLogMessage.LogSequenceNumber != _previousSequenceNumber - 1)
+        if (engineLogMessage.LogSequenceNumber != _previousSequenceNumber - 1)
         {
-            _previousSequenceNumber = workerLogMessage.LogSequenceNumber; // Opdater for næste tjek
+            _previousSequenceNumber = engineLogMessage.LogSequenceNumber; // Opdater for næste tjek
             return true; // Ude af rækkefølge
         }
 
-        _previousSequenceNumber = workerLogMessage.LogSequenceNumber; // Opdater for næste tjek
+        _previousSequenceNumber = engineLogMessage.LogSequenceNumber; // Opdater for næste tjek
         return false; // Sekvensen er i orden
     }
     
@@ -76,13 +79,11 @@ else
     {
         await SubscribeToLogs();
 
-        SignalRService.HubConnection.On<WorkerLogEntry>("ReceiveWorkerLog", async logLine =>
+        SignalRService.HubConnection.On<EngineLogEntry>("ReceiveEngineLog", async logLine =>
         {
-            if (WorkerId == logLine.WorkerId)
-            {
+
                 await InvokeAsync(StateHasChanged);
-            }
-            
+
         });
     }
     
@@ -90,7 +91,7 @@ else
     {
         return logLevel switch
         {
-            LogLevel.Warning => "bg-yellow-900 text-yellow-200",
+            LogLevel.Warning => "text-yellow-200",
             LogLevel.Error => "bg-red-900 text-red-200",
             LogLevel.Critical => "bg-red-900 text-red-200 font-bold",
             _ => "", // Standardfarve for Information eller lavere
@@ -118,7 +119,7 @@ else
     {
         if (!_isSubscribed)
         {
-            await SignalRService.HubConnection.SendAsync("SubscribeToWorkerLogs", WorkerId, EngineId);
+            await SignalRService.HubConnection.SendAsync("SubscribeToEngineLogs", EngineId);
             _isSubscribed = true;
         }
     }
@@ -127,7 +128,7 @@ else
     {
         if (_isSubscribed)
         {
-            await SignalRService.HubConnection.SendAsync("UnsubscribeFromWorkerLogs", WorkerId, EngineId);
+            await SignalRService.HubConnection.SendAsync("UnsubscribeFromEngineLogs", EngineId);
             _isSubscribed = false;
         }
     }
@@ -146,7 +147,7 @@ else
     private async void DownloadLogs()
     {
         var logContent = new System.Text.StringBuilder();
-        logContent.AppendLine($"EngineId: {EngineId}, WorkerId: {WorkerId}");
+        logContent.AppendLine($"EngineId: {EngineId}");
         logContent.AppendLine("Timestamp,LogLevel,Message");
 
         foreach (var logEntry in LogMessages)
@@ -154,7 +155,7 @@ else
             logContent.AppendLine($"{logEntry.Timestamp},{logEntry.LogLevel},{logEntry.Message}");
         }
 
-        var logFileName = $"logs_{WorkerId}_{DateTime.UtcNow:yyyyMMdd_HHmmss}.txt";
+        var logFileName = $"logs_{EngineId}_{DateTime.UtcNow:yyyyMMdd_HHmmss}.txt";
         await TriggerFileDownload(logFileName, logContent.ToString());
     }
 
@@ -166,3 +167,4 @@ else
         await JsRuntime.InvokeVoidAsync("triggerFileDownload", fileName, fileUrl);
     }
 }
+
