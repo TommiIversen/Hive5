@@ -132,6 +132,7 @@ public class StreamHub
                     TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5),
                     TimeSpan.FromSeconds(5)
                 })
+                .AddMessagePackProtocol()
                 .Build();
 
             // Handle StopWorker command asynchronously
