@@ -26,7 +26,7 @@ public interface IWorkerManager
 
 }
 
-public class WorkerManager(MessageQueue messageQueue, RepositoryFactory repositoryFactory, ILoggerService loggerService)
+public class WorkerManager(MessageQueue messageQueue, RepositoryFactory repositoryFactory, ILoggerService loggerService, StreamerWatchdogFactory watchdogFactory)
     : IWorkerManager
 {
     private readonly Dictionary<string, IWorkerService> _workers = new();
@@ -56,12 +56,16 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
                 WorkerId = workerEntity.WorkerId,
                 GstCommand = workerEntity.Command
             };
+            
+            // Opret WorkerConfiguration fra WorkerEntity med FromEntity metoden
+            var workerConfig = WorkerConfiguration.FromEntity(workerEntity);
             var workerService = new WorkerService(
-                loggerService, 
-                messageQueue, 
-                streamerService, 
-                workerEntity.WorkerId, 
-                repositoryFactory);
+                loggerService,
+                messageQueue,
+                streamerService,
+                repositoryFactory,
+                watchdogFactory,
+                workerConfig);
             _workers[workerEntity.WorkerId] = workerService;
 
             // Start arbejderen if enabled
@@ -100,19 +104,6 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
             return async;
         }
 
-        IStreamerService streamerService = new FakeStreamerService
-        {
-            WorkerId = workerCreate.WorkerId,
-            GstCommand = workerCreate.Command
-        };
-        // opret en ny service for workeren
-        var workerService = new WorkerService(
-            loggerService, 
-            messageQueue, 
-            streamerService, 
-            workerCreate.WorkerId, 
-            repositoryFactory);
-        _workers[workerCreate.WorkerId] = workerService;
 
         LogInfo($"Adding worker to database.. {workerCreate.WorkerId}", workerCreate.WorkerId);
         var workerEntity = new WorkerEntity
@@ -129,6 +120,24 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
         // Tilføj worker til databasen asynkront
         await workerRepository.AddWorkerAsync(workerEntity);
         await SendWorkerEvent(workerCreate.WorkerId, EventType.Created);
+
+        
+        IStreamerService streamerService = new FakeStreamerService
+        {
+            WorkerId = workerCreate.WorkerId,
+            GstCommand = workerCreate.Command
+        };
+        
+        // opret en ny service for workeren
+        var workerConfig = WorkerConfiguration.FromEntity(workerEntity);
+        var workerService = new WorkerService(
+            loggerService,
+            messageQueue,
+            streamerService,
+            repositoryFactory,
+            watchdogFactory,
+            workerConfig);
+        _workers[workerCreate.WorkerId] = workerService;
         return workerService;
     }
 
@@ -339,8 +348,7 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
         // Fjern woker fra databasen først
         var workerRepository = repositoryFactory.CreateWorkerRepository();
         await workerRepository.DeleteWorkerAsync(workerId);
-
-
+        
         _workers.Remove(workerId);
         Log.Information($"Worker {workerId} successfully removed.");
 
@@ -392,7 +400,10 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
             EventType = EventType.Deleted,
             Timestamp = DateTime.UtcNow,
             IsEnabled = false,
-            WatchdogEventCount = 0
+            WatchdogEventCount = 0,
+            ImgWatchdogEnabled = false,
+            ImgWatchdogGraceTime = TimeSpan.FromSeconds(10),
+            ImgWatchdogInterval = TimeSpan.FromSeconds(2)
         };
         messageQueue.EnqueueMessage(workerEvent);
     }

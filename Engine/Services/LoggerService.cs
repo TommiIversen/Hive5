@@ -9,16 +9,17 @@ public interface ILoggerService
     void LogMessage(BaseLogEntry logEntry);
 }
 
-public class LoggerService(IEngineIdProvider engineIdProvider, MessageQueue messageQueue) : ILoggerService
+public class LoggerService(Lazy<IEngineIdProvider> engineIdProvider, MessageQueue messageQueue) : ILoggerService
 {
-    private readonly Guid _engineId = engineIdProvider.GetEngineId();
+    // Brug Lazy IEngineIdProvider og hent EngineId første gang, det er nødvendigt
+    private readonly Guid _engineId = engineIdProvider.Value.GetEngineId();
     private readonly ConcurrentDictionary<string, int> _workerLogCounters = new();
     private int _engineLogCounter;
 
     public void LogMessage(BaseLogEntry logEntry)
     {
         // Sæt EngineId og Timestamp automatisk
-        logEntry.EngineId = _engineId;
+        logEntry.EngineId = _engineId; // Henter EngineId på første brug
         logEntry.Timestamp = DateTime.UtcNow;
 
         // Sæt sekvensnummer afhængigt af logtypen

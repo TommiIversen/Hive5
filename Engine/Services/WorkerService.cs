@@ -22,7 +22,7 @@ public class WorkerService : IWorkerService
     private readonly MessageQueue _messageQueue;
     private readonly RepositoryFactory _repositoryFactory;
     private readonly IStreamerService _streamerService;
-    private readonly IStreamerWatchdogService _watchdogService;
+    private IStreamerWatchdogService _watchdogService;
     private WorkerState _desiredState;
     private int _imageCounter;
     private DateTime _lastImageUpdate;
@@ -31,31 +31,48 @@ public class WorkerService : IWorkerService
         ILoggerService loggerService, 
         MessageQueue messageQueue, 
         IStreamerService streamerService,
-        string workerCreateWorkerId, 
-        RepositoryFactory repositoryFactory)
+        RepositoryFactory repositoryFactory,
+        StreamerWatchdogFactory watchdogFactory,
+        WorkerConfiguration config)
     {
         _messageQueue = messageQueue;
         _streamerService = streamerService;
-        _streamerService.WorkerId = workerCreateWorkerId;
+        _streamerService.WorkerId = config.WorkerId;
         _repositoryFactory = repositoryFactory;
         _loggerService = loggerService;
-
-        WorkerId = workerCreateWorkerId;
+        
+        //WorkerId = workerCreateWorkerId;
+        WorkerId = config.WorkerId;
 
         // Forbind runnerens events til WorkerService handlers
+        _streamerService.GstCommand = config.GstCommand;
         _streamerService.LogGenerated += OnLogGenerated;
         _streamerService.ImageGenerated += OnImageGenerated;
         _streamerService.StateChangedAsync = async newState => { await HandleStateChangeAsync(newState); };
 
         // Initialiser watchdog med callbacks
-        _watchdogService = new StreamerWatchdogService(workerCreateWorkerId, ShouldRestart, WatchdogRestartCallback, TimeSpan.FromSeconds(6),
-            TimeSpan.FromSeconds(1));
+        _watchdogService = watchdogFactory.CreateWatchdog(
+            config.WorkerId,
+            ShouldRestart,
+            WatchdogRestartCallback,
+            config.ImgWatchdogGraceTime,
+            config.ImgWatchdogInterval);
+        
+        _watchdogService.SetEnabled(config.ImgWatchdogEnabled); // Aktiver eller deaktiver Watchdog baseret på konfiguration
+
         _watchdogService.StateChanged += async (sender, message) => await OnWatchdogStateChanged(sender, message);
         _streamerService.LogGenerated += _watchdogService.OnServiceLogGenerated;
         _desiredState = WorkerState.Idle;
     }
-
     public string WorkerId { set; get; }
+    
+    public void SetWatchdog(IStreamerWatchdogService newWatchdogService)
+    {
+        _watchdogService.StopAsync();  // Stop eksisterende Watchdog
+        _watchdogService = newWatchdogService;  // Udskift med ny
+        _watchdogService.StartAsync();  // Start den nye Watchdog
+    }
+
     
     public void SetGstCommand(string gstCommand)
     {

@@ -6,5 +6,10 @@ Set data path via env: HIVE_BASE_PATH
 dotnet list package
 
 # EF core
-dotnet ef migrations add setUrlRequered
+setx PATH "%PATH%;%USERPROFILE%\.dotnet\tools"
+
+
+dotnet tool install --global dotnet-ef
+
+dotnet ef migrations add watchdogSettings
 

@@ -14,6 +14,18 @@ public class ApplicationDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<WorkerEntity>()
+            .Property(w => w.ImgWatchdogEnabled)
+            .HasDefaultValue(true);
+
+        modelBuilder.Entity<WorkerEntity>()
+            .Property(w => w.ImgWatchdogGraceTime)
+            .HasDefaultValue(TimeSpan.FromSeconds(10));
+
+        modelBuilder.Entity<WorkerEntity>()
+            .Property(w => w.ImgWatchdogInterval)
+            .HasDefaultValue(TimeSpan.FromSeconds(2));
+        
         // Opret et unikt indeks på HubUrl i HubUrlEntity
         modelBuilder.Entity<HubUrlEntity>()
             .HasIndex(h => h.HubUrl)

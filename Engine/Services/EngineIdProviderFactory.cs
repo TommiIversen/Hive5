@@ -19,6 +19,7 @@ public class EngineIdProviderFactory : IEngineIdProviderFactory
 
     public IEngineIdProvider CreateEngineIdProvider()
     {
+        Console.WriteLine("CreateEngineIdProvider: Henter EngineId fra databasen...");
         using var dbContext = _dbContextFactory.CreateDbContext();
             
         var engineEntity = dbContext.EngineEntities.FirstOrDefault();

@@ -86,6 +86,21 @@ namespace Engine.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<bool>("ImgWatchdogEnabled")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(true);
+
+                    b.Property<TimeSpan>("ImgWatchdogGraceTime")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT")
+                        .HasDefaultValue(new TimeSpan(0, 0, 0, 10, 0));
+
+                    b.Property<TimeSpan>("ImgWatchdogInterval")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT")
+                        .HasDefaultValue(new TimeSpan(0, 0, 0, 2, 0));
+
                     b.Property<bool>("IsEnabled")
                         .HasColumnType("INTEGER");
 

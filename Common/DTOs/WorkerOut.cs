@@ -9,4 +9,8 @@ public class WorkerOut : BaseMessage
     public required bool IsEnabled { get; set; }
     public required int WatchdogEventCount { get; set; }
     public WorkerState State { get; set; }
+    
+    public bool ImgWatchdogEnabled { get; set; } = true;
+    public required TimeSpan ImgWatchdogGraceTime { get; set; }
+    public required TimeSpan ImgWatchdogInterval { get; set; }
 }

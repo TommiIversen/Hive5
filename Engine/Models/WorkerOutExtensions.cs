@@ -20,7 +20,10 @@ public static class WorkerOutExtensions
             Timestamp = DateTime.UtcNow,
             SequenceNumber = 0,
             EventType = eventType,
-            WatchdogEventCount = workerEntity.WatchdogEventCount
+            WatchdogEventCount = workerEntity.WatchdogEventCount,
+            ImgWatchdogEnabled = workerEntity.ImgWatchdogEnabled,
+            ImgWatchdogGraceTime = workerEntity.ImgWatchdogGraceTime,
+            ImgWatchdogInterval = workerEntity.ImgWatchdogInterval
         };
     }
 
@@ -39,7 +42,10 @@ public static class WorkerOutExtensions
             Timestamp = DateTime.UtcNow,
             SequenceNumber = 0,
             EventType = eventType,
-            WatchdogEventCount = workerEntity.WatchdogEventCount
+            WatchdogEventCount = workerEntity.WatchdogEventCount,
+            ImgWatchdogEnabled = workerEntity.ImgWatchdogEnabled,
+            ImgWatchdogGraceTime = workerEntity.ImgWatchdogGraceTime,
+            ImgWatchdogInterval = workerEntity.ImgWatchdogInterval
         };
     }
 }
