@@ -1,8 +1,10 @@
 ﻿using Engine.DAL.Repositories;
+using Engine.Database;
 using Engine.Hubs;
 using Engine.Services;
 using Engine.Utils;
 using Microsoft.Extensions.DependencyInjection;
+using Serilog;
 
 namespace Engine.DependencyInjection
 {
@@ -34,6 +36,24 @@ namespace Engine.DependencyInjection
                 services.AddSingleton<StreamHub>();
 
                 return services;
+            }
+            
+            
+            public static void InitializeEngineId(IServiceProvider serviceProvider)
+            {
+                using var scope = serviceProvider.CreateScope();
+                var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+                var engineEntity = dbContext.EngineEntities.FirstOrDefault();
+
+                if (engineEntity != null)
+                {
+                    var loggerService = scope.ServiceProvider.GetRequiredService<ILoggerService>();
+                    loggerService.SetEngineId(engineEntity.EngineId); // Sæt EngineId i LoggerService
+                }
+                else
+                {
+                    Console.WriteLine("Ingen EngineId fundet under initialisering.");
+                }
             }
         }
 
