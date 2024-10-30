@@ -65,7 +65,7 @@ public class MemoryUsageMonitor
     {
         var memInfo = await File.ReadAllLinesAsync("/proc/meminfo", cancellationToken);
         var totalMemoryLine = Array.Find(memInfo, line => line.StartsWith("MemTotal"));
-        return ParseMemoryValue(totalMemoryLine) / 1024.0; // Returner MB
+        return ParseMemoryValue(totalMemoryLine ?? string.Empty) / 1024.0; // Returner MB
     }
 
     private async Task<double> GetLinuxAvailableMemoryAsync(CancellationToken cancellationToken)

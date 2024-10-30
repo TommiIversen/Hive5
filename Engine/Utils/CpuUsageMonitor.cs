@@ -114,7 +114,7 @@ public class CpuUsageMonitor : IDisposable
     {
         var cpuLine = await ReadProcStatLineAsync(cancellationToken);
 
-        var cpuValues = ParseCpuStat(cpuLine);
+        var cpuValues = ParseCpuStat(cpuLine ?? string.Empty);
         return CalculateCpuUsage(cpuValues);
     }
 

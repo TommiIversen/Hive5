@@ -252,7 +252,7 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
         var commandChanged = workerEntity.Command != newCommand;
         if (commandChanged)
         {
-            workerEntity.Command = newCommand;
+            workerEntity.Command = newCommand ?? string.Empty;
             isModified = "New Command";
         }
 

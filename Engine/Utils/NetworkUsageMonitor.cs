@@ -82,7 +82,7 @@ public class NetworkUsageMonitor(INetworkInterfaceProvider networkInterfaceProvi
 
     public class NetworkInterfaceUsage
     {
-        public string InterfaceName { get; set; }
+        public required string InterfaceName { get; set; }
         public double LinkSpeedGbps { get; set; }
         public double RxMbps { get; set; }
         public double TxMbps { get; set; }

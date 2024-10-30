@@ -14,7 +14,6 @@ public class StreamHub
     private readonly IEngineService _engineService;
     private readonly MessageQueue _globalMessageQueue;
     private readonly ConcurrentDictionary<string, HubConnectionInfo> _hubConnections = new();
-    private readonly ILogger<StreamHub> _logger;
     private readonly ILoggerFactory _loggerFactory;
     private readonly ILoggerService _loggerService;
     private readonly int _maxQueueSize = 20;
@@ -25,7 +24,6 @@ public class StreamHub
 
     public StreamHub(ILoggerService loggerService,
         MessageQueue globalMessageQueue,
-        ILogger<StreamHub> logger,
         ILoggerFactory loggerFactory,
         IWorkerManager workerManager,
         IEngineService engineService,
@@ -34,13 +32,11 @@ public class StreamHub
     {
         _loggerService = loggerService;
         _messageEnricher = messageEnricher;
-        _logger = logger;
         _globalMessageQueue = globalMessageQueue;
         _workerManager = workerManager;
         _engineService = engineService;
         _loggerFactory = loggerFactory;
         _workerEventHandlers = workerEventHandlers;
-
 
         var engineInfo = _engineService.GetEngineBaseInfoAsEvent().Result;
         _engineId = engineInfo.EngineId;
@@ -176,7 +172,7 @@ public class StreamHub
             _ = Task.Run(async () =>
                 await TryReconnect(hubConnection, hubUrl, connectionInfo.ReconnectTokenSource.Token));
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             LogInfo($"Failed to connect to {hubUrl}", LogLevel.Error);
         }
@@ -225,7 +221,7 @@ public class StreamHub
                     await hubConnection.InvokeAsync("ReceiveEngineSystemInfo", systemInfo);
                     LogInfo("System information blev sendt succesfuldt via SignalR.");
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     LogInfo("Fejl opstod under forsøget på at sende systeminformation via SignalR.", LogLevel.Error);
                 }
