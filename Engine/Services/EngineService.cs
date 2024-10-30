@@ -1,4 +1,5 @@
-﻿using Engine.DAL.Entities;
+﻿using Common.DTOs;
+using Engine.DAL.Entities;
 using Engine.DAL.Repositories;
 using Engine.Database;
 using Microsoft.EntityFrameworkCore;
@@ -12,12 +13,14 @@ public interface IEngineService
     Task AddHubUrlAsync(string hubUrl, string apiKey);
     Task RemoveHubUrlAsync(int hubUrlId);
     Task EditHubUrlAsync(int hubUrlId, string newHubUrl, string newApiKey);
+    Task<EngineEvent> GetEngineBaseInfoAsEvent();
 }
 
 public class EngineService : IEngineService
 {
     private readonly IDbContextFactory<ApplicationDbContext> _contextFactory;
     private readonly IEngineRepository _engineRepository;
+    private readonly DateTime _initDateTime = DateTime.UtcNow;
 
     public EngineService(IDbContextFactory<ApplicationDbContext> contextFactory)
     {
@@ -80,5 +83,31 @@ public class EngineService : IEngineService
             hubUrl.ApiKey = newApiKey;
             if (engine != null) await _engineRepository.SaveEngineAsync(engine);
         }
+    }
+    
+    public async Task<EngineEvent> GetEngineBaseInfoAsEvent()
+    {
+        var engine = await GetEngineAsync(); // Hent de opdaterede data
+        if (engine == null) throw new InvalidOperationException("Engine not found");
+
+        var engineBaseInfo = new EngineEvent
+        {
+            EngineId = engine.EngineId,
+            EngineName = engine.Name,
+            EngineDescription = engine.Description,
+            Version = engine.Version,
+            InstallDate = engine.InstallDate,
+            EngineStartDate = _initDateTime,
+            HubUrls = engine.HubUrls.Select(h => new HubUrlInfo
+                {
+                    Id = h.Id,
+                    HubUrl = h.HubUrl,
+                    ApiKey = h.ApiKey
+                })
+                .ToList(),
+            EventType = EventType.Updated // Mapper de nyeste URL'er fra database til DTO
+        };
+
+        return engineBaseInfo;
     }
 }

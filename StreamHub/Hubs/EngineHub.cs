@@ -176,8 +176,8 @@ public class EngineHub(
         if (engineManager.TryGetEngine(workerLogMessage.EngineId, out var engine))
         {
             // For debugging msg sequence + delay in the system
-            //TimeSpan delay = DateTime.UtcNow - logMessage.Timestamp;
-            //Console.WriteLine($"Time delay: {delay.TotalMilliseconds} Milliseconds - {logMessage.Timestamp} - {DateTime.UtcNow} - {logMessage.LogSequenceNumber}");
+            //TimeSpan delay = DateTime.UtcNow - workerLogMessage.Timestamp;
+            //Console.WriteLine($"Time delay: {delay.TotalMilliseconds} Milliseconds - {workerLogMessage.Timestamp} - {DateTime.UtcNow} - LogSeq {workerLogMessage.LogSequenceNumber} GlobalSeq {workerLogMessage.SequenceNumber}");
             var wasAdded = engine != null && engine.AddWorkerLog(workerLogMessage.WorkerId, workerLogMessage);
 
             if (wasAdded)

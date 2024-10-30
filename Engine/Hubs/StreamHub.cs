@@ -14,7 +14,6 @@ public class StreamHub
     private readonly IEngineService _engineService;
     private readonly MessageQueue _globalMessageQueue;
     private readonly ConcurrentDictionary<string, HubConnectionInfo> _hubConnections = new();
-    private readonly DateTime _initDateTime = DateTime.UtcNow;
     private readonly ILogger<StreamHub> _logger;
     private readonly ILoggerFactory _loggerFactory;
     private readonly ILoggerService _loggerService;
@@ -43,7 +42,7 @@ public class StreamHub
         _workerEventHandlers = workerEventHandlers;
 
 
-        var engineInfo = GetEngineBaseInfo().Result;
+        var engineInfo = _engineService.GetEngineBaseInfoAsEvent().Result;
         _engineId = engineInfo.EngineId;
         foreach (var hubUrl in engineInfo.HubUrls.Select(h => h.HubUrl)) StartHubConnection(hubUrl);
 
@@ -111,7 +110,7 @@ public class StreamHub
             await _engineService.RemoveHubUrlAsync(hubUrlEntity.Id);
             LogInfo($"Successfully removed hub URL {hubUrlToRemove} from database via EngineService");
 
-            var engineUpdateEvent = await GetEngineBaseInfo();
+            var engineUpdateEvent = await _engineService.GetEngineBaseInfoAsEvent();
             _globalMessageQueue.EnqueueMessage(engineUpdateEvent);
 
             return new CommandResult(true, $"Successfully removed hub URL {hubUrlToRemove} from database.");
@@ -212,7 +211,7 @@ public class StreamHub
             connectionInfo.SyncTimestamp = DateTime.UtcNow;
             LogInfo($"Sending engine Init messages to streamHub on: {streamhubUrl}");
 
-            var engineModel = await GetEngineBaseInfo();
+            var engineModel = await _engineService.GetEngineBaseInfoAsEvent();
             var connectedAndAccepted = await hubConnection.InvokeAsync<bool>("RegisterEngineConnection", engineModel);
 
             if (connectedAndAccepted)
@@ -247,32 +246,6 @@ public class StreamHub
         }
     }
 
-    private async Task<EngineEvent> GetEngineBaseInfo()
-    {
-        var engine = await _engineService.GetEngineAsync(); // Hent de opdaterede data
-        if (engine == null) throw new InvalidOperationException("Engine not found");
-
-        var engineBaseInfo = new EngineEvent
-        {
-            EngineId = engine.EngineId,
-            EngineName = engine.Name,
-            EngineDescription = engine.Description,
-            Version = engine.Version,
-            InstallDate = engine.InstallDate,
-            EngineStartDate = _initDateTime,
-            HubUrls = engine.HubUrls.Select(h => new HubUrlInfo
-                {
-                    Id = h.Id,
-                    HubUrl = h.HubUrl,
-                    ApiKey = h.ApiKey
-                })
-                .ToList(),
-            EventType = EventType.Updated // Mapper de nyeste URL'er fra database til DTO
-        };
-
-        return engineBaseInfo;
-    }
-
     // Global processing of messages from main queue to per-connection queue
     private async Task RouteMessagesToClientQueuesAsync(CancellationToken cancellationToken)
     {
@@ -301,8 +274,6 @@ public class StreamHub
         if (_hubConnections.TryGetValue(url, out var connectionInfo))
         {
             var queue = connectionInfo.MessageQueue;
-            var sequenceNumber = 0;
-
             // Brug synkroniseringstidspunktet fra connectionInfo
             var syncTimestamp = connectionInfo.SyncTimestamp;
 
