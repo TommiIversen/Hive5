@@ -21,14 +21,14 @@
 
 
     @* <HeadOutlet @rendermode="InteractiveServer"/> *@
-    <HeadOutlet @rendermode="new InteractiveServerRenderMode(prerender: false)"/>
+    <HeadOutlet @rendermode="new InteractiveServerRenderMode(false)"/>
 
 </head>
 
 <body class="bg-gray-900 text-white">
 
 @* <Routes @rendermode="InteractiveServer"/> *@
-<Routes @rendermode="new InteractiveServerRenderMode(prerender: false)"/>
+<Routes @rendermode="new InteractiveServerRenderMode(false)"/>
 <script src="_framework/blazor.web.js"></script>
 </body>
 

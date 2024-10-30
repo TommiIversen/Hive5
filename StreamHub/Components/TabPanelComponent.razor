@@ -1,5 +1,4 @@
-﻿@using Common.DTOs
-@using Microsoft.AspNetCore.SignalR.Client
+﻿@using Microsoft.AspNetCore.SignalR.Client
 @using StreamHub.Models
 @using StreamHub.Services
 @inject BlazorSignalRService SignalRService
@@ -26,21 +25,21 @@
     @if (_tabs["Edit"])
     {
         <div class="px-2 mb-2">
-            <WorkerEditComponent @key="@( $"WorkerEditComponent-{EngineId}-{Worker.WorkerId}" )" EngineId="@EngineId"  Worker="@Worker"/>
+            <WorkerEditComponent @key="@($"WorkerEditComponent-{EngineId}-{Worker.WorkerId}")" EngineId="@EngineId" Worker="@Worker"/>
         </div>
     }
 
     @if (_tabs["Log"])
     {
         <div class="px-2 mb-2">
-            <WorkerLog @key="@( $"WorkerLoggerComponent-{EngineId}-{Worker.WorkerId}" )" LogMessages="Worker.LogMessages" WorkerId="@Worker.WorkerId" EngineId="@EngineId.ToString()"/>
+            <WorkerLog @key="@($"WorkerLoggerComponent-{EngineId}-{Worker.WorkerId}")" LogMessages="Worker.LogMessages" WorkerId="@Worker.WorkerId" EngineId="@EngineId.ToString()"/>
         </div>
     }
 
     @if (_tabs["Control"])
     {
         <div class="px-2 mb-2">
-            <WorkerControlsComponent @key="@( $"WorkerControlsComponent-{EngineId}-{Worker.WorkerId}" )" WorkerId="@Worker.WorkerId" EngineId="@EngineId" Worker="Worker"></WorkerControlsComponent>
+            <WorkerControlsComponent @key="@($"WorkerControlsComponent-{EngineId}-{Worker.WorkerId}")" WorkerId="@Worker.WorkerId" EngineId="@EngineId" Worker="Worker"></WorkerControlsComponent>
         </div>
     }
 
@@ -65,7 +64,7 @@
         {"Control", false},
         {"Restarter", false}
     };
-    
+
     private void ToggleTab(string tabName)
     {
         _tabs[tabName] = !_tabs[tabName];
@@ -79,18 +78,20 @@
         }
     }
 
-    private string GetTabButtonStyle(bool isActive) =>
-        isActive ? "bg-slate-600 " : "bg-slate-800";
+    private string GetTabButtonStyle(bool isActive)
+    {
+        return isActive ? "bg-slate-600 " : "bg-slate-800";
+    }
 
-    private string GetTabIconRotation(bool isActive) =>
-        isActive ? "transform rotate-180" : "";
+    private string GetTabIconRotation(bool isActive)
+    {
+        return isActive ? "transform rotate-180" : "";
+    }
 
     protected override Task OnInitializedAsync()
     {
-        SignalRService.HubConnection.On<object>($"WorkerLockEvent-{EngineId}-{Worker.WorkerId}", async (_) => 
-        {
-            await InvokeAsync(StateHasChanged);
-        });
+        SignalRService.HubConnection.On<object>($"WorkerLockEvent-{EngineId}-{Worker.WorkerId}", async _ => { await InvokeAsync(StateHasChanged); });
         return Task.CompletedTask;
     }
+
 }

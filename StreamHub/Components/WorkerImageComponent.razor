@@ -7,21 +7,20 @@
 <div class="image-container" @key="@(EngineId + Worker.WorkerId)" style="position: relative;">
     @if (!string.IsNullOrEmpty(_imageData) && Worker.Worker.State == WorkerState.Running)
     {
-    <img src="@_imageData" alt="Worker Image" class="w-[300px] h-[168.75px] rounded"/>
-    <div class="latency-overlay" style="position: absolute; top: 3px; left: 3px; color: white; background-color: rgba(0, 0, 0, 0.5); padding: 2px 4px; border-radius: 3px; font-size: 12px;">
-        Latency: @(_latencyMs) ms
-        @if (_imageLost)
-        {
-        <span style="color: red; margin-left: 5px;">⚠️</span>
-        }
-    </div>
+        <img src="@_imageData" alt="Worker Image" class="w-[300px] h-[168.75px] rounded"/>
+        <div class="latency-overlay" style="position: absolute; top: 3px; left: 3px; color: white; background-color: rgba(0, 0, 0, 0.5); padding: 2px 4px; border-radius: 3px; font-size: 12px;">
+            Latency: @(_latencyMs) ms
+            @if (_imageLost)
+            {
+                <span style="color: red; margin-left: 5px;">⚠️</span>
+            }
+        </div>
     }
     else
     {
-    <img src="/img/hive.jpg" alt="Default Image" class="w-[300px] h-[168.75px] rounded" />
+        <img src="/img/hive.jpg" alt="Default Image" class="w-[300px] h-[168.75px] rounded"/>
     }
 </div>
-
 
 
 @code {
@@ -39,7 +38,7 @@
         _imageData = InitialImageData;
         SignalRService.HubConnection.On<ImageData>($"ReceiveImage-{EngineId}-{Worker.WorkerId}", async imageData =>
         {
-            _latencyMs = (long)(DateTime.UtcNow - imageData.Timestamp).TotalMilliseconds;
+            _latencyMs = (long) (DateTime.UtcNow - imageData.Timestamp).TotalMilliseconds;
             _imageLost = _previousImageSequenceNumber != -1 && imageData.ImageSequenceNumber != _previousImageSequenceNumber + 1;
             _previousImageSequenceNumber = imageData.ImageSequenceNumber;
             _imageData = $"data:image/jpeg;base64,{Convert.ToBase64String(imageData.ImageBytes)}";
@@ -53,4 +52,5 @@
         Console.WriteLine($"Disposing Image component for worker {Worker.WorkerId}");
         SignalRService.HubConnection.Remove($"ReceiveImage-{EngineId}");
     }
+
 }

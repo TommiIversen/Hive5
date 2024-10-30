@@ -73,7 +73,7 @@
 
     protected override Task OnInitializedAsync()
     {
-        SignalRService.HubConnection.On<Metric>($"UpdateMetric-{EngineId}", async (metric) =>
+        SignalRService.HubConnection.On<Metric>($"UpdateMetric-{EngineId}", async metric =>
         {
             if (metric.EngineId == EngineId)
             {

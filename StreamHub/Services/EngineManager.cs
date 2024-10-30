@@ -10,9 +10,9 @@ public class EngineManager
 
     public EngineViewModel GetOrAddEngine(EngineBaseInfo baseInfo)
     {
-        return _engines.GetOrAdd(baseInfo.EngineId, _ => new EngineViewModel { BaseInfo = baseInfo });
+        return _engines.GetOrAdd(baseInfo.EngineId, _ => new EngineViewModel {BaseInfo = baseInfo});
     }
-    
+
     // method to update base info
     public void UpdateBaseInfo(EngineBaseInfo baseInfo)
     {
@@ -22,13 +22,9 @@ public class EngineManager
             Console.WriteLine($"Base info for engine {baseInfo.EngineId} updated.");
             engine.BaseInfo = baseInfo;
             engine.BaseInfo.HubUrls = new List<HubUrlInfo>(baseInfo.HubUrls); // Kopi af ny HubUrls-liste
-            
+
             // print out urls
-            foreach (var url in engine.BaseInfo.HubUrls)
-            {
-                Console.WriteLine($"UPDATEEEEE HubUrl: {url.HubUrl}");
-            }
-            
+            foreach (var url in engine.BaseInfo.HubUrls) Console.WriteLine($"UPDATEEEEE HubUrl: {url.HubUrl}");
         }
     }
 
@@ -80,12 +76,11 @@ public class EngineManager
         Console.WriteLine($"Worker {workerOut.WorkerId} added.");
     }
 
-    
+
     public bool TryGetEngine(Guid engineId, out EngineViewModel? engineInfo)
     {
         return _engines.TryGetValue(engineId, out engineInfo);
     }
-
 
 
     public bool RemoveConnection(string connectionId)
@@ -113,7 +108,7 @@ public class EngineManager
     {
         return _engines.TryRemove(engineId, out _);
     }
-    
+
     public void SynchronizeWorkers(List<WorkerEvent> workers, Guid engineId)
     {
         Console.WriteLine($"-----------SynchronizeWorkers workers: {workers.Count}");

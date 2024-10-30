@@ -2,7 +2,7 @@
 
 public class CancellationService
 {
-    private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+    private readonly CancellationTokenSource _cancellationTokenSource = new();
 
     public CancellationToken Token => _cancellationTokenSource.Token;
 

@@ -6,44 +6,44 @@
         <ImplicitUsings>enable</ImplicitUsings>
     </PropertyGroup>
 
-    <PropertyGroup >
-      <OutputPath>bin\Debug\Streamhub</OutputPath>
+    <PropertyGroup>
+        <OutputPath>bin\Debug\Streamhub</OutputPath>
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="MessagePack" Version="3.0.238-rc.1" />
-      <PackageReference Include="MessagePack.Annotations" Version="3.0.238-rc.1" />
-      <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="9.0.0-rc.2.24474.3" />
-      <PackageReference Include="Microsoft.AspNetCore.SignalR.Protocols.MessagePack" Version="9.0.0-rc.2.24474.3" />
+        <PackageReference Include="MessagePack" Version="3.0.238-rc.1"/>
+        <PackageReference Include="MessagePack.Annotations" Version="3.0.238-rc.1"/>
+        <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="9.0.0-rc.2.24474.3"/>
+        <PackageReference Include="Microsoft.AspNetCore.SignalR.Protocols.MessagePack" Version="9.0.0-rc.2.24474.3"/>
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Common\Common.csproj" />
+        <ProjectReference Include="..\Common\Common.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
-      <_ContentIncludedByDefault Remove="Components\Worker\ExpandablePanel.razor" />
-      <_ContentIncludedByDefault Remove="Components\Worker\FakeComponent1.razor" />
-      <_ContentIncludedByDefault Remove="Components\Worker\FakeComponent2.razor" />
-      <_ContentIncludedByDefault Remove="Components\Worker\TabPanelComponent.razor" />
-      <_ContentIncludedByDefault Remove="Components\Worker\WorkerComponent.razor" />
-      <_ContentIncludedByDefault Remove="Components\Worker\WorkerControlsComponent.razor" />
-      <_ContentIncludedByDefault Remove="Components\Worker\WorkerImageComponent.razor" />
-      <_ContentIncludedByDefault Remove="Components\Worker\WorkerLog.razor" />
+        <_ContentIncludedByDefault Remove="Components\Worker\ExpandablePanel.razor"/>
+        <_ContentIncludedByDefault Remove="Components\Worker\FakeComponent1.razor"/>
+        <_ContentIncludedByDefault Remove="Components\Worker\FakeComponent2.razor"/>
+        <_ContentIncludedByDefault Remove="Components\Worker\TabPanelComponent.razor"/>
+        <_ContentIncludedByDefault Remove="Components\Worker\WorkerComponent.razor"/>
+        <_ContentIncludedByDefault Remove="Components\Worker\WorkerControlsComponent.razor"/>
+        <_ContentIncludedByDefault Remove="Components\Worker\WorkerImageComponent.razor"/>
+        <_ContentIncludedByDefault Remove="Components\Worker\WorkerLog.razor"/>
     </ItemGroup>
 
     <ItemGroup>
-        <WatchExclude Include="bin\**\*" />
-        <WatchExclude Include="obj\**\*" />
+        <WatchExclude Include="bin\**\*"/>
+        <WatchExclude Include="obj\**\*"/>
     </ItemGroup>
 
     <ItemGroup>
-      <AdditionalFiles Include="Components\TabPanelComponent.razor" />
-      <AdditionalFiles Include="Components\WorkerComponent.razor" />
-      <AdditionalFiles Include="Components\WorkerControlsComponent.razor" />
-      <AdditionalFiles Include="Components\WorkerEditComponent.razor" />
-      <AdditionalFiles Include="Components\WorkerImageComponent.razor" />
-      <AdditionalFiles Include="Components\WorkerLog.razor" />
+        <AdditionalFiles Include="Components\TabPanelComponent.razor"/>
+        <AdditionalFiles Include="Components\WorkerComponent.razor"/>
+        <AdditionalFiles Include="Components\WorkerControlsComponent.razor"/>
+        <AdditionalFiles Include="Components\WorkerEditComponent.razor"/>
+        <AdditionalFiles Include="Components\WorkerImageComponent.razor"/>
+        <AdditionalFiles Include="Components\WorkerLog.razor"/>
     </ItemGroup>
 
 

@@ -15,17 +15,18 @@
 
     protected override Task OnInitializedAsync()
     {
-        SignalRService.HubConnection.On<Metric>($"UpdateMetric-{EngineId}", async (metric) =>
+        SignalRService.HubConnection.On<Metric>($"UpdateMetric-{EngineId}", async metric =>
         {
             await UpdateChart(metric.PerCoreCpuUsage);
 
             // Hvis det er første gang, der modtages data, opret labels for CPU-kerner
             if (_coreNames.Count == 0 && metric.PerCoreCpuUsage.Count > 0)
             {
-                for (int i = 0; i < metric.PerCoreCpuUsage.Count; i++)
+                for (var i = 0; i < metric.PerCoreCpuUsage.Count; i++)
                 {
                     _coreNames.Add($"C-{i}");
                 }
+
                 // Opret grafen med de første modtagne data
                 _chart = await JsRuntime.InvokeAsync<IJSObjectReference>("barChartInterop.createBarChart", GetCanvasId(), _coreNames, metric.PerCoreCpuUsage);
             }
@@ -46,5 +47,9 @@
         }
     }
 
-    private string GetCanvasId() => $"cpuBarChart-{EngineId}";
+    private string GetCanvasId()
+    {
+        return $"cpuBarChart-{EngineId}";
+    }
+
 }

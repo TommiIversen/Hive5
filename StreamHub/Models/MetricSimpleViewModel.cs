@@ -4,13 +4,6 @@ namespace StreamHub.Models;
 
 public class MetricSimpleViewModel
 {
-    public double CPUUsage { get; set; }
-    public double RxMbps { get; set; }
-    public double TxMbps { get; set; }
-    public double RxUsagePercent { get; set; }
-    public double TxUsagePercent { get; set; }
-    public DateTime Timestamp { get; set; }
-
     // Constructor to map values from a Metric object
     public MetricSimpleViewModel(Metric metric)
     {
@@ -21,4 +14,11 @@ public class MetricSimpleViewModel
         TxUsagePercent = metric.TxUsagePercent;
         Timestamp = metric.Timestamp;
     }
+
+    public double CPUUsage { get; set; }
+    public double RxMbps { get; set; }
+    public double TxMbps { get; set; }
+    public double RxUsagePercent { get; set; }
+    public double TxUsagePercent { get; set; }
+    public DateTime Timestamp { get; set; }
 }

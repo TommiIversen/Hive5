@@ -89,11 +89,11 @@
                     <div class="bg-slate-800 p-4 rounded-lg shadow-md">
                         <div class="flex mb-2 items-center">
                             <span class="font-semibold mr-2">URL:</span>
-                            <div class="break-all">@url.HubUrl</div> 
+                            <div class="break-all">@url.HubUrl</div>
                         </div>
                         <div class="flex mb-2 items-center">
                             <span class="font-semibold mr-2">API Key:</span>
-                            <div class="break-all">@url.ApiKey</div> 
+                            <div class="break-all">@url.ApiKey</div>
                         </div>
                         <div class="flex space-x-2">
                             <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" @onclick="() => EditUrl(url)">Rediger</button>
@@ -119,13 +119,13 @@
 @code {
     [Parameter] public required EngineViewModel Engine { get; set; }
 
-    
+
     protected override Task OnInitializedAsync()
     {
         SignalRService.HubConnection.On("EngineChange", async () => { await InvokeAsync(StateHasChanged); });
         return Task.CompletedTask;
     }
-    
+
     private void EditUrl(HubUrlInfo url)
     {
         // Implementér redigeringslogik her

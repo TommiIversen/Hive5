@@ -222,7 +222,7 @@ public class StreamHub
                 systemInfo.EngineId = _engineId;
                 try
                 {
-                    await hubConnection.InvokeAsync("SendSystemInfo", systemInfo);
+                    await hubConnection.InvokeAsync("ReceiveEngineSystemInfo", systemInfo);
                     LogInfo("System information blev sendt succesfuldt via SignalR.");
                 }
                 catch (Exception ex)

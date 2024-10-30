@@ -1,9 +1,10 @@
-﻿@using Common.DTOs
+﻿@inject IJSRuntime JsRuntime
+@inject BlazorSignalRService SignalRService
+@using System.Text.Json
+@using Common.DTOs
 @using Microsoft.AspNetCore.SignalR.Client
 @using StreamHub.Models
 @using StreamHub.Services
-@inject IJSRuntime JsRuntime
-@inject BlazorSignalRService SignalRService
 @implements IDisposable
 
 
@@ -21,7 +22,7 @@
 
     protected override Task OnInitializedAsync()
     {
-        SignalRService.HubConnection.On<Metric>($"UpdateMetric-{Engine.BaseInfo.EngineId}", async (metric) =>
+        SignalRService.HubConnection.On<Metric>($"UpdateMetric-{Engine.BaseInfo.EngineId}", async metric =>
         {
             if (metric.EngineId == Engine.BaseInfo.EngineId)
             {
@@ -60,10 +61,14 @@
     {
         if (_chart != null)
         {
-            var serializedData = System.Text.Json.JsonSerializer.Serialize(newMetricData);
+            var serializedData = JsonSerializer.Serialize(newMetricData);
             await JsRuntime.InvokeVoidAsync("chartInterop.updateLineChart", _chart, serializedData);
         }
     }
 
-    private string GetCanvasId() => $"cpuChart-{Engine.BaseInfo.EngineId}";
+    private string GetCanvasId()
+    {
+        return $"cpuChart-{Engine.BaseInfo.EngineId}";
+    }
+
 }

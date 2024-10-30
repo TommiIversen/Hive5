@@ -20,18 +20,18 @@
         _workerName = Worker.Worker.Name;
         _workerDescription = Worker.Worker.Description;
         _workerCommand = Worker.Worker.Command;
-       
-        string workerEventTopic = $"WorkerEvent-{EngineId}-{Worker.WorkerId}";
-        SignalRService.HubConnection.On<WorkerEvent>(workerEventTopic, async (_) => { await InvokeAsync(StateHasChanged); });
+
+        var workerEventTopic = $"WorkerEvent-{EngineId}-{Worker.WorkerId}";
+        SignalRService.HubConnection.On<WorkerEvent>(workerEventTopic, async _ => { await InvokeAsync(StateHasChanged); });
     }
-    
+
     private string GetButtonCss()
     {
         return Worker.IsProcessing
             ? "bg-gray-400 text-gray-700 cursor-not-allowed"
             : "bg-blue-600 hover:bg-blue-700 text-white";
     }
-    
+
     private async Task ApplyChangesAsync()
     {
         // Opret et WorkerCreate objekt ud fra de redigerede værdier
@@ -40,13 +40,14 @@
             EngineId = EngineId,
             WorkerId = Worker.Worker.WorkerId,
             Name = _workerName ?? string.Empty,
-            Description = _workerDescription?? string.Empty,
-            Command = _workerCommand?? string.Empty
+            Description = _workerDescription ?? string.Empty,
+            Command = _workerCommand ?? string.Empty
         };
 
         // Kald EditWorkerAsync metoden for at gemme ændringerne
         var result = await WorkerService.EditWorkerAsync(editWorker);
     }
+
 }
 
 <div class="px-2 mb-2">
@@ -57,12 +58,12 @@
             <div>
                 <label class="block text-gray-300">Worker Name</label>
                 <input @bind="_workerName"
-                       class="bg-gray-600 p-2 rounded text-white w-full" />
+                       class="bg-gray-600 p-2 rounded text-white w-full"/>
             </div>
             <div>
                 <label class="block text-gray-300">Worker Description</label>
                 <input @bind="_workerDescription"
-                       class="bg-gray-600 p-2 rounded text-white w-full" />
+                       class="bg-gray-600 p-2 rounded text-white w-full"/>
             </div>
             <button @onclick="ApplyChangesAsync"
                     class="px-4 py-2 rounded w-full font-bold @GetButtonCss()"

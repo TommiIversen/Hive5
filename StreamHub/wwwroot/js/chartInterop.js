@@ -43,7 +43,7 @@
                     },
                     y: {
                         beginAtZero: true,
-                        
+
                     }
                 },
                 plugins: {
@@ -51,7 +51,7 @@
                         callbacks: {
                             label: function (context) {
                                 const datasetLabel = context.dataset.label || '';
-                                const value = context.raw.toFixed(1); 
+                                const value = context.raw.toFixed(1);
                                 if (context.datasetIndex === 1 || context.datasetIndex === 2) {
                                     // Hvis det er Network RX eller TX, skal vi tilføje Mbps til tooltip
                                     const metricData = context.chart.data.metricData ? context.chart.data.metricData[context.dataIndex] : null;
@@ -75,7 +75,7 @@
     },
     updateLineChartOld: function (chart, serializedMetricData) {
         const metricData = JSON.parse(serializedMetricData); // Parse serialized data from C#
-       console.log('Updating chart with new data:', metricData)
+        console.log('Updating chart with new data:', metricData)
 
         chart.data.labels.push(metricData.Timestamp);
         chart.data.datasets[0].data.push(metricData.CPUUsage);

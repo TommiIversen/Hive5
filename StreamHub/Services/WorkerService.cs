@@ -37,10 +37,7 @@ public class WorkerService(
             return new CommandResult(false, msg);
         }
 
-        if (setProcessing)
-        {
-            worker.IsProcessing = true;
-        }
+        if (setProcessing) worker.IsProcessing = true;
 
         using var timeoutCts = new CancellationTokenSource(timeoutMilliseconds);
         using var linkedCts =
@@ -71,12 +68,13 @@ public class WorkerService(
             {
                 worker.OperationResult = msg;
                 worker.IsProcessing = false;
-                
+
                 // Send nu SignalR-besked for at opdatere UI efter state er sat korrekt
                 await hubContext.Clients.Group("frontendClients")
-                    .SendAsync($"WorkerLockEvent-{data.EngineId}-{data.WorkerId}", new { worker.IsProcessing, msg });
+                    .SendAsync($"WorkerLockEvent-{data.EngineId}-{data.WorkerId}", new {worker.IsProcessing, msg});
             }
         }
+
         return result;
     }
 
@@ -135,7 +133,6 @@ public class WorkerService(
 
     public async Task<CommandResult> EditWorkerAsync(WorkerCreate workerCreate)
     {
-        
         return await HandleWorkerOperationWithDataAsync("EditWorker", workerCreate, setProcessing: true);
     }
 
@@ -148,7 +145,7 @@ public class WorkerService(
             EngineId = engineId,
             Enable = enable
         };
-        
+
         return await HandleWorkerOperationWithDataAsync("EnableDisableWorker", message);
     }
 }

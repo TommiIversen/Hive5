@@ -15,7 +15,7 @@
             <div class="text-gray-400">ID: @Worker.WorkerId</div>
             <div>
                 IsRunning:
-                <span class="font-bold @(Worker.Worker.IsEnabled ? (Worker.Worker.State != WorkerState.Running ? "text-red-500" : "text-green-500") : "text-gray-400")">
+                <span class="font-bold @(Worker.Worker.IsEnabled ? Worker.Worker.State != WorkerState.Running ? "text-red-500" : "text-green-500" : "text-gray-400")">
                     @(Worker.Worker.State)
                 </span>
             </div>
@@ -57,8 +57,8 @@
 
     protected override Task OnInitializedAsync()
     {
-        string workerEventTopic = $"WorkerEvent-{EngineId}-{Worker.WorkerId}";
-        SignalRService.HubConnection.On<WorkerEvent>(workerEventTopic, async (_) => { await InvokeAsync(StateHasChanged); });
+        var workerEventTopic = $"WorkerEvent-{EngineId}-{Worker.WorkerId}";
+        SignalRService.HubConnection.On<WorkerEvent>(workerEventTopic, async _ => { await InvokeAsync(StateHasChanged); });
         return Task.CompletedTask;
     }
 

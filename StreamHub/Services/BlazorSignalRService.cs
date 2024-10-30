@@ -6,8 +6,6 @@ namespace StreamHub.Services;
 
 public class BlazorSignalRService : IAsyncDisposable
 {
-    public HubConnection HubConnection { get; }
-
     public BlazorSignalRService(NavigationManager navigationManager)
     {
         HubConnection = new HubConnectionBuilder()
@@ -17,6 +15,14 @@ public class BlazorSignalRService : IAsyncDisposable
             .Build();
     }
 
+    public HubConnection HubConnection { get; }
+
+    public async ValueTask DisposeAsync()
+    {
+        await HubConnection.DisposeAsync();
+        Console.WriteLine("SignalR Async connection disposed.");
+    }
+
     public async Task StartConnectionAsync()
     {
         if (HubConnection.State == HubConnectionState.Disconnected)
@@ -24,11 +30,5 @@ public class BlazorSignalRService : IAsyncDisposable
             await HubConnection.StartAsync();
             Console.WriteLine("SignalR connected.");
         }
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        await HubConnection.DisposeAsync();
-        Console.WriteLine("SignalR Async connection disposed.");
     }
 }

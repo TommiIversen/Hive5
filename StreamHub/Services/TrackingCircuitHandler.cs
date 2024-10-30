@@ -1,8 +1,7 @@
-﻿namespace StreamHub.Services;
-
+﻿using System.Collections.Concurrent;
 using Microsoft.AspNetCore.Components.Server.Circuits;
-using Microsoft.Extensions.Logging;
-using System.Collections.Concurrent;
+
+namespace StreamHub.Services;
 
 public class UserCountChangedEventArgs(int userCount) : EventArgs
 {
@@ -11,22 +10,21 @@ public class UserCountChangedEventArgs(int userCount) : EventArgs
 
 public class TrackingCircuitHandler : CircuitHandler
 {
-    private readonly ILogger<TrackingCircuitHandler> _logger;
-
     // Thread-safe dictionary to keep track of user connections
     private readonly ConcurrentDictionary<string, bool> _connectedCircuits = new();
-
-    // Event with data (user count)
-    public event EventHandler<UserCountChangedEventArgs>? OnUserCountChanged;
+    private readonly ILogger<TrackingCircuitHandler> _logger;
 
     public TrackingCircuitHandler(ILogger<TrackingCircuitHandler> logger)
     {
         _logger = logger;
     }
 
+    // Event with data (user count)
+    public event EventHandler<UserCountChangedEventArgs>? OnUserCountChanged;
+
     public int GetTotalConnectedUsers()
     {
-        return _connectedCircuits.Count(entry => entry.Value == true);
+        return _connectedCircuits.Count(entry => entry.Value);
     }
 
     // Called when a circuit is connected
@@ -65,7 +63,7 @@ public class TrackingCircuitHandler : CircuitHandler
     // Udløser event med brugerdata (antal tilsluttede brugere)
     private void RaiseUserCountChangedEvent()
     {
-        int connectedUsers = _connectedCircuits.Count(entry => entry.Value == true);
+        var connectedUsers = _connectedCircuits.Count(entry => entry.Value);
         OnUserCountChanged?.Invoke(this, new UserCountChangedEventArgs(connectedUsers));
     }
 }

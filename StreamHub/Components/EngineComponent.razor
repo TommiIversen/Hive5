@@ -21,7 +21,7 @@
         <h2 class="text-xl font-semibold">@Engine?.BaseInfo.EngineName</h2>
         <div class="text-gray-400">@Engine?.BaseInfo.EngineDescription</div>
         <EngineConnectionInfoComponent Engine="@Engine"/>
-        <MetricExpandPanelComponent EngineId="@Engine.BaseInfo.EngineId" />
+        <MetricExpandPanelComponent EngineId="@Engine.BaseInfo.EngineId"/>
         <EngineLogPanel LogMessages="Engine.EngineLogMessages" EngineId="@Engine.BaseInfo.EngineId"></EngineLogPanel>
         <EngineCreateWorker EngineId="@Engine.BaseInfo.EngineId"/>
         <MetricLineChartComponent Engine="@Engine"/>
@@ -46,14 +46,12 @@
 </div>
 
 @code {
-    [Parameter]
-    public required EngineViewModel Engine { get; set; }
+    [Parameter] public required EngineViewModel Engine { get; set; }
 
-    
-    
+
     private async Task RemoveEngine(Guid engineId)
     {
         await SignalRService.HubConnection.SendAsync("RemoveEngine", engineId);
     }
-    
+
 }

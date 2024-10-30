@@ -1,4 +1,5 @@
 ﻿@using System.Collections.Concurrent
+@using System.Text
 @using Common.DTOs
 @using Microsoft.AspNetCore.SignalR.Client
 @using StreamHub.Services
@@ -20,7 +21,7 @@
     Download Logs
 </button>
 <div class="w-60">
-    
+
 </div>
 @if (LogMessages.Any())
 {
@@ -30,7 +31,7 @@
                 <div class="@GetLogLevelClass(logMessage.LogLevel)">
                     @if (IsOutOfSequence(logMessage))
                     {
-                    <span class="text-warning">&#9888;</span>
+                        <span class="text-warning">&#9888;</span>
                     }
                     @logMessage.LogSequenceNumber: @logMessage.Timestamp : @logMessage.LogLevel : @logMessage.Message
                 </div>
@@ -61,6 +62,7 @@ else
             _previousSequenceNumber = workerLogMessage.LogSequenceNumber;
             return false;
         }
+
         if (workerLogMessage.LogSequenceNumber != _previousSequenceNumber - 1)
         {
             _previousSequenceNumber = workerLogMessage.LogSequenceNumber; // Opdater for næste tjek
@@ -70,7 +72,7 @@ else
         _previousSequenceNumber = workerLogMessage.LogSequenceNumber; // Opdater for næste tjek
         return false; // Sekvensen er i orden
     }
-    
+
 
     protected override async Task OnInitializedAsync()
     {
@@ -82,10 +84,9 @@ else
             {
                 await InvokeAsync(StateHasChanged);
             }
-            
         });
     }
-    
+
     private string GetLogLevelClass(LogLevel logLevel)
     {
         return logLevel switch
@@ -93,7 +94,7 @@ else
             LogLevel.Warning => "bg-yellow-900 text-yellow-200",
             LogLevel.Error => "bg-red-900 text-red-200",
             LogLevel.Critical => "bg-red-900 text-red-200 font-bold",
-            _ => "", // Standardfarve for Information eller lavere
+            _ => "" // Standardfarve for Information eller lavere
         };
     }
 
@@ -140,12 +141,13 @@ else
             _forceRender = false;
             return true;
         }
+
         return !_pauseRendering;
     }
 
     private async void DownloadLogs()
     {
-        var logContent = new System.Text.StringBuilder();
+        var logContent = new StringBuilder();
         logContent.AppendLine($"EngineId: {EngineId}, WorkerId: {WorkerId}");
         logContent.AppendLine("Timestamp,LogLevel,Message");
 
@@ -160,9 +162,10 @@ else
 
     private async Task TriggerFileDownload(string fileName, string content)
     {
-        var bytes = System.Text.Encoding.UTF8.GetBytes(content);
+        var bytes = Encoding.UTF8.GetBytes(content);
         var base64 = Convert.ToBase64String(bytes);
         var fileUrl = $"data:text/plain;base64,{base64}";
         await JsRuntime.InvokeVoidAsync("triggerFileDownload", fileName, fileUrl);
     }
+
 }

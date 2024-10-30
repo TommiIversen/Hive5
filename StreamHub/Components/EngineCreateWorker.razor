@@ -54,7 +54,7 @@
             Command = _newWorkerCommand
         };
         var commandResult = await WorkerService.CreateWorkerAsync(workerCreate);
-        
+
         // reset form if success 
         if (commandResult.Success)
         {
@@ -63,7 +63,8 @@
             _newWorkerDescription = string.Empty;
             _newWorkerCommand = string.Empty;
         }
-        
+
         _commandResultMessage = commandResult.Message;
     }
+
 }

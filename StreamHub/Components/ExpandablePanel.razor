@@ -20,14 +20,13 @@
 @code {
     private bool _isExpanded = false;
 
-    [Parameter]
-    public string Title { get; set; } = "Panel";
+    [Parameter] public string Title { get; set; } = "Panel";
 
-    [Parameter]
-    public RenderFragment? ChildContent { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
 
     private void TogglePanel()
     {
         _isExpanded = !_isExpanded;
     }
+
 }

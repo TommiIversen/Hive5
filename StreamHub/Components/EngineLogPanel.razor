@@ -1,4 +1,5 @@
 ﻿@using System.Collections.Concurrent
+@using System.Text
 @using Common.DTOs
 @using Microsoft.AspNetCore.SignalR.Client
 @using StreamHub.Services
@@ -8,42 +9,42 @@
 <!-- Pause/Unpause Button -->
 
 <ExpandablePanel Title="Engine Logs">
-<button
-    @onclick="TogglePauseRendering"
-    class="px-4 py-2 rounded 
+    <button
+        @onclick="TogglePauseRendering"
+        class="px-4 py-2 rounded 
         @(_pauseRendering ? "bg-red-500 text-white hover:bg-red-700" : "bg-green-500 text-white hover:bg-green-700")">
-    @(_pauseRendering ? "Resume Log Updates" : "Pause Log Updates")
-</button>
+        @(_pauseRendering ? "Resume Log Updates" : "Pause Log Updates")
+    </button>
 
-<!-- Download Logs Button -->
-<button
-    @onclick="DownloadLogs"
-    class="px-4 py-2 rounded bg-indigo-500 text-white hover:bg-indigo-700">
-    Download Logs
-</button>
-<div class="w-60">
-    
-</div>
-@if (LogMessages.Any())
-{
-    <div style="height: 200px; overflow-y: auto; resize: vertical;" class="w-100">
-        <Virtualize Items="LogMessages.TakeLast(100).Reverse().ToList()" Context="logMessage" ItemSize="10">
-            <div class="log-entry">
-                <div class="@GetLogLevelClass(logMessage.LogLevel)">
-                    @if (IsOutOfSequence(logMessage))
-                    {
-                    <span class="text-warning">&#9888;</span>
-                    }
-                    @logMessage.LogSequenceNumber: @logMessage.Timestamp : @logMessage.LogLevel : @logMessage.Message
-                </div>
-            </div>
-        </Virtualize>
+    <!-- Download Logs Button -->
+    <button
+        @onclick="DownloadLogs"
+        class="px-4 py-2 rounded bg-indigo-500 text-white hover:bg-indigo-700">
+        Download Logs
+    </button>
+    <div class="w-60">
+
     </div>
-}
-else
-{
-    <p>Ingen logbeskeder.</p>
-}
+    @if (LogMessages.Any())
+    {
+        <div style="height: 200px; overflow-y: auto; resize: vertical;" class="w-100">
+            <Virtualize Items="LogMessages.TakeLast(100).Reverse().ToList()" Context="logMessage" ItemSize="10">
+                <div class="log-entry">
+                    <div class="@GetLogLevelClass(logMessage.LogLevel)">
+                        @if (IsOutOfSequence(logMessage))
+                        {
+                            <span class="text-warning">&#9888;</span>
+                        }
+                        @logMessage.LogSequenceNumber: @logMessage.Timestamp : @logMessage.LogLevel : @logMessage.Message
+                    </div>
+                </div>
+            </Virtualize>
+        </div>
+    }
+    else
+    {
+        <p>Ingen logbeskeder.</p>
+    }
 
 </ExpandablePanel>
 
@@ -64,6 +65,7 @@ else
             _previousSequenceNumber = engineLogMessage.LogSequenceNumber;
             return false;
         }
+
         if (engineLogMessage.LogSequenceNumber != _previousSequenceNumber - 1)
         {
             _previousSequenceNumber = engineLogMessage.LogSequenceNumber; // Opdater for næste tjek
@@ -73,20 +75,15 @@ else
         _previousSequenceNumber = engineLogMessage.LogSequenceNumber; // Opdater for næste tjek
         return false; // Sekvensen er i orden
     }
-    
+
 
     protected override async Task OnInitializedAsync()
     {
         await SubscribeToLogs();
 
-        SignalRService.HubConnection.On<EngineLogEntry>("ReceiveEngineLog", async logLine =>
-        {
-
-                await InvokeAsync(StateHasChanged);
-
-        });
+        SignalRService.HubConnection.On<EngineLogEntry>("ReceiveEngineLog", async logLine => { await InvokeAsync(StateHasChanged); });
     }
-    
+
     private string GetLogLevelClass(LogLevel logLevel)
     {
         return logLevel switch
@@ -94,7 +91,7 @@ else
             LogLevel.Warning => "text-yellow-200",
             LogLevel.Error => "bg-red-900 text-red-200",
             LogLevel.Critical => "bg-red-900 text-red-200 font-bold",
-            _ => "", // Standardfarve for Information eller lavere
+            _ => "" // Standardfarve for Information eller lavere
         };
     }
 
@@ -141,12 +138,13 @@ else
             _forceRender = false;
             return true;
         }
+
         return !_pauseRendering;
     }
 
     private async void DownloadLogs()
     {
-        var logContent = new System.Text.StringBuilder();
+        var logContent = new StringBuilder();
         logContent.AppendLine($"EngineId: {EngineId}");
         logContent.AppendLine("Timestamp,LogLevel,Message");
 
@@ -161,10 +159,10 @@ else
 
     private async Task TriggerFileDownload(string fileName, string content)
     {
-        var bytes = System.Text.Encoding.UTF8.GetBytes(content);
+        var bytes = Encoding.UTF8.GetBytes(content);
         var base64 = Convert.ToBase64String(bytes);
         var fileUrl = $"data:text/plain;base64,{base64}";
         await JsRuntime.InvokeVoidAsync("triggerFileDownload", fileName, fileUrl);
     }
-}
 
+}

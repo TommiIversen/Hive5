@@ -12,13 +12,10 @@ public class WorkerViewModel
     public bool IsProcessing { get; set; }
     public string OperationResult { get; set; } = "";
     public DateTime EventProcessedTimestamp { get; set; }
-    
+
     public void AddLogMessage(WorkerLogEntry message)
     {
         LogMessages.Enqueue(message);
-        if (LogMessages.Count > 50)
-        {
-            LogMessages.TryDequeue(out _); // Remove the oldest message
-        }
+        if (LogMessages.Count > 50) LogMessages.TryDequeue(out _); // Remove the oldest message
     }
 }
