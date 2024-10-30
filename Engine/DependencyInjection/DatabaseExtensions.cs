@@ -27,9 +27,9 @@ namespace Engine.DependencyInjection
             {
                 dbContext.Database.ExecuteSqlRaw("DELETE FROM __EFMigrationsLock");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Log.Warning(ex, "Kunne ikke rydde migrationslåsen.");
+                Log.Warning("Kunne ikke rydde migrationslåsen.");
             }
 
             // Anvend migrationer og seed data

@@ -1,7 +1,9 @@
 using Engine.Components;
+using Engine.Database;
 using Engine.DependencyInjection;
 using Engine.Hubs;
 using Engine.Services;
+using Serilog;
 
 // Få basePath fra miljøvariablen eller brug fallback
 var basePath = Environment.GetEnvironmentVariable("HIVE_BASE_PATH") ?? @"C:\temp\hive";
@@ -19,10 +21,26 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
 builder.Services.AddDatabase(basePath);
-builder.Services.AddApplicationServices();
+builder.Services.AddApplicationServicesPreBuild();
 
 var app = builder.Build();
 app.InitializeDatabase();
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    var engineEntity = dbContext.EngineEntities.FirstOrDefault();
+
+    if (engineEntity != null)
+    {
+        var loggerService = scope.ServiceProvider.GetRequiredService<ILoggerService>();
+        loggerService.SetEngineId(engineEntity.EngineId);
+    }
+    else
+    {
+        Log.Warning("Ingen EngineId fundet under initialisering.");
+    }
+}
+// Registrer de services, der kræver database-adgang, efter `InitializeDatabase` og før appen kører.
 
 app.Services.GetRequiredService<StreamHub>();
 

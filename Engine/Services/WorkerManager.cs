@@ -114,12 +114,12 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
             Command = workerCreate.Command,
             IsEnabled = true,
             CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            UpdatedAt = DateTime.UtcNow,
+            ImgWatchdogEnabled = workerCreate.ImgWatchdogEnabled,
         };
 
         // Tilføj worker til databasen asynkront
         await workerRepository.AddWorkerAsync(workerEntity);
-        await SendWorkerEvent(workerCreate.WorkerId, EventType.Created);
 
         
         IStreamerService streamerService = new FakeStreamerService
@@ -138,6 +138,8 @@ public class WorkerManager(MessageQueue messageQueue, RepositoryFactory reposito
             watchdogFactory,
             workerConfig);
         _workers[workerCreate.WorkerId] = workerService;
+        
+        await SendWorkerEvent(workerCreate.WorkerId, EventType.Created);
         return workerService;
     }
 
