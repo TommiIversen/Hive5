@@ -7,30 +7,31 @@ using Microsoft.AspNetCore.SignalR.Client;
 
 namespace Engine.Hubs;
 
-public class StreamHub 
+public class StreamHub
 {
     private readonly CancellationTokenSource _cancellationTokenSource = new();
+    private readonly Guid _engineId;
     private readonly IEngineService _engineService;
     private readonly MessageQueue _globalMessageQueue;
     private readonly ConcurrentDictionary<string, HubConnectionInfo> _hubConnections = new();
     private readonly DateTime _initDateTime = DateTime.UtcNow;
     private readonly ILogger<StreamHub> _logger;
     private readonly ILoggerFactory _loggerFactory;
-    private readonly int _maxQueueSize = 20;
-    private readonly IWorkerManager _workerManager;
-    private readonly Guid _engineId;
     private readonly ILoggerService _loggerService;
+    private readonly int _maxQueueSize = 20;
     private readonly IMessageEnricher _messageEnricher;
+    private readonly IHubWorkerEventHandlers _workerEventHandlers;
+    private readonly IWorkerManager _workerManager;
 
-    public StreamHub(
-        ILoggerService loggerService, 
+
+    public StreamHub(ILoggerService loggerService,
         MessageQueue globalMessageQueue,
         ILogger<StreamHub> logger,
         ILoggerFactory loggerFactory,
         IWorkerManager workerManager,
         IEngineService engineService,
-        IMessageEnricher messageEnricher
-        )
+        IMessageEnricher messageEnricher,
+        IHubWorkerEventHandlers workerEventHandlers)
     {
         _loggerService = loggerService;
         _messageEnricher = messageEnricher;
@@ -39,6 +40,8 @@ public class StreamHub
         _workerManager = workerManager;
         _engineService = engineService;
         _loggerFactory = loggerFactory;
+        _workerEventHandlers = workerEventHandlers;
+
 
         var engineInfo = GetEngineBaseInfo().Result;
         _engineId = engineInfo.EngineId;
@@ -90,7 +93,8 @@ public class StreamHub
                 return new CommandResult(false, $"Failed to stop hub connection: {ex.Message}");
             }
         else
-            LogInfo($"No active connection found for {hubUrlToRemove}, proceeding to remove it from database.", LogLevel.Error);
+            LogInfo($"No active connection found for {hubUrlToRemove}, proceeding to remove it from database.",
+                LogLevel.Error);
 
         // Uanset om forbindelsen var aktiv eller ej, skal vi stadig fjerne URL'en fra databasen
         try
@@ -136,28 +140,6 @@ public class StreamHub
                 .AddMessagePackProtocol()
                 .Build();
 
-            // Handle StopWorker command asynchronously
-            hubConnection.On("StopWorker", async (WorkerOperationMessage message) =>
-            {
-                LogInfo($"Got StopWorker: {message.WorkerId}");
-                var commandResult = await _workerManager.StopWorkerAsync(message.WorkerId);
-                return commandResult;
-            });
-
-            hubConnection.On("StartWorker", async (WorkerOperationMessage message) =>
-            {
-                LogInfo($"Got StartWorker: {message.WorkerId}");
-                var commandResult = await _workerManager.StartWorkerAsync(message.WorkerId);
-                return commandResult;
-            });
-
-            // Handle RemoveWorker command asynchronously
-            hubConnection.On("RemoveWorker", async (WorkerOperationMessage message) =>
-            {
-                LogInfo($"Got RemoveWorker: {message.WorkerId}");
-                var commandResult = await _workerManager.RemoveWorkerAsync(message.WorkerId);
-                return commandResult;
-            });
 
             hubConnection.On("RemoveHubConnection", async (string hubUrlToRemove) =>
             {
@@ -166,41 +148,7 @@ public class StreamHub
                 return commandResult;
             });
 
-            hubConnection.On("ResetWatchdogEventCount", async (WorkerOperationMessage message) =>
-            {
-                LogInfo($"Got ResetWatchdogEventCount: {message.WorkerId}");
-                var commandResult = await _workerManager.ResetWatchdogEventCountAsync(message.WorkerId);
-                return commandResult;
-            });
-
-            hubConnection.On("EnableDisableWorker", async (WorkerEnableDisableMessage message) =>
-            {
-                LogInfo($"Got EnableDisableWorker: {message.WorkerId}, Enable: {message.Enable}");
-                var commandResult = await _workerManager.EnableDisableWorkerAsync(message.WorkerId, message.Enable);
-                return commandResult;
-            });
-
-            hubConnection.On("EditWorker", async (WorkerCreate workerEdit) =>
-            {
-                LogInfo($"Got EditWorker for WorkerId: {workerEdit.WorkerId} - {workerEdit.Name}");
-                var commandResult = await _workerManager.EditWorkerAsync(workerEdit.WorkerId, workerEdit.Name,
-                    workerEdit.Description, workerEdit.Command);
-                return commandResult;
-            });
-
-            // Add new SignalR handler for creating workers
-            hubConnection.On("CreateWorker", async (WorkerCreate workerCreate) =>
-            {
-                LogInfo($"Got CreateWorker: {workerCreate.Name}");
-                var workerService = await _workerManager.AddWorkerAsync(_engineId, workerCreate);
-                if (workerService == null)
-                {
-                    LogInfo($"Worker with ID {workerCreate.WorkerId} already exists.", LogLevel.Warning);
-                    return new CommandResult(false, $"Worker with ID {workerCreate.WorkerId} already exists.");
-                }
-                var result = await _workerManager.StartWorkerAsync(workerService.WorkerId);
-                return result;
-            });
+            _workerEventHandlers.AttachWorkerHandlers(hubConnection); // Vedhæft worker-specifikke handlers
 
             hubConnection.Reconnected += async _ =>
             {
@@ -357,7 +305,7 @@ public class StreamHub
 
             // Brug synkroniseringstidspunktet fra connectionInfo
             var syncTimestamp = connectionInfo.SyncTimestamp;
-            
+
             IHubClient hubClient = new HubClient(hubConnection);
 
 
@@ -394,7 +342,7 @@ public class StreamHub
 
     private void LogInfo(string message, LogLevel logLevel = LogLevel.Information)
     {
-        _loggerService.LogMessage(new EngineLogEntry()
+        _loggerService.LogMessage(new EngineLogEntry
         {
             Message = $"StreamHub: {message}",
             LogLevel = logLevel

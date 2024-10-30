@@ -14,7 +14,7 @@ namespace Engine.DependencyInjection
             var providerFactory = services.BuildServiceProvider().GetRequiredService<IEngineIdProviderFactory>();
             services.AddSingleton(providerFactory.CreateEngineIdProvider());
             services.AddSingleton<IMessageEnricher, MessageEnricher>();
-
+            services.AddSingleton<IHubWorkerEventHandlers, HubWorkerWorkerEventHandlers>();
             
             services.AddSingleton<MessageQueue>(provider => new MessageQueue(10));
             services.AddScoped<IEngineRepository, EngineRepository>();
