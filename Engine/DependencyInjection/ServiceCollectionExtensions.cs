@@ -13,6 +13,8 @@ namespace Engine.DependencyInjection
             services.AddSingleton<IEngineIdProviderFactory, EngineIdProviderFactory>();
             var providerFactory = services.BuildServiceProvider().GetRequiredService<IEngineIdProviderFactory>();
             services.AddSingleton(providerFactory.CreateEngineIdProvider());
+            services.AddSingleton<IMessageEnricher, MessageEnricher>();
+
             
             services.AddSingleton<MessageQueue>(provider => new MessageQueue(10));
             services.AddScoped<IEngineRepository, EngineRepository>();

@@ -20,6 +20,7 @@ public class StreamHub
     private readonly IWorkerManager _workerManager;
     private readonly Guid _engineId;
     private readonly ILoggerService _loggerService;
+    private readonly IMessageEnricher _messageEnricher;
 
     public StreamHub(
         ILoggerService loggerService, 
@@ -27,11 +28,12 @@ public class StreamHub
         ILogger<StreamHub> logger,
         ILoggerFactory loggerFactory,
         IWorkerManager workerManager,
-        IEngineService engineService
+        IEngineService engineService,
+        IMessageEnricher messageEnricher
         )
     {
         _loggerService = loggerService;
-
+        _messageEnricher = messageEnricher;
         _logger = logger;
         _globalMessageQueue = globalMessageQueue;
         _workerManager = workerManager;
@@ -373,9 +375,8 @@ public class StreamHub
 
                 if (hubConnection.State == HubConnectionState.Connected)
                 {
-                    EnrichMessage(baseMessage, sequenceNumber++);
+                    _messageEnricher.Enrich(baseMessage, _engineId);
                     await MessageRouter.RouteMessageToClientAsync(hubClient, baseMessage);
-
                 }
                 else
                 {
@@ -390,12 +391,7 @@ public class StreamHub
         }
     }
 
-    private void EnrichMessage(BaseMessage baseMessage, int sequenceNumber)
-    {
-        baseMessage.EngineId = _engineId;
-        baseMessage.SequenceNumber = sequenceNumber;
-    }
-    
+
     private void LogInfo(string message, LogLevel logLevel = LogLevel.Information)
     {
         _loggerService.LogMessage(new EngineLogEntry()
