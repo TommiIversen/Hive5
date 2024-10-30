@@ -15,14 +15,15 @@ namespace Engine.DependencyInjection
             services.AddSingleton(providerFactory.CreateEngineIdProvider());
             services.AddSingleton<IMessageEnricher, MessageEnricher>();
             services.AddSingleton<IHubWorkerEventHandlers, HubWorkerWorkerEventHandlers>();
-            
+
             services.AddSingleton<MessageQueue>(provider => new MessageQueue(10));
             services.AddScoped<IEngineRepository, EngineRepository>();
             services.AddSingleton<IEngineService, EngineService>();
-            
+
             services.AddSingleton<RepositoryFactory>();
+            services.AddSingleton<StreamerWatchdogFactory>();
             services.AddSingleton<INetworkInterfaceProvider, NetworkInterfaceProvider>();
-            
+
             services.AddHostedService<MetricsService>();
             services.AddSingleton<ILoggerService, LoggerService>();
             services.AddSingleton<IWorkerManager, WorkerManager>();

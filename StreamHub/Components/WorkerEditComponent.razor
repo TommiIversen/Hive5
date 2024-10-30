@@ -65,6 +65,19 @@
                 <input @bind="_workerDescription"
                        class="bg-gray-600 p-2 rounded text-white w-full"/>
             </div>
+            <div>
+                <label class="block text-gray-300">Worker ImgWatchdogEnabled</label>
+                <span class="text-white">@Worker.Worker.ImgWatchdogEnabled</span>
+            </div>
+            <div>
+                <label class="block text-gray-300">Worker ImgWatchdogInterval</label>
+                <span class="text-white">@Worker.Worker.ImgWatchdogInterval</span>
+            </div>
+            <div>
+                <label class="block text-gray-300">Worker ImgWatchdogGraceTime</label>
+                <span class="text-white">@Worker.Worker.ImgWatchdogGraceTime</span>
+            </div>
+
             <button @onclick="ApplyChangesAsync"
                     class="px-4 py-2 rounded w-full font-bold @GetButtonCss()"
                     disabled="@Worker.IsProcessing">
