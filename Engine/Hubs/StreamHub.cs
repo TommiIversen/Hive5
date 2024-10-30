@@ -4,31 +4,22 @@ using Engine.Services;
 using Engine.Utils;
 using Microsoft.AspNetCore.Http.Connections;
 using Microsoft.AspNetCore.SignalR.Client;
-using Serilog;
 
 namespace Engine.Hubs;
-
-
 
 public class StreamHub 
 {
     private readonly CancellationTokenSource _cancellationTokenSource = new();
-
     private readonly IEngineService _engineService;
-
     private readonly MessageQueue _globalMessageQueue;
     private readonly ConcurrentDictionary<string, HubConnectionInfo> _hubConnections = new();
-
-    // fild to init date time
     private readonly DateTime _initDateTime = DateTime.UtcNow;
-
     private readonly ILogger<StreamHub> _logger;
     private readonly ILoggerFactory _loggerFactory;
     private readonly int _maxQueueSize = 20;
     private readonly IWorkerManager _workerManager;
     private readonly Guid _engineId;
     private readonly ILoggerService _loggerService;
-
 
     public StreamHub(
         ILoggerService loggerService, 
@@ -364,6 +355,9 @@ public class StreamHub
 
             // Brug synkroniseringstidspunktet fra connectionInfo
             var syncTimestamp = connectionInfo.SyncTimestamp;
+            
+            IHubClient hubClient = new HubClient(hubConnection);
+
 
             while (!cancellationToken.IsCancellationRequested)
             {
@@ -380,7 +374,8 @@ public class StreamHub
                 if (hubConnection.State == HubConnectionState.Connected)
                 {
                     EnrichMessage(baseMessage, sequenceNumber++);
-                    await MessageRouter.RouteMessageToClientAsync(hubConnection, baseMessage);
+                    await MessageRouter.RouteMessageToClientAsync(hubClient, baseMessage);
+
                 }
                 else
                 {
@@ -394,7 +389,6 @@ public class StreamHub
             LogInfo($"No connection info found for {url}", LogLevel.Error);
         }
     }
-
 
     private void EnrichMessage(BaseMessage baseMessage, int sequenceNumber)
     {

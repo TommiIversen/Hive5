@@ -1,38 +1,37 @@
 ﻿using Common.DTOs;
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.AspNetCore.SignalR.Client;
 using Serilog;
 
 namespace Engine.Hubs;
 
 public static class MessageRouter
 {
-    public static async Task RouteMessageToClientAsync(HubConnection hubConnection, BaseMessage baseMessage)
+    public static async Task RouteMessageToClientAsync(IHubClient hubClient, BaseMessage baseMessage)
     {
         try
         {
             switch (baseMessage)
             {
                 case Metric metric:
-                    await hubConnection.InvokeAsync("ReceiveMetric", metric);
+                    await hubClient.InvokeAsync("ReceiveMetric", metric);
                     break;
                 case WorkerLogEntry log:
-                    await hubConnection.InvokeAsync("ReceiveWorkerLog", log);
+                    await hubClient.InvokeAsync("ReceiveWorkerLog", log);
                     break;
                 case EngineLogEntry engineLog:
-                    await hubConnection.InvokeAsync("ReceiveEngineLog", engineLog);
+                    await hubClient.InvokeAsync("ReceiveEngineLog", engineLog);
                     break;
                 case ImageData image:
-                    await hubConnection.InvokeAsync("ReceiveImage", image);
+                    await hubClient.InvokeAsync("ReceiveImage", image);
                     break;
                 case WorkerEvent workerEvent:
-                    await hubConnection.InvokeAsync("ReceiveWorkerEvent", workerEvent);
+                    await hubClient.InvokeAsync("ReceiveWorkerEvent", workerEvent);
                     break;
                 case EngineEvent engineEvent:
-                    await hubConnection.InvokeAsync("ReceiveEngineEvent", engineEvent);
+                    await hubClient.InvokeAsync("ReceiveEngineEvent", engineEvent);
                     break;
                 default:
-                    await HandleUnknownMessage(hubConnection, baseMessage);
+                    await HandleUnknownMessage(hubClient, baseMessage);
                     break;
             }
         }
@@ -40,7 +39,7 @@ public static class MessageRouter
         {
             Log.Warning(
                 $"Method does not exist for message type: {baseMessage.GetType().Name}, redirecting to HandleUnknownMessage.");
-            await HandleUnknownMessage(hubConnection, baseMessage); // Redirect til ukendt beskedhåndtering
+            await HandleUnknownMessage(hubClient, baseMessage); // Redirect til ukendt beskedhåndtering
         }
         catch (Exception ex)
         {
@@ -48,13 +47,13 @@ public static class MessageRouter
         }
     }
 
-    private static async Task HandleUnknownMessage(HubConnection hubConnection, BaseMessage baseMessage)
+    private static async Task HandleUnknownMessage(IHubClient hubClient, BaseMessage baseMessage)
     {
         var message = $"Unknown message type received: {baseMessage.GetType().Name}, WorkerId: {baseMessage.EngineId}";
         Log.Warning(message);
         try
         {
-            await hubConnection.InvokeAsync("ReceiveDeadLetter", message);
+            await hubClient.InvokeAsync("ReceiveDeadLetter", message);
         }
         catch (Exception ex)
         {
