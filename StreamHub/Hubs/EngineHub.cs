@@ -23,8 +23,6 @@ public class EngineHub(
         await frontendHandlers.RemoveHubUrl(hubUrl, engineId);
     }
     
-    
-    
     public async Task SubscribeToEngineLogs(Guid engineId)
     {
         await frontendHandlers.SubscribeToEngineLogs(engineId, Context.ConnectionId);
@@ -47,7 +45,6 @@ public class EngineHub(
     
 
     // Backend engine handlers
-
     public async Task<bool> RegisterEngineConnection(EngineBaseInfo engineInfo)
     {
         return await backendHandlers.RegisterEngineConnection(engineInfo, Context);
@@ -105,10 +102,6 @@ public class EngineHub(
         return Task.CompletedTask;
     }
     
-
-    
-    
-
 
     public override async Task OnConnectedAsync()
     {
