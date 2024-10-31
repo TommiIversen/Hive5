@@ -45,13 +45,16 @@
 
     private async Task CreateNewWorker()
     {
-        var workerCreate = new WorkerCreate
+        var workerCreate = new WorkerCreateAndEdit
         {
             EngineId = EngineId,
             WorkerId = _newWorkerId,
             Name = _newWorkerName,
             Description = _newWorkerDescription,
-            Command = _newWorkerCommand
+            Command = _newWorkerCommand,
+            ImgWatchdogEnabled = true,
+            ImgWatchdogGraceTime = TimeSpan.FromSeconds(10),
+            ImgWatchdogInterval = TimeSpan.FromSeconds(5)
         };
         var commandResult = await WorkerService.CreateWorkerAsync(workerCreate);
 

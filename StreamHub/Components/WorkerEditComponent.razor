@@ -5,51 +5,6 @@
 @inject WorkerService WorkerService
 @inject BlazorSignalRService SignalRService
 
-
-@code {
-    [Parameter] public Guid EngineId { get; set; }
-    [Parameter] public required WorkerViewModel Worker { get; init; }
-
-    private string? _workerName;
-    private string? _workerDescription;
-    private string? _workerCommand;
-
-    protected override void OnInitialized()
-    {
-        // Initialiser lokale variabler med de eksisterende værdier fra Worker
-        _workerName = Worker.Worker.Name;
-        _workerDescription = Worker.Worker.Description;
-        _workerCommand = Worker.Worker.Command;
-
-        var workerEventTopic = $"WorkerEvent-{EngineId}-{Worker.WorkerId}";
-        SignalRService.HubConnection.On<WorkerEvent>(workerEventTopic, async _ => { await InvokeAsync(StateHasChanged); });
-    }
-
-    private string GetButtonCss()
-    {
-        return Worker.IsProcessing
-            ? "bg-gray-400 text-gray-700 cursor-not-allowed"
-            : "bg-blue-600 hover:bg-blue-700 text-white";
-    }
-
-    private async Task ApplyChangesAsync()
-    {
-        // Opret et WorkerCreate objekt ud fra de redigerede værdier
-        var editWorker = new WorkerCreate
-        {
-            EngineId = EngineId,
-            WorkerId = Worker.Worker.WorkerId,
-            Name = _workerName ?? string.Empty,
-            Description = _workerDescription ?? string.Empty,
-            Command = _workerCommand ?? string.Empty
-        };
-
-        // Kald EditWorkerAsync metoden for at gemme ændringerne
-        var result = await WorkerService.EditWorkerAsync(editWorker);
-    }
-
-}
-
 <div class="px-2 mb-2">
     <div class="px-4 py-2 bg-gray-800 flex space-x-4 rounded-lg">
 
@@ -65,17 +20,35 @@
                 <input @bind="_workerDescription"
                        class="bg-gray-600 p-2 rounded text-white w-full"/>
             </div>
-            <div>
-                <label class="block text-gray-300">Worker ImgWatchdogEnabled</label>
-                <span class="text-white">@Worker.Worker.ImgWatchdogEnabled</span>
+            <!-- Watchdog Section -->
+            <div class="mt-4 text-gray-300 font-semibold">Watchdog</div>
+
+            <!-- ImgWatchdogEnabled Switch -->
+            <div class="flex items-center justify-between space-x-4">
+                <label class="text-gray-300">Enabled</label>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" class="sr-only peer" @bind="_imgWatchdogEnabled" />
+                    <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-600 
+                                dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700
+                                peer-checked:after:translate-x-full peer-checked:after:border-white 
+                                after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white 
+                                after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 
+                                after:transition-all peer-checked:bg-blue-600"></div>
+                </label>
             </div>
-            <div>
-                <label class="block text-gray-300">Worker ImgWatchdogInterval</label>
-                <span class="text-white">@Worker.Worker.ImgWatchdogInterval</span>
+
+            <!-- ImgWatchdogInterval Input -->
+            <div class="flex items-center justify-between space-x-4">
+                <label class="text-gray-300">Interval (sec)</label>
+                <input type="number" min="0" class="bg-gray-600 p-2 rounded text-white w-20 text-center"
+                       @bind="_imgWatchdogIntervalSeconds"/>
             </div>
-            <div>
-                <label class="block text-gray-300">Worker ImgWatchdogGraceTime</label>
-                <span class="text-white">@Worker.Worker.ImgWatchdogGraceTime</span>
+
+            <!-- ImgWatchdogGraceTime Input -->
+            <div class="flex items-center justify-between space-x-4">
+                <label class="text-gray-300">GraceTime (sec)</label>
+                <input type="number" min="0" class="bg-gray-600 p-2 rounded text-white w-20 text-center"
+                       @bind="_imgWatchdogGraceTimeSeconds"/>
             </div>
 
             <button @onclick="ApplyChangesAsync"
@@ -94,3 +67,59 @@
         </div>
     </div>
 </div>
+
+@code {
+    [Parameter] public Guid EngineId { get; set; }
+    [Parameter] public required WorkerViewModel Worker { get; init; }
+
+    private string? _workerName;
+    private string? _workerDescription;
+    private string? _workerCommand;
+    private bool _imgWatchdogEnabled;
+
+    // Fields for seconds conversion
+    private int _imgWatchdogGraceTimeSeconds;
+    private int _imgWatchdogIntervalSeconds;
+
+    protected override void OnInitialized()
+    {
+        // Initialiser lokale variabler med de eksisterende værdier fra Worker
+        _workerName = Worker.Worker.Name;
+        _workerDescription = Worker.Worker.Description;
+        _workerCommand = Worker.Worker.Command;
+
+        // Initialize the TimeSpan fields as seconds for UI binding
+        _imgWatchdogEnabled = Worker.Worker.ImgWatchdogEnabled;
+        _imgWatchdogGraceTimeSeconds = (int)Worker.Worker.ImgWatchdogGraceTime.TotalSeconds;
+        _imgWatchdogIntervalSeconds = (int)Worker.Worker.ImgWatchdogInterval.TotalSeconds;
+
+        var workerEventTopic = $"WorkerEvent-{EngineId}-{Worker.WorkerId}";
+        SignalRService.HubConnection.On<WorkerEvent>(workerEventTopic, async _ => { await InvokeAsync(StateHasChanged); });
+    }
+
+    private string GetButtonCss()
+    {
+        return Worker.IsProcessing
+            ? "bg-gray-400 text-gray-700 cursor-not-allowed"
+            : "bg-blue-600 hover:bg-blue-700 text-white";
+    }
+
+    private async Task ApplyChangesAsync()
+    {
+        // Opret et WorkerCreateAndEdit objekt med de opdaterede værdier
+        var editWorker = new WorkerCreateAndEdit
+        {
+            EngineId = EngineId,
+            WorkerId = Worker.Worker.WorkerId,
+            Name = _workerName ?? string.Empty,
+            Description = _workerDescription ?? string.Empty,
+            Command = _workerCommand ?? string.Empty,
+            ImgWatchdogEnabled = _imgWatchdogEnabled,
+            ImgWatchdogGraceTime = TimeSpan.FromSeconds(_imgWatchdogGraceTimeSeconds),
+            ImgWatchdogInterval = TimeSpan.FromSeconds(_imgWatchdogIntervalSeconds)
+        };
+
+        // Kald EditWorkerAsync metoden for at gemme ændringerne
+        var result = await WorkerService.EditWorkerAsync(editWorker);
+    }
+}

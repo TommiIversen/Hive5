@@ -54,14 +54,13 @@ namespace Engine.Hubs
                 return commandResult;
             });
 
-            hubConnection.On("EditWorker", async (WorkerCreate workerEdit) =>
+            hubConnection.On("EditWorker", async (WorkerCreateAndEdit workerEdit) =>
             {
-                var commandResult = await _workerManager.EditWorkerAsync(workerEdit.WorkerId, workerEdit.Name,
-                    workerEdit.Description, workerEdit.Command);
+                var commandResult = await _workerManager.EditWorkerAsync(workerEdit);
                 return commandResult;
             });
 
-            hubConnection.On("CreateWorker", async (WorkerCreate workerCreate) =>
+            hubConnection.On("CreateWorker", async (WorkerCreateAndEdit workerCreate) =>
             {
                 var workerService = await _workerManager.AddWorkerAsync(workerCreate.EngineId, workerCreate);
                 if (workerService == null)

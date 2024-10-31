@@ -13,6 +13,7 @@ public interface IWorkerService
     WorkerState GetState();
     string WorkerId { get;  }
     void SetGstCommand(string gstCommand);
+    void UpdateWatchdogSettingsAsync(bool isEnabled, TimeSpan interval, TimeSpan graceTime);
 
 }
 
@@ -73,7 +74,16 @@ public class WorkerService : IWorkerService
         _watchdogService.StartAsync();  // Start den nye Watchdog
     }
 
-    
+    public  void UpdateWatchdogSettingsAsync(bool isEnabled, TimeSpan interval, TimeSpan graceTime)
+    {
+
+        _watchdogService.SetEnabled(isEnabled);
+        _watchdogService.UpdateCheckInterval(interval);
+        _watchdogService.UpdateGraceTime(graceTime);
+    }
+
+
+
     public void SetGstCommand(string gstCommand)
     {
         _streamerService.GstCommand = gstCommand;

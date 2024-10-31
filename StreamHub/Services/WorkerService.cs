@@ -124,16 +124,16 @@ public class WorkerService(
         return await HandleWorkerOperationWithDataAsync("ResetWatchdogEventCount", message);
     }
 
-    public async Task<CommandResult> CreateWorkerAsync(WorkerCreate workerCreate)
+    public async Task<CommandResult> CreateWorkerAsync(WorkerCreateAndEdit workerCreateAndEdit)
     {
-        Console.WriteLine($"CreateWorkerAsync: {workerCreate.WorkerId}");
-        return await HandleWorkerOperationWithDataAsync("CreateWorker", workerCreate, setProcessing: false);
+        Console.WriteLine($"CreateWorkerAsync: {workerCreateAndEdit.WorkerId}");
+        return await HandleWorkerOperationWithDataAsync("CreateWorker", workerCreateAndEdit, setProcessing: false);
     }
 
 
-    public async Task<CommandResult> EditWorkerAsync(WorkerCreate workerCreate)
+    public async Task<CommandResult> EditWorkerAsync(WorkerCreateAndEdit workerCreateAndEdit)
     {
-        return await HandleWorkerOperationWithDataAsync("EditWorker", workerCreate, setProcessing: true);
+        return await HandleWorkerOperationWithDataAsync("EditWorker", workerCreateAndEdit, setProcessing: true);
     }
 
 
