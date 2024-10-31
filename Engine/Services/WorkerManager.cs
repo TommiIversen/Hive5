@@ -124,8 +124,7 @@ public class WorkerManager(
 
         // Tilføj worker til databasen asynkront
         await workerRepository.AddWorkerAsync(workerEntity);
-
-
+        
         IStreamerService streamerService = new FakeStreamerService
         {
             WorkerId = workerCreateAndEdit.WorkerId,
