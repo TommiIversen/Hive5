@@ -19,4 +19,6 @@ public class Metric : BaseMessage
     public required double TxUsagePercent { get; set; } // Tilføjet netværksbrug TX i procent
     public required string NetworkInterfaceName { get; set; } // Tilføjet netværksinterface-navn
     public required double LinkSpeedGbps { get; set; } // Tilføjet netværksinterface hastighed
+    public required DateTime MeasureTimestamp { get; set; }
+
 }

@@ -81,7 +81,8 @@ public class MetricsService : IHostedService, IDisposable
             RxUsagePercent = rxUsagePercent,
             TxUsagePercent = txUsagePercent,
             NetworkInterfaceName = interfaceName,
-            LinkSpeedGbps = linkSpeedGbps
+            LinkSpeedGbps = linkSpeedGbps,
+            MeasureTimestamp = DateTime.UtcNow
         };
 
         await _messageQueue.EnqueueMessageAsync(metric, cancellationToken);

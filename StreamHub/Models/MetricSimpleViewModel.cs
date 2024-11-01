@@ -12,7 +12,7 @@ public class MetricSimpleViewModel
         TxMbps = metric.TxMbps;
         RxUsagePercent = metric.RxUsagePercent;
         TxUsagePercent = metric.TxUsagePercent;
-        Timestamp = metric.Timestamp;
+        Timestamp = metric.MeasureTimestamp;
     }
 
     public double CPUUsage { get; set; }
