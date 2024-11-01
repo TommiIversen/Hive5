@@ -5,19 +5,11 @@ namespace Engine.Services;
 public interface IStreamerWatchdogService
 {
     event StreamerWatchdogService.AsyncEventHandler<string>? StateChanged;
-    
     Task StartAsync();
     Task StopAsync();
-    
     void UpdateGraceTime(TimeSpan newGraceTime);
-
     void UpdateCheckInterval(TimeSpan newCheckInterval);
-
     void SetEnabled(bool isEnabled);
-
-    void OnServiceLogGenerated(object? sender, WorkerLogEntry workerLog);
-
-    List<string> GetLogLines();
 }
 
 public class StreamerWatchdogService : IStreamerWatchdogService
@@ -25,17 +17,23 @@ public class StreamerWatchdogService : IStreamerWatchdogService
     private TimeSpan _checkInterval;
     private readonly Func<(bool, string)> _checkRestartCallback;
     private TimeSpan _graceTime;
-    private readonly List<string> _logLines = new();
-    private readonly int _maxLogLines = 20;
     private readonly Func<string, Task> _restartCallback;
     private readonly string _workerId;
     private CancellationTokenSource _cancellationTokenSource;
     private bool _running;
-    private bool _enabled = true; // Ny variabel til at slå Watchdog til/fra
+    private bool _enabled = true;
     private Task? _watchdogTask;
+    private readonly ILoggerService _loggerService;
+    public delegate Task AsyncEventHandler<TEventArgs>(object sender, TEventArgs e);
+    public event AsyncEventHandler<string>? StateChanged;
 
-    public StreamerWatchdogService(string workerId, Func<(bool, string)> checkRestartCallback, Func<string, Task> restartCallback,
-        TimeSpan graceTime, TimeSpan checkInterval)
+    public StreamerWatchdogService(
+        string workerId,
+        Func<(bool, string)> checkRestartCallback,
+        Func<string, Task> restartCallback,
+        TimeSpan graceTime,
+        TimeSpan checkInterval,
+        ILoggerService loggerService)
     {
         _workerId = workerId;
         _checkRestartCallback = checkRestartCallback;
@@ -43,10 +41,8 @@ public class StreamerWatchdogService : IStreamerWatchdogService
         _graceTime = graceTime;
         _checkInterval = checkInterval;
         _cancellationTokenSource = new CancellationTokenSource();
+        _loggerService = loggerService;
     }
-
-    public delegate Task AsyncEventHandler<TEventArgs>(object sender, TEventArgs e);
-    public event AsyncEventHandler<string>? StateChanged;
 
     public async Task StartAsync()
     {
@@ -72,50 +68,45 @@ public class StreamerWatchdogService : IStreamerWatchdogService
             }
             catch (OperationCanceledException)
             {
-                AddLog("Watchdog task was cancelled.");
+                LogInfo("Watchdog task was cancelled.");
             }
         }
 
-        AddLog($"RunnerWatchdog: {_workerId} stopped.");
+        LogInfo($"RunnerWatchdog: {_workerId} stopped.");
     }
 
-    // Metode til at ændre gracetiden under kørsel
     public void UpdateGraceTime(TimeSpan newGraceTime)
     {
         _graceTime = newGraceTime;
-        AddLog($"Grace time updated to {_graceTime}");
+        LogInfo($"Grace time updated to {_graceTime}");
     }
 
-    // Metode til at ændre check-intervallet under kørsel
     public void UpdateCheckInterval(TimeSpan newCheckInterval)
     {
         _checkInterval = newCheckInterval;
-        AddLog($"Check interval updated to {_checkInterval}");
+        LogInfo($"Check interval updated to {_checkInterval}");
     }
 
-    // Metode til at slå Watchdog til eller fra
     public void SetEnabled(bool isEnabled)
     {
         _enabled = isEnabled;
-        AddLog($"Watchdog enabled set to {_enabled}");
+        LogInfo($"Watchdog enabled set to {_enabled}");
     }
 
     private async Task RunAsync(CancellationToken cancellationToken)
     {
-        AddLog($"RunnerWatchdog: {_workerId} started with a grace time of {_graceTime}.");
-
-        // Initial grace time before starting checks
+        LogInfo($"RunnerWatchdog: {_workerId} started with a grace time of {_graceTime}.");
         try
         {
             await Task.Delay(_graceTime, cancellationToken);
         }
         catch (TaskCanceledException)
         {
-            AddLog("Watchdog task was cancelled during grace time.");
+            LogInfo("Watchdog task was cancelled during grace time.");
             return;
         }
 
-        AddLog($"RunnerWatchdog: {_workerId} finished grace time and is now monitoring every {_checkInterval}.");
+        LogInfo($"RunnerWatchdog: {_workerId} finished grace time and is now monitoring every {_checkInterval}.");
 
         while (!cancellationToken.IsCancellationRequested)
         {
@@ -125,26 +116,26 @@ public class StreamerWatchdogService : IStreamerWatchdogService
 
                 if (!_enabled) 
                 {
-                    AddLog("Watchdog check skipped because it is disabled.");
+                    LogInfo("Watchdog check skipped because it is disabled.");
                     continue;
                 }
 
                 var (needRestart, message) = _checkRestartCallback();
                 if (needRestart)
                 {
-                    AddLog($"Watchdog detected a need for restart: {message}");
-                    AddLog("Calling _restartCallback...");
+                    LogInfo($"Watchdog detected a need for restart: {message}");
+                    LogInfo("Calling _restartCallback...");
                     await ExecuteRestartCallbackAsync(message);
-                    AddLog("Finished _restartCallback.");
+                    LogInfo("Finished _restartCallback.");
                 }
                 else
                 {
-                    AddLog("Watchdog check passed.");
+                    LogInfo("Watchdog check passed.");
                 }
             }
             catch (TaskCanceledException)
             {
-                AddLog("Watchdog task was cancelled.");
+                LogInfo("Watchdog task was cancelled.");
                 break;
             }
         }
@@ -159,7 +150,7 @@ public class StreamerWatchdogService : IStreamerWatchdogService
         }
         catch (Exception ex)
         {
-            AddLog($"Error during _restartCallback: {ex.Message}");
+            LogInfo($"Error during _restartCallback: {ex.Message}", LogLevel.Critical);
         }
     }
 
@@ -182,19 +173,14 @@ public class StreamerWatchdogService : IStreamerWatchdogService
         }
     }
 
-    public void OnServiceLogGenerated(object? sender, WorkerLogEntry workerLog)
+    private void LogInfo(string message, LogLevel logLevel = LogLevel.Information)
     {
-        AddLog($"{workerLog.Timestamp}: {workerLog.Message}");
+        _loggerService.LogMessage(new WorkerLogEntry
+        {
+            WorkerId = _workerId,
+            Message = $"WatchDog: {message}",
+            LogLevel = logLevel
+        });
     }
 
-    private void AddLog(string message)
-    {
-        _logLines.Add($"{DateTime.UtcNow}: {message}");
-        if (_logLines.Count > _maxLogLines) _logLines.RemoveAt(0);
-    }
-
-    public List<string> GetLogLines()
-    {
-        return new List<string>(_logLines);
-    }
 }

@@ -58,11 +58,9 @@ public class WorkerService : IWorkerService
             WatchdogRestartCallback,
             config.ImgWatchdogGraceTime,
             config.ImgWatchdogInterval);
-        
-        _watchdogService.SetEnabled(config.ImgWatchdogEnabled); // Aktiver eller deaktiver Watchdog baseret på konfiguration
-
+        _watchdogService.SetEnabled(config.ImgWatchdogEnabled);
         _watchdogService.StateChanged += async (sender, message) => await OnWatchdogStateChanged(sender, message);
-        _streamerService.LogGenerated += _watchdogService.OnServiceLogGenerated;
+
         _desiredState = WorkerState.Idle;
     }
     public string WorkerId { set; get; }
