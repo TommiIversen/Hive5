@@ -2,19 +2,6 @@
 
 namespace Engine.Utils;
 
-public interface INetworkInterfaceProvider
-{
-    NetworkInterface[] GetAllNetworkInterfaces();
-}
-
-public class NetworkInterfaceProvider : INetworkInterfaceProvider
-{
-    public NetworkInterface[] GetAllNetworkInterfaces()
-    {
-        return NetworkInterface.GetAllNetworkInterfaces();
-    }
-}
-
 public class NetworkUsageMonitor(INetworkInterfaceProvider networkInterfaceProvider)
 {
     private readonly Dictionary<string, long> _lastBytesReceived = new();
