@@ -1,6 +1,7 @@
 ﻿using Engine.DAL.Repositories;
 using Engine.Database;
 using Engine.Hubs;
+using Engine.Interfaces;
 using Engine.Services;
 using Engine.Utils;
 using Microsoft.Extensions.DependencyInjection;
@@ -25,7 +26,9 @@ namespace Engine.DependencyInjection
 
                 services.AddSingleton<IMessageEnricher, MessageEnricher>();
                 services.AddSingleton<IHubWorkerEventHandlers, HubWorkerWorkerEventHandlers>();
-                services.AddSingleton<MessageQueue>(provider => new MessageQueue(10));
+//                services.AddSingleton<IMessageQueue, MessageQueue>(provider => new MessageQueue(10));
+                services.AddSingleton<IMessageQueue>(provider => new MessageQueue(10)); // Sørg for at bruge konstruktøren korrekt
+
                 services.AddScoped<IEngineRepository, EngineRepository>();
                 services.AddSingleton<IEngineService, EngineService>();
                 services.AddSingleton<StreamerWatchdogFactory>();

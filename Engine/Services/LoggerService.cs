@@ -1,25 +1,36 @@
-﻿using System.Collections.Concurrent;
+﻿
+using System.Collections.Concurrent;
+
 using Common.DTOs;
-using Serilog;
+using Engine.Interfaces;
+using ILogger = Serilog.ILogger;
 
 namespace Engine.Services
 {
+    
     public interface ILoggerService
     {
         void LogMessage(BaseLogEntry logEntry);
-        void SetEngineId(Guid engineId); // Ny metode til dynamisk at opdatere EngineId
+        void SetEngineId(Guid engineId);
+        IEnumerable<BaseLogEntry> GetLastWorkerLogs(string workerId);
+        void DeleteWorkerLogs(string workerId);
     }
-
+    
     public class LoggerService : ILoggerService
     {
-        private Guid _engineId = Guid.Empty; // Initialiseret til tom GUID
-        private readonly MessageQueue _messageQueue;
+        private Guid _engineId = Guid.Empty;
+        private readonly IMessageQueue _messageQueue;
         private readonly ConcurrentDictionary<string, int> _workerLogCounters = new();
         private int _engineLogCounter;
 
-        public LoggerService(MessageQueue messageQueue)
+        // Log-cache for de sidste 20 logs pr. worker
+        private readonly ConcurrentDictionary<string, ConcurrentQueue<BaseLogEntry>> _workerLogs = new();
+        private readonly ILogger _logger;
+
+        public LoggerService(IMessageQueue messageQueue, ILogger logger)
         {
             _messageQueue = messageQueue;
+            _logger = logger;
         }
 
         public void SetEngineId(Guid engineId)
@@ -31,7 +42,7 @@ namespace Engine.Services
         {
             if (_engineId == Guid.Empty)
             {
-                Log.Warning("EngineId er ikke sat. Logning uden EngineId.");
+                _logger.Warning("EngineId er ikke sat. Logning uden EngineId.");
             }
             else
             {
@@ -53,6 +64,16 @@ namespace Engine.Services
                 } while (!_workerLogCounters.TryUpdate(workerLogEntry.WorkerId, newCount, currentCount));
 
                 workerLogEntry.LogSequenceNumber = newCount;
+
+                // Tilføj loggen til worker-log-cachen
+                var logQueue = _workerLogs.GetOrAdd(workerLogEntry.WorkerId, new ConcurrentQueue<BaseLogEntry>());
+                logQueue.Enqueue(workerLogEntry);
+
+                // Bevar kun de sidste 20 logs
+                while (logQueue.Count > 20)
+                {
+                    logQueue.TryDequeue(out _);
+                }
             }
             else if (logEntry is EngineLogEntry)
             {
@@ -63,6 +84,22 @@ namespace Engine.Services
             LogToSerilog(logEntry);
         }
 
+        public IEnumerable<BaseLogEntry> GetLastWorkerLogs(string workerId)
+        {
+            if (_workerLogs.TryGetValue(workerId, out var logQueue))
+            {
+                return logQueue.ToArray();
+            }
+
+            return Array.Empty<BaseLogEntry>();
+        }
+
+        public void DeleteWorkerLogs(string workerId)
+        {
+            _workerLogCounters.TryRemove(workerId, out _);
+            _workerLogs.TryRemove(workerId, out _);
+        }
+
         private void LogToSerilog(BaseLogEntry logEntry)
         {
             var logMessage = $"{logEntry.GetType().Name} - Message: {logEntry.Message}";
@@ -70,26 +107,26 @@ namespace Engine.Services
             switch (logEntry.LogLevel)
             {
                 case LogLevel.Trace:
-                    Log.Verbose(logMessage);
+                    _logger.Verbose(logMessage);
                     break;
                 case LogLevel.Debug:
-                    Log.Debug(logMessage);
+                    _logger.Debug(logMessage);
                     break;
                 case LogLevel.Information:
-                    Log.Information(logMessage);
+                    _logger.Information(logMessage);
                     break;
                 case LogLevel.Warning:
-                    Log.Warning(logMessage);
+                    _logger.Warning(logMessage);
                     break;
                 case LogLevel.Error:
-                    Log.Error(logMessage);
+                    _logger.Error(logMessage);
                     break;
                 case LogLevel.Critical:
-                    Log.Fatal(logMessage);
+                    _logger.Fatal(logMessage);
                     break;
                 case LogLevel.None:
                 default:
-                    Log.Information(logMessage);
+                    _logger.Information(logMessage);
                     break;
             }
         }

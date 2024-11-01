@@ -1,5 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using Common.DTOs;
+using Engine.Interfaces;
 using Engine.Services;
 using Engine.Utils;
 using Microsoft.AspNetCore.Http.Connections;
@@ -12,7 +13,7 @@ public class StreamHub
     private readonly CancellationTokenSource _cancellationTokenSource = new();
     private readonly Guid _engineId;
     private readonly IEngineService _engineService;
-    private readonly MessageQueue _globalMessageQueue;
+    private readonly IMessageQueue _globalMessageQueue;
     private readonly ConcurrentDictionary<string, HubConnectionInfo> _hubConnections = new();
     private readonly ILoggerFactory _loggerFactory;
     private readonly ILoggerService _loggerService;
@@ -23,7 +24,7 @@ public class StreamHub
 
 
     public StreamHub(ILoggerService loggerService,
-        MessageQueue globalMessageQueue,
+        IMessageQueue globalMessageQueue,
         ILoggerFactory loggerFactory,
         IWorkerManager workerManager,
         IEngineService engineService,

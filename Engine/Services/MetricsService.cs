@@ -1,9 +1,10 @@
 ﻿using Common.DTOs;
+using Engine.Interfaces;
 using Engine.Utils;
 
 namespace Engine.Services;
 
-public class MetricsService(MessageQueue messageQueue, INetworkInterfaceProvider networkInterfaceProvider)
+public class MetricsService(IMessageQueue messageQueue, INetworkInterfaceProvider networkInterfaceProvider)
     : IHostedService, IDisposable
 {
     private readonly CancellationTokenSource _cancellationTokenSource = new();

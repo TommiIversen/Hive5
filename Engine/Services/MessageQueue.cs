@@ -1,11 +1,12 @@
 ﻿using System.Collections.Concurrent;
 using System.Threading.Channels;
 using Common.DTOs;
+using Engine.Interfaces;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Engine.Services;
 
-public class MessageQueue
+public class MessageQueue: IMessageQueue
 {
     private readonly Channel<BaseMessage> _messageChannel;
 
@@ -42,6 +43,11 @@ public class MessageQueue
     {
         // Returnér antallet af beskeder i køen
         return _messageChannel.Reader.Count;
+    }
+
+    public void EnqueueMessage(BaseLogEntry logEntry)
+    {
+        throw new NotImplementedException();
     }
 }
 

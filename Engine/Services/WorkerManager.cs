@@ -25,7 +25,7 @@ public interface IWorkerManager
 }
 
 public class WorkerManager(
-    MessageQueue messageQueue,
+    IMessageQueue messageQueue,
     RepositoryFactory repositoryFactory,
     ILoggerService loggerService,
     StreamerWatchdogFactory watchdogFactory)

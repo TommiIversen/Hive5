@@ -20,7 +20,7 @@ public interface IWorkerService
 public class WorkerService : IWorkerService
 {
     private readonly ILoggerService _loggerService;
-    private readonly MessageQueue _messageQueue;
+    private readonly IMessageQueue _messageQueue;
     private readonly RepositoryFactory _repositoryFactory;
     private readonly IStreamerService _streamerService;
     private IStreamerWatchdogService _watchdogService;
@@ -30,7 +30,7 @@ public class WorkerService : IWorkerService
     
     public WorkerService(
         ILoggerService loggerService, 
-        MessageQueue messageQueue, 
+        IMessageQueue messageQueue, 
         IStreamerService streamerService,
         RepositoryFactory repositoryFactory,
         StreamerWatchdogFactory watchdogFactory,
