@@ -10,23 +10,23 @@
         <ul>
             <li class="flex justify-between">
                 <span class="font-semibold">IP Address:</span>
-                <span>@(string.IsNullOrEmpty(Engine.IpAddress) ? "N/A" : Engine.IpAddress)</span>
+                <span>@(string.IsNullOrEmpty(Engine.ConnectionInfo.IpAddress) ? "N/A" : Engine.ConnectionInfo.IpAddress)</span>
             </li>
             <li class="flex justify-between">
                 <span class="font-semibold">Port:</span>
-                <span>@(Engine.Port.HasValue ? Engine.Port.Value.ToString() : "N/A")</span>
+                <span>@(Engine.ConnectionInfo.Port.HasValue ? Engine.ConnectionInfo.Port.Value.ToString() : "N/A")</span>
             </li>
             <li class="flex justify-between">
                 <span class="font-semibold">Transport Type:</span>
-                <span>@(string.IsNullOrEmpty(Engine.TransportType) ? "N/A" : Engine.TransportType)</span>
+                <span>@(string.IsNullOrEmpty(Engine.ConnectionInfo.TransportType) ? "N/A" : Engine.ConnectionInfo.TransportType)</span>
             </li>
             <li class="flex justify-between">
                 <span class="font-semibold">Online Since:</span>
-                <span>@(Engine.OnlineSince.HasValue ? Engine.OnlineSince.Value.ToString("g") : "N/A")</span>
+                <span>@(Engine.ConnectionInfo.OnlineSince.HasValue ? Engine.ConnectionInfo.OnlineSince.Value.ToString("g") : "N/A")</span>
             </li>
             <li class="flex justify-between">
                 <span class="font-semibold">Uptime:</span>
-                <span>@(Engine.Uptime.HasValue ? Engine.Uptime.Value.ToString(@"dd\.hh\:mm\:ss") : "N/A")</span>
+                <span>@(Engine.ConnectionInfo.Uptime.HasValue ? Engine.ConnectionInfo.Uptime.Value.ToString(@"dd\.hh\:mm\:ss") : "N/A")</span>
             </li>
             <li class="flex justify-between">
                 <span class="font-semibold">EngineId:</span>
@@ -35,7 +35,7 @@
 
             <li class="flex justify-between">
                 <span class="font-semibold">LocalPort:</span>
-                <span>@Engine.LocalPort</span>
+                <span>@Engine.ConnectionInfo.LocalPort</span>
             </li>
 
             <li class="flex justify-between">

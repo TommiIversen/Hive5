@@ -32,17 +32,17 @@ public class FrontendHandlers
 
         // Tjek om engine allerede er forbundet
         if (_engineManager.TryGetEngine(engineId, out var existingEngine) &&
-            string.IsNullOrEmpty(existingEngine?.ConnectionId))
+            string.IsNullOrEmpty(existingEngine?.ConnectionInfo.ConnectionId))
             Console.WriteLine("Engine is not connected.");
         //return new CommandResult(false, "Engine is not connected");
         using var timeoutCts = new CancellationTokenSource(5000);
         using var linkedCts =
             CancellationTokenSource.CreateLinkedTokenSource(_cancellationService.Token, timeoutCts.Token);
 
-        if (existingEngine is {ConnectionId: not null})
+        if (existingEngine is {ConnectionInfo.ConnectionId: not null})
         {
             CommandResult result;
-            result = await _hubContext.Clients.Client(existingEngine.ConnectionId)
+            result = await _hubContext.Clients.Client(existingEngine.ConnectionInfo.ConnectionId)
                 .InvokeAsync<CommandResult>("RemoveHubConnection", hubUrl, linkedCts.Token);
             Console.WriteLine($"RemoveHubUrlRemoveHubUrlRemoveHubUrlRemoveHubUrl Result: {result.Message}");
         }

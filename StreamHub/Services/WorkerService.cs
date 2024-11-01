@@ -21,7 +21,7 @@ public class WorkerService(
             return new CommandResult(false, msg);
         }
 
-        if (engine?.ConnectionId == null)
+        if (engine?.ConnectionInfo.ConnectionId == null)
         {
             msg = $"{operation}: Engine {data.EngineId} not connected";
             Console.WriteLine(msg);
@@ -46,7 +46,7 @@ public class WorkerService(
         try
         {
             Console.WriteLine($"Forwarding {operation} request with data on engine {data.EngineId}");
-            result = await hubContext.Clients.Client(engine.ConnectionId)
+            result = await hubContext.Clients.Client(engine.ConnectionInfo.ConnectionId)
                 .InvokeAsync<CommandResult>(operation, data, linkedCts.Token);
 
             msg = $"{result.Message} Time: {DateTime.Now}";

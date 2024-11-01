@@ -85,10 +85,10 @@ public class EngineManager
 
     public bool RemoveConnection(string connectionId)
     {
-        var engine = _engines.Values.FirstOrDefault(e => e.ConnectionId == connectionId);
+        var engine = _engines.Values.FirstOrDefault(e => e.ConnectionInfo.ConnectionId == connectionId);
         if (engine == null) return false;
 
-        engine.ConnectionId = "";
+        engine.ConnectionInfo.ConnectionId = "";
         return true;
     }
 

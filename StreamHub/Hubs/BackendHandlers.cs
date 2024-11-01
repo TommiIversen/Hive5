@@ -24,7 +24,7 @@ public class BackendHandlers
         // Tjek om engine allerede er forbundet
         if (_engineManager.TryGetEngine(engineInfo.EngineId, out var existingEngine) &&
             existingEngine != null &&
-            !string.IsNullOrEmpty(existingEngine.ConnectionId))
+            !string.IsNullOrEmpty(existingEngine.ConnectionInfo.ConnectionId))
         {
             Console.WriteLine(
                 $"RegisterEngineConnection Engine {engineInfo.EngineId} is already connected. Rejecting new connection.");
@@ -35,21 +35,21 @@ public class BackendHandlers
 
         // Tilføj eller opdater engine og sæt forbindelses ID
         var engine = _engineManager.GetOrAddEngine(engineInfo);
-        engine.ConnectionId = context.ConnectionId;
-        engine.OnlineSince = DateTime.UtcNow;
+        engine.ConnectionInfo.ConnectionId = context.ConnectionId;
+        engine.ConnectionInfo.OnlineSince = DateTime.UtcNow;
         engine.BaseInfo = engineInfo;
 
         // Få flere oplysninger om forbindelsen
         var httpContext = context.GetHttpContext();
         if (httpContext != null)
         {
-            engine.IpAddress = httpContext.Connection.RemoteIpAddress?.ToString();
-            engine.Port = httpContext.Connection.RemotePort;
-            engine.LocalPort = httpContext.Connection.LocalPort;
-            engine.TransportType = context.Features.Get<IHttpTransportFeature>()?.TransportType.ToString();
+            engine.ConnectionInfo.IpAddress = httpContext.Connection.RemoteIpAddress?.ToString();
+            engine.ConnectionInfo.Port = httpContext.Connection.RemotePort;
+            engine.ConnectionInfo.LocalPort = httpContext.Connection.LocalPort;
+            engine.ConnectionInfo.TransportType = context.Features.Get<IHttpTransportFeature>()?.TransportType.ToString();
 
             Console.WriteLine(
-                $"Connected from IP: {engine.IpAddress}, Port: {engine.Port}, Transport: {engine.TransportType}, Time: {engine.OnlineSince}");
+                $"Connected from IP: {engine.ConnectionInfo.IpAddress}, Port: {engine.ConnectionInfo.Port}, Transport: {engine.ConnectionInfo.TransportType}, Time: {engine.ConnectionInfo.OnlineSince}");
         }
 
         // Tilføj engine til backendClients-gruppen efter godkendelse

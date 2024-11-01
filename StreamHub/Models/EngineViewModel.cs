@@ -3,29 +3,26 @@ using Common.DTOs;
 
 namespace StreamHub.Models;
 
+public class ConnectionInfo
+{
+    public string? ConnectionId { get; set; }
+    public string? IpAddress { get; set; }
+    public int? Port { get; set; }
+    public string? TransportType { get; set; }
+    public int LocalPort { get; set; }
+    public DateTime? OnlineSince { get; set; }
+    public TimeSpan? Uptime => OnlineSince.HasValue ? DateTime.UtcNow - OnlineSince.Value : null;
+}
+
 public class EngineViewModel
 {
     public required EngineBaseInfo BaseInfo { get; set; }
     public SystemInfoModel? SystemInfo { get; set; }
-    public string? ConnectionId { get; set; }
     public Metric? LastMetric { get; set; }
     public ConcurrentDictionary<string, WorkerViewModel> Workers { get; } = new();
-
     public ConcurrentQueue<EngineLogEntry> EngineLogMessages { get; set; } = new();
-
-
-    // New fields
-    public string? IpAddress { get; set; }
-    public int? Port { get; set; }
-    public string? TransportType { get; set; }
-    public DateTime? OnlineSince { get; set; }
-
-    public TimeSpan? Uptime => OnlineSince.HasValue ? DateTime.UtcNow - OnlineSince.Value : null;
-
-
+    public ConnectionInfo ConnectionInfo { get; set; } = new();
     public ConcurrentQueue<MetricSimpleViewModel> MetricsQueue { get; set; } = new();
-    public int LocalPort { get; set; }
-
 
     public bool AddWorkerLog(string workerId, WorkerLogEntry message)
     {
@@ -40,8 +37,12 @@ public class EngineViewModel
         EngineLogMessages.Enqueue(message);
         if (EngineLogMessages.Count > 50) EngineLogMessages.TryDequeue(out _); // Remove the oldest message
     }
-
-
+    
+    public void ClearEngineLogs()
+    {
+        EngineLogMessages = new ConcurrentQueue<EngineLogEntry>();
+    }
+    
     public void AddMetric(Metric metric)
     {
         var simplifiedMetric = new MetricSimpleViewModel(metric);

@@ -2,6 +2,7 @@
 @using System.Text
 @using Common.DTOs
 @using Microsoft.AspNetCore.SignalR.Client
+@using StreamHub.Models
 @using StreamHub.Services
 @inject BlazorSignalRService SignalRService
 @inject IJSRuntime JsRuntime
@@ -11,46 +12,52 @@
 <ExpandablePanel Title="Engine Logs">
     <button
         @onclick="TogglePauseRendering"
-        class="px-4 py-2 rounded 
+        class="px-2 py-1 text-xs rounded 
         @(_pauseRendering ? "bg-red-500 text-white hover:bg-red-700" : "bg-green-500 text-white hover:bg-green-700")">
-        @(_pauseRendering ? "Resume Log Updates" : "Pause Log Updates")
+        @(_pauseRendering ? "Resume" : "Pause")
     </button>
 
     <!-- Download Logs Button -->
     <button
         @onclick="DownloadLogs"
-        class="px-4 py-2 rounded bg-indigo-500 text-white hover:bg-indigo-700">
-        Download Logs
+        class="px-2 py-1 text-xs rounded bg-indigo-500 text-white hover:bg-indigo-700">
+        Download
     </button>
-    <div class="w-60">
 
-    </div>
-    @if (LogMessages.Any())
+    <!-- Clear Logs Button -->
+    <button
+        @onclick="Engine.ClearEngineLogs"
+        class="px-2 py-1 text-xs rounded bg-red-500 text-white hover:bg-red-700">
+        Clear
+    </button>
+
+
+    <!-- Log Entries -->
+    @if (Engine.EngineLogMessages.Any())
     {
-        <div style="height: 200px; overflow-y: auto; resize: vertical;" class="w-100">
-            <Virtualize Items="LogMessages.TakeLast(100).Reverse().ToList()" Context="logMessage" ItemSize="10">
-                <div class="log-entry">
-                    <div class="@GetLogLevelClass(logMessage.LogLevel)">
-                        @if (IsOutOfSequence(logMessage))
-                        {
-                            <span class="text-warning">&#9888;</span>
-                        }
-                        @logMessage.LogSequenceNumber: @logMessage.Timestamp : @logMessage.LogLevel : @logMessage.Message
-                    </div>
+    <div style="height: 200px; overflow-y: auto; resize: vertical;" class="w-100">
+        <Virtualize Items="Engine.EngineLogMessages.TakeLast(100).Reverse().ToList()" Context="logMessage" ItemSize="10">
+            <div class="log-entry mb-2">
+                <div class="@GetLogLevelClass(logMessage.LogLevel)">
+                    @logMessage.Timestamp : @logMessage.LogLevel
                 </div>
-            </Virtualize>
-        </div>
+                <!-- Display log message below -->
+                <div class="text-sm pl-4">
+                    @logMessage.Message
+                </div>
+            </div>
+        </Virtualize>
+    </div>
     }
     else
     {
-        <p>Ingen logbeskeder.</p>
+    <p>Ingen logbeskeder.</p>
     }
 
 </ExpandablePanel>
 
 @code {
-    [Parameter] public ConcurrentQueue<EngineLogEntry> LogMessages { get; set; } = new();
-    [Parameter] public required Guid EngineId { get; init; }
+    [Parameter] public required EngineViewModel Engine { get; init; }
 
     private bool _isSubscribed = false;
     private bool _pauseRendering = false;
@@ -116,7 +123,7 @@
     {
         if (!_isSubscribed)
         {
-            await SignalRService.HubConnection.SendAsync("SubscribeToEngineLogs", EngineId);
+            await SignalRService.HubConnection.SendAsync("SubscribeToEngineLogs", Engine.BaseInfo.EngineId);
             _isSubscribed = true;
         }
     }
@@ -125,7 +132,7 @@
     {
         if (_isSubscribed)
         {
-            await SignalRService.HubConnection.SendAsync("UnsubscribeFromEngineLogs", EngineId);
+            await SignalRService.HubConnection.SendAsync("UnsubscribeFromEngineLogs", Engine.BaseInfo.EngineId);
             _isSubscribed = false;
         }
     }
@@ -145,15 +152,15 @@
     private async void DownloadLogs()
     {
         var logContent = new StringBuilder();
-        logContent.AppendLine($"EngineId: {EngineId}");
+        logContent.AppendLine($"EngineId: {Engine.BaseInfo.EngineId}");
         logContent.AppendLine("Timestamp,LogLevel,Message");
 
-        foreach (var logEntry in LogMessages)
+        foreach (var logEntry in Engine.EngineLogMessages)
         {
             logContent.AppendLine($"{logEntry.Timestamp},{logEntry.LogLevel},{logEntry.Message}");
         }
 
-        var logFileName = $"logs_{EngineId}_{DateTime.UtcNow:yyyyMMdd_HHmmss}.txt";
+        var logFileName = $"logs_{Engine.BaseInfo.EngineId}_{DateTime.UtcNow:yyyyMMdd_HHmmss}.txt";
         await TriggerFileDownload(logFileName, logContent.ToString());
     }
 
