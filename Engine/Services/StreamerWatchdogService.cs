@@ -52,6 +52,16 @@ public class StreamerWatchdogService : IStreamerWatchdogService
         _cancellationTokenSource = new CancellationTokenSource();
         _watchdogTask = RunAsync(_cancellationTokenSource.Token);
     }
+    
+    // Offentlig egenskab for at teste om watchdoggen kører
+    public bool IsRunning => _running;
+
+    // Offentlig egenskab for at tilgå grace time
+    public TimeSpan GraceTime => _graceTime;
+
+    // Offentlig egenskab for at tilgå check interval
+    public TimeSpan CheckInterval => _checkInterval;
+
 
     public async Task StopAsync()
     {
