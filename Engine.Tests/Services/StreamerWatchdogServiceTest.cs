@@ -1,20 +1,21 @@
-﻿using Moq;
-using System;
+﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Engine.Services;
+using Moq;
 using Xunit;
+
+namespace Engine.Tests.Services;
 
 public class StreamerWatchdogServiceTests
 {
-    private readonly Mock<ILoggerService> _mockLoggerService;
     private readonly Mock<Func<(bool, string)>> _mockCheckRestartCallback;
     private readonly Mock<Func<string, Task>> _mockRestartCallback;
     private readonly StreamerWatchdogService _watchdogService;
 
     public StreamerWatchdogServiceTests()
     {
-        _mockLoggerService = new Mock<ILoggerService>();
+        var mockLoggerService = new Mock<ILoggerService>();
         _mockCheckRestartCallback = new Mock<Func<(bool, string)>>();
         _mockRestartCallback = new Mock<Func<string, Task>>();
         
@@ -25,7 +26,7 @@ public class StreamerWatchdogServiceTests
             _mockRestartCallback.Object,
             TimeSpan.FromMilliseconds(100),  // Grace time reduceret til 100 ms
             TimeSpan.FromMilliseconds(50),   // Check interval reduceret til 50 ms
-            _mockLoggerService.Object);
+            mockLoggerService.Object);
     }
 
     [Fact]
