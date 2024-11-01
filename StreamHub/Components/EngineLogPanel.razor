@@ -1,5 +1,4 @@
-﻿@using System.Collections.Concurrent
-@using System.Text
+﻿@using System.Text
 @using Common.DTOs
 @using Microsoft.AspNetCore.SignalR.Client
 @using StreamHub.Models
@@ -35,23 +34,23 @@
     <!-- Log Entries -->
     @if (Engine.EngineLogMessages.Any())
     {
-    <div style="height: 200px; overflow-y: auto; resize: vertical;" class="w-100">
-        <Virtualize Items="Engine.EngineLogMessages.TakeLast(100).Reverse().ToList()" Context="logMessage" ItemSize="10">
-            <div class="log-entry mb-2">
-                <div class="@GetLogLevelClass(logMessage.LogLevel)">
-                    @logMessage.Timestamp : @logMessage.LogLevel
+        <div style="height: 200px; overflow-y: auto; resize: vertical;" class="w-100">
+            <Virtualize Items="Engine.EngineLogMessages.TakeLast(100).Reverse().ToList()" Context="logMessage" ItemSize="10">
+                <div class="log-entry mb-2">
+                    <div class="@GetLogLevelClass(logMessage.LogLevel)">
+                        @logMessage.Timestamp : @logMessage.LogLevel
+                    </div>
+                    <!-- Display log message below -->
+                    <div class="text-sm pl-4">
+                        @logMessage.Message
+                    </div>
                 </div>
-                <!-- Display log message below -->
-                <div class="text-sm pl-4">
-                    @logMessage.Message
-                </div>
-            </div>
-        </Virtualize>
-    </div>
+            </Virtualize>
+        </div>
     }
     else
     {
-    <p>Ingen logbeskeder.</p>
+        <p>Ingen logbeskeder.</p>
     }
 
 </ExpandablePanel>

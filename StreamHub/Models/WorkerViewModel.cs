@@ -18,4 +18,9 @@ public class WorkerViewModel
         LogMessages.Enqueue(message);
         if (LogMessages.Count > 50) LogMessages.TryDequeue(out _); // Remove the oldest message
     }
+
+    public void ClearWorkerLogs()
+    {
+        LogMessages = new ConcurrentQueue<WorkerLogEntry>();
+    }
 }

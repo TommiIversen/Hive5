@@ -32,7 +32,7 @@
     @if (_tabs["Log"])
     {
         <div class="px-2 mb-2">
-            <WorkerLog @key="@($"WorkerLoggerComponent-{EngineId}-{Worker.WorkerId}")" LogMessages="Worker.LogMessages" WorkerId="@Worker.WorkerId" EngineId="@EngineId.ToString()"/>
+            <WorkerLog @key="@($"WorkerLoggerComponent-{EngineId}-{Worker.WorkerId}")" Worker="@Worker" EngineId="@EngineId"/>
         </div>
     }
 

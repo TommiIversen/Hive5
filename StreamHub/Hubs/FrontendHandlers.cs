@@ -61,7 +61,7 @@ public class FrontendHandlers
         Console.WriteLine($"Unsubscribing from logs for worker {workerId}");
         await _hubContext.Groups.RemoveFromGroupAsync(connectionId, $"worker-{engineId}-{workerId}");
     }
-    
+
     public async Task SubscribeToEngineLogs(Guid engineId, string connectionId)
     {
         Console.WriteLine($"Subscribing to logs for engine {engineId}");

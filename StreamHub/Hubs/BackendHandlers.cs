@@ -46,7 +46,8 @@ public class BackendHandlers
             engine.ConnectionInfo.IpAddress = httpContext.Connection.RemoteIpAddress?.ToString();
             engine.ConnectionInfo.Port = httpContext.Connection.RemotePort;
             engine.ConnectionInfo.LocalPort = httpContext.Connection.LocalPort;
-            engine.ConnectionInfo.TransportType = context.Features.Get<IHttpTransportFeature>()?.TransportType.ToString();
+            engine.ConnectionInfo.TransportType =
+                context.Features.Get<IHttpTransportFeature>()?.TransportType.ToString();
 
             Console.WriteLine(
                 $"Connected from IP: {engine.ConnectionInfo.IpAddress}, Port: {engine.ConnectionInfo.Port}, Transport: {engine.ConnectionInfo.TransportType}, Time: {engine.ConnectionInfo.OnlineSince}");

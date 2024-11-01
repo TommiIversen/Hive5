@@ -1,7 +1,7 @@
-﻿@using System.Collections.Concurrent
-@using System.Text
+﻿@using System.Text
 @using Common.DTOs
 @using Microsoft.AspNetCore.SignalR.Client
+@using StreamHub.Models
 @using StreamHub.Services
 @inject BlazorSignalRService SignalRService
 @inject IJSRuntime JsRuntime
@@ -9,24 +9,30 @@
 <!-- Pause/Unpause Button -->
 <button
     @onclick="TogglePauseRendering"
-    class="px-4 py-2 rounded 
+    class="px-2 py-1 text-xs rounded 
         @(_pauseRendering ? "bg-red-500 text-white hover:bg-red-700" : "bg-green-500 text-white hover:bg-green-700")">
-    @(_pauseRendering ? "Resume Log Updates" : "Pause Log Updates")
+    @(_pauseRendering ? "Resume" : "Pause")
 </button>
 
 <!-- Download Logs Button -->
 <button
     @onclick="DownloadLogs"
-    class="px-4 py-2 rounded bg-indigo-500 text-white hover:bg-indigo-700">
-    Download Logs
+    class="px-2 py-1 text-xs rounded bg-indigo-500 text-white hover:bg-indigo-700">
+    Download
 </button>
-<div class="w-60">
 
-</div>
-@if (LogMessages.Any())
-{
-    <div style="height: 200px; overflow-y: auto; resize: vertical;" class="w-100">
-        <Virtualize Items="LogMessages.TakeLast(100).Reverse().ToList()" Context="logMessage" ItemSize="10">
+<!-- Clear Logs Button -->
+<button
+    @onclick="Worker.ClearWorkerLogs"
+    class="px-2 py-1 text-xs rounded bg-red-500 text-white hover:bg-red-700">
+    Clear
+</button>
+
+<div style="height: 200px; overflow-y: auto; resize: vertical;" class="w-100">
+
+    @if (Worker.LogMessages.Any())
+    {
+        <Virtualize Items="Worker.LogMessages.TakeLast(100).Reverse().ToList()" Context="logMessage" ItemSize="10">
             <div class="log-entry">
                 <div class="@GetLogLevelClass(logMessage.LogLevel)">
                     @if (IsOutOfSequence(logMessage))
@@ -37,17 +43,17 @@
                 </div>
             </div>
         </Virtualize>
-    </div>
-}
-else
-{
-    <p>Ingen logbeskeder.</p>
-}
+    }
+    else
+    {
+        <p>Ingen logbeskeder.</p>
+    }
+</div>
+
 
 @code {
-    [Parameter] public ConcurrentQueue<WorkerLogEntry> LogMessages { get; set; } = new();
-    [Parameter] public required string WorkerId { get; init; }
-    [Parameter] public required string EngineId { get; init; }
+    [Parameter] public required Guid EngineId { get; init; }
+    [Parameter] public required WorkerViewModel Worker { get; init; }
 
     private bool _isSubscribed = false;
     private bool _pauseRendering = false;
@@ -80,7 +86,7 @@ else
 
         SignalRService.HubConnection.On<WorkerLogEntry>("ReceiveWorkerLog", async logLine =>
         {
-            if (WorkerId == logLine.WorkerId)
+            if (Worker.WorkerId == logLine.WorkerId)
             {
                 await InvokeAsync(StateHasChanged);
             }
@@ -119,7 +125,7 @@ else
     {
         if (!_isSubscribed)
         {
-            await SignalRService.HubConnection.SendAsync("SubscribeToWorkerLogs", WorkerId, EngineId);
+            await SignalRService.HubConnection.SendAsync("SubscribeToWorkerLogs", Worker.WorkerId, EngineId);
             _isSubscribed = true;
         }
     }
@@ -128,7 +134,7 @@ else
     {
         if (_isSubscribed)
         {
-            await SignalRService.HubConnection.SendAsync("UnsubscribeFromWorkerLogs", WorkerId, EngineId);
+            await SignalRService.HubConnection.SendAsync("UnsubscribeFromWorkerLogs", Worker.WorkerId, EngineId);
             _isSubscribed = false;
         }
     }
@@ -148,15 +154,15 @@ else
     private async void DownloadLogs()
     {
         var logContent = new StringBuilder();
-        logContent.AppendLine($"EngineId: {EngineId}, WorkerId: {WorkerId}");
+        logContent.AppendLine($"EngineId: {EngineId}, WorkerId: {Worker.WorkerId}");
         logContent.AppendLine("Timestamp,LogLevel,Message");
 
-        foreach (var logEntry in LogMessages)
+        foreach (var logEntry in Worker.LogMessages)
         {
             logContent.AppendLine($"{logEntry.Timestamp},{logEntry.LogLevel},{logEntry.Message}");
         }
 
-        var logFileName = $"logs_{WorkerId}_{DateTime.UtcNow:yyyyMMdd_HHmmss}.txt";
+        var logFileName = $"logs_{Worker.WorkerId}_{DateTime.UtcNow:yyyyMMdd_HHmmss}.txt";
         await TriggerFileDownload(logFileName, logContent.ToString());
     }
 

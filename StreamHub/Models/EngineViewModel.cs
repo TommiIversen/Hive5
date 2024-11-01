@@ -37,12 +37,12 @@ public class EngineViewModel
         EngineLogMessages.Enqueue(message);
         if (EngineLogMessages.Count > 50) EngineLogMessages.TryDequeue(out _); // Remove the oldest message
     }
-    
+
     public void ClearEngineLogs()
     {
         EngineLogMessages = new ConcurrentQueue<EngineLogEntry>();
     }
-    
+
     public void AddMetric(Metric metric)
     {
         var simplifiedMetric = new MetricSimpleViewModel(metric);

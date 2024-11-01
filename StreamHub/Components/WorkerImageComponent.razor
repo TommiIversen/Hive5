@@ -50,5 +50,7 @@
         Console.WriteLine($"Disposing Image component for worker {Worker.WorkerId}");
         SignalRService.HubConnection.Remove($"ReceiveImage-{EngineId}");
     }
+
 }
+
 }

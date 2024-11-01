@@ -27,7 +27,7 @@
             <div class="flex items-center justify-between space-x-4">
                 <label class="text-gray-300">Enabled</label>
                 <label class="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" class="sr-only peer" @bind="_imgWatchdogEnabled" />
+                    <input type="checkbox" class="sr-only peer" @bind="_imgWatchdogEnabled"/>
                     <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-600 
                                 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700
                                 peer-checked:after:translate-x-full peer-checked:after:border-white 
@@ -90,8 +90,8 @@
 
         // Initialize the TimeSpan fields as seconds for UI binding
         _imgWatchdogEnabled = Worker.Worker.ImgWatchdogEnabled;
-        _imgWatchdogGraceTimeSeconds = (int)Worker.Worker.ImgWatchdogGraceTime.TotalSeconds;
-        _imgWatchdogIntervalSeconds = (int)Worker.Worker.ImgWatchdogInterval.TotalSeconds;
+        _imgWatchdogGraceTimeSeconds = (int) Worker.Worker.ImgWatchdogGraceTime.TotalSeconds;
+        _imgWatchdogIntervalSeconds = (int) Worker.Worker.ImgWatchdogInterval.TotalSeconds;
 
         var workerEventTopic = $"WorkerEvent-{EngineId}-{Worker.WorkerId}";
         SignalRService.HubConnection.On<WorkerEvent>(workerEventTopic, async _ => { await InvokeAsync(StateHasChanged); });
@@ -122,4 +122,5 @@
         // Kald EditWorkerAsync metoden for at gemme ændringerne
         var result = await WorkerService.EditWorkerAsync(editWorker);
     }
+
 }

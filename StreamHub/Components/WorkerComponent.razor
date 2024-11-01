@@ -25,8 +25,12 @@
 
                     <!-- Tooltip content -->
                     <div class="absolute left-0 mt-1 w-96 p-2 bg-gray-800 text-gray-300 text-sm rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10">
-                        <p><strong>ID:</strong> @Worker.WorkerId</p>
-                        <p><strong>Sidst opdateret:</strong> @Worker.Worker.Timestamp.ToLocalTime().ToString("dd.MM.yyyy HH:mm:ss")</p>
+                        <p>
+                            <strong>ID:</strong> @Worker.WorkerId
+                        </p>
+                        <p>
+                            <strong>Sidst opdateret:</strong> @Worker.Worker.Timestamp.ToLocalTime().ToString("dd.MM.yyyy HH:mm:ss")
+                        </p>
                     </div>
                 </span>
             </div>
