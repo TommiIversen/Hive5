@@ -24,3 +24,16 @@ public class EngineLogEntry : BaseLogEntry
 }
 
 
+public class WorkerEventLogDto
+{
+    public DateTime EventTimestamp { get; set; }
+    public string EventMessage { get; set; } = string.Empty;
+    public List<WorkerLogEntry> Logs { get; set; } = new(); // Hver event har en liste af logs
+}
+
+public class WorkerEventWithLogsDto
+{
+    public string WorkerId { get; set; } = string.Empty;
+    public List<WorkerEventLogDto> Events { get; set; } = new(); // De seneste 20 events for worker
+}
+

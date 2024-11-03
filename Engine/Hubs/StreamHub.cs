@@ -3,6 +3,8 @@ using Common.DTOs;
 using Engine.Interfaces;
 using Engine.Services;
 using Engine.Utils;
+using MessagePack;
+using MessagePack.Resolvers;
 using Microsoft.AspNetCore.Http.Connections;
 using Microsoft.AspNetCore.SignalR.Client;
 
@@ -123,6 +125,8 @@ public class StreamHub
     {
         try
         {
+            var messagePackOptions = MessagePackSerializerOptions.Standard
+                .WithResolver(TypelessContractlessStandardResolver.Instance);
             var hubConnection = new HubConnectionBuilder()
                 .WithUrl($"{hubUrl}?clientType=backend", connectionOptions =>
                 {
@@ -133,7 +137,10 @@ public class StreamHub
                     TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5),
                     TimeSpan.FromSeconds(5)
                 })
-                .AddMessagePackProtocol()
+                // .AddMessagePackProtocol(options =>
+                // {
+                //     options.SerializerOptions = messagePackOptions;
+                // })
                 .Build();
 
 

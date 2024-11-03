@@ -1,0 +1,58 @@
+﻿@using Common.DTOs
+
+@code {
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public WorkerEventWithLogsDto? WorkerEventsWithLogs { get; set; }
+}
+
+<dialog open>
+    <div class="modal-overlay" @onclick="() => OnClose.InvokeAsync()"></div>
+    <div class="modal-content">
+        <h3 class="text-lg font-bold mb-4">Events & Logs for Worker @WorkerEventsWithLogs?.WorkerId</h3>
+
+        @if (WorkerEventsWithLogs != null && WorkerEventsWithLogs.Events.Any())
+        {
+            @foreach (var evt in WorkerEventsWithLogs.Events)
+            {
+                <div class="event mb-4">
+                    <h4 class="text-sm font-semibold">@evt.EventTimestamp - @evt.EventMessage</h4>
+                    <ul class="logs-list ml-4">
+                        @foreach (var log in evt.Logs)
+                        {
+                            <li>
+                                <span class="@GetLogLevelClass(log.LogLevel)">
+                                    @log.LogTimestamp - @log.LogLevel - @log.Message
+                                </span>
+                            </li>
+                        }
+                    </ul>
+                </div>
+            }
+        }
+        else
+        {
+            <p>No events or logs available.</p>
+        }
+        <button @onclick="() => OnClose.InvokeAsync()" class="mt-4 px-4 py-2 rounded bg-red-500 text-white hover:bg-red-700">
+            Close
+        </button>
+    </div>
+</dialog>
+
+<style>
+    /* Basic styling for modal */
+    .modal-overlay { /* overlay styles */ }
+    .modal-content { /* content styles */ }
+</style>
+
+@code {
+
+    private string GetLogLevelClass(LogLevel logLevel) => logLevel switch
+    {
+        LogLevel.Warning => "text-yellow-500",
+        LogLevel.Error => "text-red-500",
+        LogLevel.Critical => "text-red-700 font-bold",
+        _ => "text-gray-700"
+    };
+
+}

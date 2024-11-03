@@ -22,6 +22,7 @@ public interface IWorkerManager
     Task<List<WorkerChangeEvent>> GetAllWorkers(Guid engineId);
     Task<CommandResult> RemoveWorkerAsync(string workerId);
     Task<CommandResult> ResetWatchdogEventCountAsync(string workerId);
+    Task<WorkerEventWithLogsDto> GetWorkerEventsWithLogsAsync(string workerId);
 }
 
 public class WorkerManager(
@@ -457,6 +458,42 @@ public class WorkerManager(
             LogInfo($"Worker with ID {workerId} not found.", workerId, LogLevel.Warning);
         }
     }
+    
+    public async Task<WorkerEventWithLogsDto> GetWorkerEventsWithLogsAsync(string workerId)
+    {
+        var workerRepository = repositoryFactory.CreateWorkerRepository();
+        var workerEntity = await workerRepository.GetWorkerByIdWithEventsAsync(workerId);
+
+        if (workerEntity == null)
+        {
+            throw new InvalidOperationException($"Worker with ID {workerId} not found.");
+        }
+
+        // Hent de sidste 20 events for denne worker og inkluder logs
+        var recentEvents = workerEntity.Events
+            .OrderByDescending(e => e.EventTimestamp)
+            .Take(20)
+            .Select(e => new WorkerEventLogDto
+            {
+                EventTimestamp = e.EventTimestamp,
+                EventMessage = e.Message,
+                Logs = e.EventLogs.Select(log => new WorkerLogEntry
+                {
+                    WorkerId = workerId,
+                    Message = log.Message,
+                    LogLevel = log.LogLevel,
+                    LogTimestamp = log.LogTimestamp,
+                    LogSequenceNumber = log.LogId // LogId som sequence
+                }).ToList()
+            }).ToList();
+
+        return new WorkerEventWithLogsDto
+        {
+            WorkerId = workerId,
+            Events = recentEvents
+        };
+    }
+
 
     private IWorkerService? GetWorkerService(string workerId)
     {

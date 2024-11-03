@@ -48,7 +48,6 @@ public class WorkerService(
             Console.WriteLine($"Forwarding {operation} request with data on engine {data.EngineId}");
             result = await hubContext.Clients.Client(engine.ConnectionInfo.ConnectionId)
                 .InvokeAsync<CommandResult>(operation, data, linkedCts.Token);
-
             msg = $"{result.Message} Time: {DateTime.Now}";
         }
         catch (OperationCanceledException)
@@ -148,4 +147,20 @@ public class WorkerService(
 
         return await HandleWorkerOperationWithDataAsync("EnableDisableWorker", message);
     }
+    
+    public async Task<CommandResult> GetWorkerEventsWithLogsAsync(Guid engineId, string workerId)
+    {
+        var message = new WorkerOperationMessage
+        {
+            WorkerId = workerId,
+            EngineId = engineId
+        };
+
+        // Brug "GetWorkerEventsWithLogs" som operationens navn, så den matcher SignalR-handleren i EngineHub
+        var result = await HandleWorkerOperationWithDataAsync("GetWorkerEventsWithLogs", message, setProcessing: false);
+        var workerEventWithLogsDto = result.Data as WorkerEventWithLogsDto;
+        Console.WriteLine($"GetWorkerEventsWithLogsAsync: {workerEventWithLogsDto}");
+        return result;
+    }
+
 }

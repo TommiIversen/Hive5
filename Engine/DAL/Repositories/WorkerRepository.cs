@@ -13,6 +13,7 @@ public interface IWorkerRepository
     Task UpdateWorkerAsync(WorkerEntity worker);
     Task DeleteWorkerAsync(string workerId);
     Task AddWorkerEventAsync(string workerId, string message, List<BaseLogEntry> logs);
+    Task<WorkerEntity?> GetWorkerByIdWithEventsAsync(string workerId);
 }
 
 public class WorkerRepository(ApplicationDbContext context) : IWorkerRepository
@@ -91,6 +92,15 @@ public class WorkerRepository(ApplicationDbContext context) : IWorkerRepository
         }
 
         await context.SaveChangesAsync();
+    }
+    
+    public async Task<WorkerEntity?> GetWorkerByIdWithEventsAsync(string workerId)
+    {
+        return await context.Workers
+            .AsNoTracking()
+            .Include(w => w.Events)
+            .ThenInclude(e => e.EventLogs)
+            .FirstOrDefaultAsync(w => w.WorkerId == workerId);
     }
     
 }
