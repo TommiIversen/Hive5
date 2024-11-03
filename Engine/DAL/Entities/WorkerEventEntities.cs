@@ -21,6 +21,7 @@ public class WorkerEventLog
     public int LogId { get; set; }
 
     [ForeignKey("WorkerEvent")]
+    [ConcurrencyCheck] // Samtidig opdatering på fremmednøglefeltet
     public int EventId { get; set; } // Reference til WorkerEvent
     public DateTime LogTimestamp { get; set; }
     public LogLevel LogLevel { get; set; }

@@ -31,5 +31,12 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<HubUrlEntity>()
             .HasIndex(h => h.HubUrl)
             .IsUnique(); // Sørg for, at HubUrl er unik
+        
+        
+        modelBuilder.Entity<WorkerEntity>()
+            .HasMany(w => w.Events)
+            .WithOne()
+            .HasForeignKey(e => e.WorkerId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

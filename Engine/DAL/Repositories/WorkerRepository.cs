@@ -13,7 +13,7 @@ public interface IWorkerRepository
     Task UpdateWorkerAsync(WorkerEntity worker);
     Task DeleteWorkerAsync(string workerId);
     Task AddWorkerEventAsync(string workerId, string message, List<BaseLogEntry> logs);
-    Task<WorkerEntity?> GetWorkerByIdWithEventsAsync(string workerId);
+    Task<List<WorkerEventLogDto>> GetRecentWorkerEventsWithLogsAsync(string workerId, int maxEvents = 20);
 }
 
 public class WorkerRepository(ApplicationDbContext context) : IWorkerRepository
@@ -64,43 +64,76 @@ public class WorkerRepository(ApplicationDbContext context) : IWorkerRepository
             await context.SaveChangesAsync();
         }
     }
-    
+
     public async Task AddWorkerEventAsync(string workerId, string message, List<BaseLogEntry> logs)
     {
-        var worker = await context.Workers.Include(w => w.Events).FirstOrDefaultAsync(w => w.WorkerId == workerId);
-        if (worker == null) throw new InvalidOperationException("Worker not found");
-
-        var newEvent = new WorkerEvent
+        await using var transaction = await context.Database.BeginTransactionAsync();
+        try
         {
-            WorkerId = workerId,
-            Message = message,
-            EventLogs = logs.Select(log => new WorkerEventLog
+            var worker = await context.Workers
+                .Include(w => w.Events)
+                .FirstOrDefaultAsync(w => w.WorkerId == workerId);
+
+            if (worker == null)
             {
-                LogTimestamp = log.LogTimestamp,
-                LogLevel = log.LogLevel,
-                Message = log.Message
-            }).ToList()
-        };
+                throw new InvalidOperationException("Worker not found");
+            }
 
-        worker.Events.Add(newEvent);
+            var newEvent = new WorkerEvent
+            {
+                WorkerId = workerId,
+                Message = message,
+                EventLogs = logs.Select(log => new WorkerEventLog
+                {
+                    LogTimestamp = log.LogTimestamp,
+                    LogLevel = log.LogLevel,
+                    Message = log.Message
+                }).ToList()
+            };
 
-        // Begræns til de sidste 20 hændelser
-        if (worker.Events.Count > 20)
-        {
-            var excessEvents = worker.Events.OrderBy(e => e.EventTimestamp).Take(worker.Events.Count - 20).ToList();
-            context.WorkerEvents.RemoveRange(excessEvents);
+            worker.Events.Add(newEvent);
+
+            // Begræns til de sidste 20 hændelser
+            if (worker.Events.Count > 20)
+            {
+                var excessEvents = worker.Events
+                    .OrderBy(e => e.EventTimestamp)
+                    .Take(worker.Events.Count - 20)
+                    .ToList();
+                context.WorkerEvents.RemoveRange(excessEvents);
+            }
+
+            await context.SaveChangesAsync();
+            await transaction.CommitAsync(); // Commit transaktionen
         }
+        catch
+        {
+            await transaction.RollbackAsync(); // Rul tilbage ved fejl
+            throw;
+        }
+    }
 
-        await context.SaveChangesAsync();
-    }
+
     
-    public async Task<WorkerEntity?> GetWorkerByIdWithEventsAsync(string workerId)
+    public async Task<List<WorkerEventLogDto>> GetRecentWorkerEventsWithLogsAsync(string workerId, int maxEvents = 20)
     {
-        return await context.Workers
-            .AsNoTracking()
-            .Include(w => w.Events)
-            .ThenInclude(e => e.EventLogs)
-            .FirstOrDefaultAsync(w => w.WorkerId == workerId);
+        return await context.WorkerEvents.AsNoTracking()
+            .Where(e => e.WorkerId == workerId)
+            .OrderByDescending(e => e.EventTimestamp)
+            .Take(maxEvents)
+            .Select(e => new WorkerEventLogDto
+            {
+                EventTimestamp = e.EventTimestamp,
+                EventMessage = e.Message,
+                Logs = e.EventLogs.Select(log => new WorkerLogEntry
+                {
+                    WorkerId = workerId,
+                    Message = log.Message,
+                    LogLevel = log.LogLevel,
+                    LogTimestamp = log.LogTimestamp,
+                    LogSequenceNumber = log.LogId
+                }).ToList()
+            })
+            .ToListAsync();
     }
-    
 }

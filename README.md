@@ -11,5 +11,5 @@ setx PATH "%PATH%;%USERPROFILE%\.dotnet\tools"
 
 dotnet tool install --global dotnet-ef
 
-dotnet ef migrations add addEventsTable
+dotnet ef migrations add cascadeDeleworker
 

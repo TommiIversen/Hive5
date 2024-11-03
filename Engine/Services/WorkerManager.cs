@@ -462,30 +462,12 @@ public class WorkerManager(
     public async Task<WorkerEventWithLogsDto> GetWorkerEventsWithLogsAsync(string workerId)
     {
         var workerRepository = repositoryFactory.CreateWorkerRepository();
-        var workerEntity = await workerRepository.GetWorkerByIdWithEventsAsync(workerId);
+        var recentEvents = await workerRepository.GetRecentWorkerEventsWithLogsAsync(workerId);
 
-        if (workerEntity == null)
+        if (recentEvents == null || !recentEvents.Any())
         {
-            throw new InvalidOperationException($"Worker with ID {workerId} not found.");
+            throw new InvalidOperationException($"Worker with ID {workerId} not found or has no events.");
         }
-
-        // Hent de sidste 20 events for denne worker og inkluder logs
-        var recentEvents = workerEntity.Events
-            .OrderByDescending(e => e.EventTimestamp)
-            .Take(20)
-            .Select(e => new WorkerEventLogDto
-            {
-                EventTimestamp = e.EventTimestamp,
-                EventMessage = e.Message,
-                Logs = e.EventLogs.Select(log => new WorkerLogEntry
-                {
-                    WorkerId = workerId,
-                    Message = log.Message,
-                    LogLevel = log.LogLevel,
-                    LogTimestamp = log.LogTimestamp,
-                    LogSequenceNumber = log.LogId // LogId som sequence
-                }).ToList()
-            }).ToList();
 
         return new WorkerEventWithLogsDto
         {
@@ -493,7 +475,6 @@ public class WorkerManager(
             Events = recentEvents
         };
     }
-
 
     private IWorkerService? GetWorkerService(string workerId)
     {

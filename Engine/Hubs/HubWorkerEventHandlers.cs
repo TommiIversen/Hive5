@@ -72,6 +72,31 @@ namespace Engine.Hubs
                 return result;
             });
             
+            hubConnection.On<WorkerOperationMessage>("GetWorkerEventsWithLogs", async (message) =>
+            {
+                try
+                {
+                    var eventsWithLogs = await _workerManager.GetWorkerEventsWithLogsAsync(message.WorkerId);
+
+                    foreach (var workerEventWithLogsDto in eventsWithLogs.Events)
+                    {
+                        Console.WriteLine($"Event: {workerEventWithLogsDto.EventMessage}");
+                        foreach (var log in workerEventWithLogsDto.Logs)
+                        {
+                            Console.WriteLine($"Log: {log.Message}");
+                        }
+                    }
+        
+                    // Hvis du ønsker at returnere noget til klienten, brug en separat send eller invoke
+                    await hubConnection.InvokeAsync("ReturnWorkerEventsWithLogs", new CommandResult(true, "Success", eventsWithLogs));
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, $"Error fetching events with logs for worker {message.WorkerId}: {ex.Message}");
+                    await hubConnection.InvokeAsync("ReturnWorkerEventsWithLogs", new CommandResult(false, $"Error: {ex.Message}", null));
+                }
+            });
+            
             hubConnection.On("GetWorkerEventsWithLogs", async (WorkerOperationMessage message) =>
             {
                 try
@@ -79,6 +104,7 @@ namespace Engine.Hubs
                     var eventsWithLogs = await _workerManager.GetWorkerEventsWithLogsAsync(message.WorkerId);
                     
                     // console
+                    
                     foreach (var workerEventWithLogsDto in eventsWithLogs.Events)
                     {
                         Console.WriteLine($"åååååååååååååååEvent: {workerEventWithLogsDto.EventMessage}");
@@ -87,7 +113,9 @@ namespace Engine.Hubs
                             Console.WriteLine($"Log: {log.Message}");
                         }
                     }
-                    return new CommandResult(true, "Worker events and logs retrieved successfully.", eventsWithLogs);
+                    await hubConnection.InvokeAsync("ReturnWorkerEventsWithLogs", eventsWithLogs);
+
+                    return new CommandResult(true, "Worker events and logs retrieved successfully.");
                 }
                 catch (Exception ex)
                 {
