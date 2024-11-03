@@ -252,6 +252,10 @@ public class WorkerService : IWorkerService
             // Tæl op
             workerEntity.WatchdogEventCount++;
             await workerRepository.UpdateWorkerAsync(workerEntity); // Gem ændringerne asynkront
+            
+            // Hent de sidste 20 logs og gem dem som en hændelse
+            var logs = _loggerService.GetLastWorkerLogs(WorkerId).Take(20).ToList();
+            await workerRepository.AddWorkerEventAsync(WorkerId, message, logs);
 
             LogInfo(
                 $"------Watchdog state changed for worker {WorkerId}. Event count: {workerEntity.WatchdogEventCount}");

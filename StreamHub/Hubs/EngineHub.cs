@@ -50,7 +50,7 @@ public class EngineHub(
         return await backendHandlers.RegisterEngineConnection(engineInfo, Context);
     }
 
-    public async Task SynchronizeWorkers(List<WorkerEvent> workers, Guid engineId)
+    public async Task SynchronizeWorkers(List<WorkerChangeEvent> workers, Guid engineId)
     {
         await backendHandlers.SynchronizeWorkers(workers, engineId);
     }
@@ -68,9 +68,9 @@ public class EngineHub(
     }
 
 
-    public async Task ReceiveWorkerEvent(WorkerEvent workerEvent)
+    public async Task ReceiveWorkerEvent(WorkerChangeEvent workerChangeEvent)
     {
-        await backendHandlers.ReceiveWorkerEvent(workerEvent);
+        await backendHandlers.ReceiveWorkerEvent(workerChangeEvent);
     }
 
 

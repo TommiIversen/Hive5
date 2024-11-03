@@ -11,6 +11,7 @@ public class ApplicationDbContext : DbContext
 
     public DbSet<EngineEntities> EngineEntities { get; set; }
     public DbSet<WorkerEntity> Workers { get; set; }
+    public DbSet<WorkerEvent> WorkerEvents { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

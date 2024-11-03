@@ -1,6 +1,6 @@
 ﻿namespace Common.DTOs;
 
-public class WorkerEvent : WorkerOut
+public class WorkerChangeEvent : WorkerOut
 {
     public required EventType EventType { get; set; }
 }

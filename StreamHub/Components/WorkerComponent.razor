@@ -81,8 +81,8 @@
 
     protected override Task OnInitializedAsync()
     {
-        var workerEventTopic = $"WorkerEvent-{EngineId}-{Worker.WorkerId}";
-        SignalRService.HubConnection.On<WorkerEvent>(workerEventTopic, async _ => { await InvokeAsync(StateHasChanged); });
+        var workerEventTopic = $"WorkerChangeEvent-{EngineId}-{Worker.WorkerId}";
+        SignalRService.HubConnection.On<WorkerChangeEvent>(workerEventTopic, async _ => { await InvokeAsync(StateHasChanged); });
         return Task.CompletedTask;
     }
 

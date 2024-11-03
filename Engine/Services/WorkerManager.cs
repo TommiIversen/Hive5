@@ -19,7 +19,7 @@ public interface IWorkerManager
 
     Task<CommandResult> EditWorkerAsync(WorkerCreateAndEdit workerEdit);
 
-    Task<List<WorkerEvent>> GetAllWorkers(Guid engineId);
+    Task<List<WorkerChangeEvent>> GetAllWorkers(Guid engineId);
     Task<CommandResult> RemoveWorkerAsync(string workerId);
     Task<CommandResult> ResetWatchdogEventCountAsync(string workerId);
 }
@@ -332,14 +332,14 @@ public class WorkerManager(
     }
 
 
-    public async Task<List<WorkerEvent>> GetAllWorkers(Guid engineId)
+    public async Task<List<WorkerChangeEvent>> GetAllWorkers(Guid engineId)
     {
         Log.Information("Getting all workers from database...");
 
         var workerRepository = repositoryFactory.CreateWorkerRepository();
         var workerEntities = await workerRepository.GetAllWorkersAsync();
 
-        // Map WorkerEntity til WorkerEvent direkte med opdateret state fra WorkerService
+        // Map WorkerEntity til WorkerChangeEvent direkte med opdateret state fra WorkerService
         var workerEvents = workerEntities
             .Select(workerEntity =>
             {
@@ -420,7 +420,7 @@ public class WorkerManager(
     private void SendWorkerDeletedEvent(string workerId)
     {
         Log.Information($"Sending delete event for worker: {workerId}");
-        var workerEvent = new WorkerEvent
+        var workerEvent = new WorkerChangeEvent
         {
             Name = "WorkerDeleted",
             Description = "Worker has been deleted",

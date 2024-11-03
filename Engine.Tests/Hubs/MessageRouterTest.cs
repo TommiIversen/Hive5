@@ -26,7 +26,8 @@ public class MessageRouterTests
             RxUsagePercent = 0,
             TxUsagePercent = 0,
             NetworkInterfaceName = null,
-            LinkSpeedGbps = 0
+            LinkSpeedGbps = 0,
+            MeasureTimestamp = default
         };
 
         // Act
@@ -88,7 +89,8 @@ public class MessageRouterTests
             RxUsagePercent = 0,
             TxUsagePercent = 0,
             NetworkInterfaceName = null,
-            LinkSpeedGbps = 0
+            LinkSpeedGbps = 0,
+            MeasureTimestamp = default
         };
         
         // Konfigurer mock til at kaste en HubException med den specifikke besked

@@ -109,7 +109,7 @@ public class EngineManager
         return _engines.TryRemove(engineId, out _);
     }
 
-    public void SynchronizeWorkers(List<WorkerEvent> workers, Guid engineId)
+    public void SynchronizeWorkers(List<WorkerChangeEvent> workers, Guid engineId)
     {
         Console.WriteLine($"-----------SynchronizeWorkers workers: {workers.Count}");
 

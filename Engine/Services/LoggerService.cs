@@ -49,7 +49,8 @@ namespace Engine.Services
                 logEntry.EngineId = _engineId;
             }
 
-            logEntry.Timestamp = DateTime.UtcNow;
+            //logEntry.Timestamp = DateTime.UtcNow;
+            logEntry.LogTimestamp = DateTime.UtcNow;
 
             if (logEntry is WorkerLogEntry workerLogEntry)
             {

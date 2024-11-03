@@ -8,6 +8,7 @@ public class BaseLogEntry : BaseMessage
     public required string Message { get; set; }
     public int LogSequenceNumber { get; set; }
     public LogLevel LogLevel { get; set; } = LogLevel.Information;
+    public DateTime LogTimestamp { get; set; }
 }
 
 

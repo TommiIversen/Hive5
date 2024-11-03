@@ -24,7 +24,7 @@ public static class MessageRouter
                 case ImageData image:
                     await hubClient.InvokeAsync("ReceiveImage", image);
                     break;
-                case WorkerEvent workerEvent:
+                case WorkerChangeEvent workerEvent:
                     await hubClient.InvokeAsync("ReceiveWorkerEvent", workerEvent);
                     break;
                 case EngineEvent engineEvent:

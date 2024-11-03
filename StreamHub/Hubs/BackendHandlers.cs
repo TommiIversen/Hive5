@@ -59,7 +59,7 @@ public class BackendHandlers
         return true; // Forbindelsen er godkendt
     }
 
-    public async Task SynchronizeWorkers(List<WorkerEvent> workers, Guid engineId)
+    public async Task SynchronizeWorkers(List<WorkerChangeEvent> workers, Guid engineId)
     {
         _engineManager.SynchronizeWorkers(workers, engineId);
         await _hubContext.Clients.Group("frontendClients").SendAsync("EngineChange", _cancellationService.Token);
@@ -121,26 +121,26 @@ public class BackendHandlers
     }
 
 
-    public async Task ReceiveWorkerEvent(WorkerEvent workerEvent)
+    public async Task ReceiveWorkerEvent(WorkerChangeEvent workerChangeEvent)
     {
-        switch (workerEvent.EventType)
+        switch (workerChangeEvent.EventType)
         {
             case EventType.Deleted:
-                _engineManager.RemoveWorker(workerEvent.EngineId, workerEvent.WorkerId);
+                _engineManager.RemoveWorker(workerChangeEvent.EngineId, workerChangeEvent.WorkerId);
                 await _hubContext.Clients.Group("frontendClients")
                     .SendAsync("EngineChange", _cancellationService.Token);
                 break;
             case EventType.Created:
-                _engineManager.AddOrUpdateWorker(workerEvent);
+                _engineManager.AddOrUpdateWorker(workerChangeEvent);
                 await _hubContext.Clients.Group("frontendClients")
                     .SendAsync("EngineChange", _cancellationService.Token);
                 break;
             case EventType.Updated:
-                _engineManager.AddOrUpdateWorker(workerEvent);
-                var workerEventTopic = $"WorkerEvent-{workerEvent.EngineId}-{workerEvent.WorkerId}";
+                _engineManager.AddOrUpdateWorker(workerChangeEvent);
+                var workerEventTopic = $"WorkerChangeEvent-{workerChangeEvent.EngineId}-{workerChangeEvent.WorkerId}";
 
                 await _hubContext.Clients.Group("frontendClients")
-                    .SendAsync(workerEventTopic, workerEvent, _cancellationService.Token);
+                    .SendAsync(workerEventTopic, workerChangeEvent, _cancellationService.Token);
                 break;
         }
     }

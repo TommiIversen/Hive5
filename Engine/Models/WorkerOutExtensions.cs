@@ -5,10 +5,10 @@ namespace Engine.Models;
 
 public static class WorkerOutExtensions
 {
-    public static WorkerEvent ToWorkerEvent(this WorkerEntity workerEntity, Guid engineId,
+    public static WorkerChangeEvent ToWorkerEvent(this WorkerEntity workerEntity, Guid engineId,
         WorkerState state, EventType eventType = EventType.Updated)
     {
-        return new WorkerEvent
+        return new WorkerChangeEvent
         {
             WorkerId = workerEntity.WorkerId,
             Name = workerEntity.Name,
@@ -28,10 +28,10 @@ public static class WorkerOutExtensions
     }
 
 
-    public static WorkerEvent ToWorkerEvent(this WorkerEntity workerEntity,
+    public static WorkerChangeEvent ToWorkerEvent(this WorkerEntity workerEntity,
         WorkerState state, EventType eventType = EventType.Updated)
     {
-        return new WorkerEvent
+        return new WorkerChangeEvent
         {
             WorkerId = workerEntity.WorkerId,
             Name = workerEntity.Name,

@@ -1,4 +1,5 @@
-﻿using Engine.DAL.Entities;
+﻿using Common.DTOs;
+using Engine.DAL.Entities;
 using Engine.Database;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,6 +12,7 @@ public interface IWorkerRepository
     Task AddWorkerAsync(WorkerEntity worker);
     Task UpdateWorkerAsync(WorkerEntity worker);
     Task DeleteWorkerAsync(string workerId);
+    Task AddWorkerEventAsync(string workerId, string message, List<BaseLogEntry> logs);
 }
 
 public class WorkerRepository(ApplicationDbContext context) : IWorkerRepository
@@ -61,4 +63,34 @@ public class WorkerRepository(ApplicationDbContext context) : IWorkerRepository
             await context.SaveChangesAsync();
         }
     }
+    
+    public async Task AddWorkerEventAsync(string workerId, string message, List<BaseLogEntry> logs)
+    {
+        var worker = await context.Workers.Include(w => w.Events).FirstOrDefaultAsync(w => w.WorkerId == workerId);
+        if (worker == null) throw new InvalidOperationException("Worker not found");
+
+        var newEvent = new WorkerEvent
+        {
+            WorkerId = workerId,
+            Message = message,
+            EventLogs = logs.Select(log => new WorkerEventLog
+            {
+                LogTimestamp = log.LogTimestamp,
+                LogLevel = log.LogLevel,
+                Message = log.Message
+            }).ToList()
+        };
+
+        worker.Events.Add(newEvent);
+
+        // Begræns til de sidste 20 hændelser
+        if (worker.Events.Count > 20)
+        {
+            var excessEvents = worker.Events.OrderBy(e => e.EventTimestamp).Take(worker.Events.Count - 20).ToList();
+            context.WorkerEvents.RemoveRange(excessEvents);
+        }
+
+        await context.SaveChangesAsync();
+    }
+    
 }

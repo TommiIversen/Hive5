@@ -1,6 +1,7 @@
 ﻿using Engine.Database;
 using Engine.Utils;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 
@@ -12,7 +13,9 @@ namespace Engine.DependencyInjection
         {
             var dbFileName = DbConstants.GetDatabaseFilePath(basePath);
             services.AddDbContextFactory<ApplicationDbContext>(options =>
-                options.UseSqlite($"Data Source={dbFileName}"));
+                options.UseSqlite($"Data Source={dbFileName}")
+                    .ConfigureWarnings(warnings => 
+                        warnings.Ignore(RelationalEventId.NonTransactionalMigrationOperationWarning)));
 
             return services;
         }

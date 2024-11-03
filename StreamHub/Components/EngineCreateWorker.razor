@@ -54,7 +54,7 @@
             Command = _newWorkerCommand,
             ImgWatchdogEnabled = true,
             ImgWatchdogGraceTime = TimeSpan.FromSeconds(10),
-            ImgWatchdogInterval = TimeSpan.FromSeconds(5)
+            ImgWatchdogInterval = TimeSpan.FromSeconds(2)
         };
         var commandResult = await WorkerService.CreateWorkerAsync(workerCreate);
 

@@ -18,4 +18,7 @@ public class WorkerEntity
     public bool ImgWatchdogEnabled { get; set; }
     public TimeSpan ImgWatchdogGraceTime { get; set; }
     public TimeSpan ImgWatchdogInterval { get; set; }
+    
+    public List<WorkerEvent> Events { get; set; } = new(); // Hændelser for worker
+
 }

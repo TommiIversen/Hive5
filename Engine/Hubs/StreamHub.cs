@@ -282,7 +282,7 @@ public class StreamHub
                 var baseMessage = await queue.DequeueMessageAsync(cancellationToken);
 
                 // Filtrer forældede WorkerEvent-beskeder baseret på syncTimestamp
-                if (baseMessage is WorkerEvent workerEvent && workerEvent.Timestamp < syncTimestamp)
+                if (baseMessage is WorkerChangeEvent workerEvent && workerEvent.Timestamp < syncTimestamp)
                 {
                     LogInfo(
                         $"Skipping outdated event for streamHub: {url} - {workerEvent.EventType} {workerEvent.Name}");

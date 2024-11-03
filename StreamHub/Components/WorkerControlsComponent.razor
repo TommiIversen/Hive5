@@ -83,7 +83,7 @@
     public void Dispose()
     {
         Console.WriteLine("Disposing WorkerControlsComponent");
-        SignalRService.HubConnection.Remove("WorkerEvent");
+        SignalRService.HubConnection.Remove("WorkerChangeEvent");
     }
 
 }
