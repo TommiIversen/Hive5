@@ -1,11 +1,13 @@
 ﻿using System.Diagnostics;
 using System.Runtime.InteropServices;
-using System.Runtime.Versioning;
 
 namespace Engine.Utils;
 
 
-
+public interface ICpuStatReader
+{
+    string[] GetCpuStatLines();
+}
 
 public class CpuUsageMonitor : IDisposable
 {
@@ -15,6 +17,7 @@ public class CpuUsageMonitor : IDisposable
     private PerformanceCounter[]? _perCoreCpuCounters;
     private PerformanceCounter? _totalCpuCounter;
 
+    
     public void Dispose()
     {
         Dispose(true);
@@ -90,6 +93,13 @@ public class CpuUsageMonitor : IDisposable
                 _perCoreCpuCounters[i].NextValue(); // Skipper første værdi
             }
         }
+        
+        // Hvis counters stadig er null eller ikke initialiseret korrekt, returnér en array med defaults (0'er)
+        if (_perCoreCpuCounters == null || _perCoreCpuCounters.Any(counter => counter == null))
+        {
+            Console.WriteLine("----Per-core CPU counters are not initialized jet.");
+            return Enumerable.Repeat(0.0, Environment.ProcessorCount).ToArray();
+        }
 
         var cpuUsages = new double[_perCoreCpuCounters.Length];
         for (var i = 0; i < _perCoreCpuCounters.Length; i++)
@@ -119,7 +129,6 @@ public class CpuUsageMonitor : IDisposable
             var coreValues = ParseCpuStat(coreLines[i]);
             usages[i] = CalculateCpuUsage(coreValues);
         }
-
         return usages;
     }
 

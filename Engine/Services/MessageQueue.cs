@@ -125,15 +125,14 @@ public class MultiQueue
         }
     }
 
-
-    public Dictionary<string, int> ReportQueueContents()
+    
+    public int GetQueueSizeForType(Type messageType)
     {
-        var report = new Dictionary<string, int>();
+        return _queues.TryGetValue(messageType, out var queue) ? queue.Count : 0;
+    }
 
-        foreach (var queue in _queues) report[queue.Key.Name] = queue.Value.Count;
-
-        foreach (var uniqueQueue in _uniqueQueues) report[$"Unique-{uniqueQueue.Key}"] = uniqueQueue.Value.Count;
-
-        return report;
+    public int GetUniqueQueueSize(string uniqueId)
+    {
+        return _uniqueQueues.TryGetValue(uniqueId, out var queue) ? queue.Count : 0;
     }
 }
