@@ -14,6 +14,8 @@ public interface IWorkerRepository
     Task DeleteWorkerAsync(string workerId);
     Task AddWorkerEventAsync(string workerId, string message, List<BaseLogEntry> logs);
     Task<List<WorkerEventLogDto>> GetRecentWorkerEventsWithLogsAsync(string workerId, int maxEvents = 20);
+    Task<List<WorkerChangeLog>> GetWorkerChangeLogAsync(string workerId, int maxEntries = 50);
+    Task AddWorkerChangeLogsAsync(IEnumerable<WorkerChangeLog> changeLogs);
 }
 
 public class WorkerRepository(ApplicationDbContext context) : IWorkerRepository
@@ -129,5 +131,20 @@ public class WorkerRepository(ApplicationDbContext context) : IWorkerRepository
                 }).ToList()
             })
             .ToListAsync();
+    }
+    
+    public async Task<List<WorkerChangeLog>> GetWorkerChangeLogAsync(string workerId, int maxEntries = 50)
+    {
+        return await context.WorkerChangeLogs
+            .Where(log => log.WorkerId == workerId)
+            .OrderByDescending(log => log.ChangeTimestamp)
+            .Take(maxEntries)
+            .ToListAsync();
+    }
+    
+    public async Task AddWorkerChangeLogsAsync(IEnumerable<WorkerChangeLog> changeLogs)
+    {
+        await context.WorkerChangeLogs.AddRangeAsync(changeLogs);
+        await context.SaveChangesAsync();
     }
 }

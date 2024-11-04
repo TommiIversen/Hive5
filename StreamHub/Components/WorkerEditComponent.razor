@@ -113,6 +113,7 @@
             WorkerId = Worker.Worker.WorkerId,
             Name = _workerName ?? string.Empty,
             Description = _workerDescription ?? string.Empty,
+            IsEnabled = Worker.Worker.IsEnabled,
             Command = _workerCommand ?? string.Empty,
             ImgWatchdogEnabled = _imgWatchdogEnabled,
             ImgWatchdogGraceTime = TimeSpan.FromSeconds(_imgWatchdogGraceTimeSeconds),

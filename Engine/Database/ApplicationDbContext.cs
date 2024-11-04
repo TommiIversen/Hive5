@@ -12,6 +12,8 @@ public class ApplicationDbContext : DbContext
     public DbSet<EngineEntities> EngineEntities { get; set; }
     public DbSet<WorkerEntity> Workers { get; set; }
     public DbSet<WorkerEvent> WorkerEvents { get; set; }
+    public DbSet<WorkerChangeLog> WorkerChangeLogs { get; set; } // Ny ændringslog-tabel
+
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -50,5 +52,16 @@ public class ApplicationDbContext : DbContext
             .WithOne()
             .HasForeignKey(log => log.EventId)
             .OnDelete(DeleteBehavior.Cascade); // Cascade delete på EventLogs
+        
+        
+        modelBuilder.Entity<WorkerEntity>()
+            .HasMany(w => w.ChangeLogs)
+            .WithOne()
+            .HasForeignKey(c => c.WorkerId)
+            .OnDelete(DeleteBehavior.Cascade); // Cascade delete for ændringslogs
+
+        modelBuilder.Entity<WorkerChangeLog>()
+            .Property(c => c.ChangeDescription)
+            .HasMaxLength(255); // Optional begrænsning på længden af ChangeDescription
     }
 }

@@ -20,4 +20,6 @@ public class WorkerEntity
     public TimeSpan ImgWatchdogInterval { get; set; }
 
     public List<WorkerEvent> Events { get; set; } = new(); // Hændelser for worker
+    public List<WorkerChangeLog> ChangeLogs { get; set; } = new(); // Tilføjet liste over ændringslogs
+
 }

@@ -3,6 +3,7 @@ using Engine.DAL.Entities;
 using Engine.DAL.Repositories;
 using Engine.Interfaces;
 using Engine.Models;
+using Engine.Utils;
 using Serilog;
 
 namespace Engine.Services;
@@ -233,11 +234,11 @@ public class WorkerManager(
         return new CommandResult(true, $"Worker {workerId} {(enable ? "enabled" : "disabled")} successfully");
     }
 
+
     public async Task<CommandResult> EditWorkerAsync(WorkerCreateAndEdit workerEdit)
     {
         LogInfo($"Editing worker: {workerEdit.WorkerId}", workerEdit.WorkerId);
 
-        // Hent arbejderen fra databasen
         var workerRepository = repositoryFactory.CreateWorkerRepository();
         var workerEntity = await workerRepository.GetWorkerByIdAsync(workerEdit.WorkerId);
 
@@ -248,73 +249,51 @@ public class WorkerManager(
             return new CommandResult(false, "Worker not found in database");
         }
 
-        // Tjek om der er ændringer i Name, Description eller Command
-        var isModified = "";
-        var commandChanged = false;
+        // Brug WorkerChangeDetector til at finde ændringer
+        var changeDetector = new WorkerChangeDetector();
+        var changes = changeDetector.DetectChanges(workerEntity, workerEdit);
 
-
-        if (workerEntity.Name != workerEdit.Name)
-        {
-            workerEntity.Name = workerEdit.Name;
-            isModified = "New Name";
-        }
-
-        if (workerEntity.Description != workerEdit.Description)
-        {
-            workerEntity.Description = workerEdit.Description;
-            isModified = "New Description";
-        }
-
-        commandChanged = workerEntity.Command != workerEdit.Command;
-        if (commandChanged)
-        {
-            workerEntity.Command = workerEdit.Command ?? string.Empty;
-            isModified = "New Command";
-        }
-
-
-        // Tjek og opdater Watchdog felter hvis ændret
-        var watchdogChanged = false;
-
-        if (workerEntity.ImgWatchdogEnabled != workerEdit.ImgWatchdogEnabled ||
-            workerEntity.ImgWatchdogInterval != workerEdit.ImgWatchdogInterval ||
-            workerEntity.ImgWatchdogGraceTime != workerEdit.ImgWatchdogGraceTime)
-        {
-            watchdogChanged = true;
-            workerEntity.ImgWatchdogEnabled = workerEdit.ImgWatchdogEnabled;
-            workerEntity.ImgWatchdogInterval = workerEdit.ImgWatchdogInterval;
-            workerEntity.ImgWatchdogGraceTime = workerEdit.ImgWatchdogGraceTime;
-            isModified = "Watchdog Settings";
-        }
-
-        if (string.IsNullOrEmpty(isModified) && !watchdogChanged)
+        if (!changes.Any())
         {
             LogInfo("No changes detected", workerEdit.WorkerId);
             return new CommandResult(true, "No changes detected");
         }
 
+        // Opdater workerEntity med nye værdier
+        workerEntity.Name = workerEdit.Name;
+        workerEntity.Description = workerEdit.Description;
+        workerEntity.Command = workerEdit.Command ?? string.Empty;
+        workerEntity.IsEnabled = workerEdit.IsEnabled;
+        workerEntity.ImgWatchdogEnabled = workerEdit.ImgWatchdogEnabled;
+        workerEntity.ImgWatchdogInterval = workerEdit.ImgWatchdogInterval;
+        workerEntity.ImgWatchdogGraceTime = workerEdit.ImgWatchdogGraceTime;
         workerEntity.UpdatedAt = DateTime.UtcNow;
 
         await workerRepository.UpdateWorkerAsync(workerEntity);
 
+        // Tilføj ændringerne til WorkerChangeLog
+        await workerRepository.AddWorkerChangeLogsAsync(changes);
+
+        // Ekstra handlinger baseret på specifikke ændringer (kommandoændring, watchdogændringer)
+        var commandChanged = changes.Any(c => c.ChangeDescription == "Command changed");
+        var watchdogChanged = changes.Any(c => c.ChangeDescription == "Watchdog settings changed");
 
         if (watchdogChanged)
         {
             var workerService = GetWorkerService(workerEdit.WorkerId);
-            workerService?.UpdateWatchdogSettingsAsync(workerEdit.ImgWatchdogEnabled,
-                workerEdit.ImgWatchdogInterval, workerEdit.ImgWatchdogGraceTime);
+            workerService?.UpdateWatchdogSettingsAsync(workerEdit.ImgWatchdogEnabled, workerEdit.ImgWatchdogInterval,
+                workerEdit.ImgWatchdogGraceTime);
         }
 
-        // Hvis kommandoen er ændret, genstart arbejderen med den nye kommando
         if (commandChanged)
         {
             var workerService = GetWorkerService(workerEdit.WorkerId);
             if (workerService != null)
             {
                 LogInfo($"Restarting worker {workerEdit.WorkerId} due to command change.", workerEdit.WorkerId);
-                await workerService.StopAsync(); // Stop arbejderen
-                workerService.SetGstCommand(workerEdit.Command ?? string.Empty); // Opdater kommandoen
-                var result = await workerService.StartAsync(); // Genstart med den nye kommando
+                await workerService.StopAsync();
+                workerService.SetGstCommand(workerEdit.Command ?? string.Empty);
+                var result = await workerService.StartAsync();
                 if (!result.Success)
                 {
                     LogInfo($"Failed to restart worker {workerEdit.WorkerId}: {result.Message}", workerEdit.WorkerId,
@@ -324,11 +303,12 @@ public class WorkerManager(
             }
         }
 
-        // Send en event om at arbejderen er blevet opdateret
         await SendWorkerEvent(workerEdit.WorkerId, EventType.Updated);
+        LogInfo($"Worker updated successfully: {string.Join(", ", changes.Select(c => c.ChangeDescription))}",
+            workerEdit.WorkerId);
 
-        LogInfo($"Worker updated successfully: {isModified}", workerEdit.WorkerId);
-        return new CommandResult(true, $"Worker updated successfully: {isModified}");
+        return new CommandResult(true,
+            $"Worker updated successfully: {string.Join(", ", changes.Select(c => c.ChangeDescription))}");
     }
 
 
