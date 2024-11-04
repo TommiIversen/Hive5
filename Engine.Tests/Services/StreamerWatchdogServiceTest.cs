@@ -18,14 +18,14 @@ public class StreamerWatchdogServiceTests
         var mockLoggerService = new Mock<ILoggerService>();
         _mockCheckRestartCallback = new Mock<Func<(bool, string)>>();
         _mockRestartCallback = new Mock<Func<string, Task>>();
-        
+
         // Initialiserer StreamerWatchdogService med mock-objekter og reducerede tidsintervaller
         _watchdogService = new StreamerWatchdogService(
             "test-worker",
             _mockCheckRestartCallback.Object,
             _mockRestartCallback.Object,
-            TimeSpan.FromMilliseconds(100),  // Grace time reduceret til 100 ms
-            TimeSpan.FromMilliseconds(50),   // Check interval reduceret til 50 ms
+            TimeSpan.FromMilliseconds(100), // Grace time reduceret til 100 ms
+            TimeSpan.FromMilliseconds(50), // Check interval reduceret til 50 ms
             mockLoggerService.Object);
     }
 
@@ -69,7 +69,7 @@ public class StreamerWatchdogServiceTests
 
         // Assert
         _mockRestartCallback.Verify(callback => callback(It.IsAny<string>()), Times.AtLeastOnce);
-    
+
         // Cleanup
         await _watchdogService.StopAsync();
     }
@@ -88,7 +88,7 @@ public class StreamerWatchdogServiceTests
         await _watchdogService.StartAsync();
 
         // Act
-        bool eventWasRaised = eventRaised.Wait(200); // Vent op til 200 ms på, at eventen udløses
+        var eventWasRaised = eventRaised.Wait(200); // Vent op til 200 ms på, at eventen udløses
 
         // Assert
         Assert.True(eventWasRaised, "StateChanged event was not raised within the expected time.");

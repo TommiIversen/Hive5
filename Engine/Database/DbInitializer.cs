@@ -5,7 +5,6 @@ namespace Engine.Database;
 
 public static class DbInitializer
 {
-    
     public static void Seed(ApplicationDbContext context)
     {
         var engineEntity = context.EngineEntities.Include(e => e.HubUrls).FirstOrDefault();
@@ -18,9 +17,9 @@ public static class DbInitializer
                 Version = "1.0",
                 Description = "Default Description",
                 InstallDate = DateTime.Now,
-                HubUrls = new List<HubUrlEntity> 
+                HubUrls = new List<HubUrlEntity>
                 {
-                    new HubUrlEntity { HubUrl = "http://127.0.0.1:9000/streamhub" }
+                    new() {HubUrl = "http://127.0.0.1:9000/streamhub"}
                 }
             };
 
@@ -29,9 +28,8 @@ public static class DbInitializer
         }
         else if (!engineEntity.HubUrls.Any())
         {
-            engineEntity.HubUrls.Add(new HubUrlEntity { HubUrl = "http://127.0.0.1:9000/streamhub" });
+            engineEntity.HubUrls.Add(new HubUrlEntity {HubUrl = "http://127.0.0.1:9000/streamhub"});
             context.SaveChanges();
         }
     }
-
 }

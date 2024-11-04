@@ -1,22 +1,12 @@
-﻿using Common.DTOs;
+﻿using System.Threading;
+using System.Threading.Tasks;
+using Common.DTOs;
 using Engine.Services;
+using Microsoft.Extensions.Logging;
+using Moq;
+using Xunit;
 
 namespace Engine.Tests.Services;
-
-using System;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
-using Xunit;
-using Moq;
-using Engine.Utils;
-using System;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
-using Xunit;
-using Moq;
 
 public class MultiQueueTests
 {
@@ -76,14 +66,12 @@ public class MultiQueueTests
         var multiQueue = new MultiQueue(_loggerMock.Object, queueLimit);
 
         // Act
-        for (int i = 0; i < queueLimit + 1; i++)
-        {
-            multiQueue.EnqueueMessage(new BaseMessage());
-        }
+        for (var i = 0; i < queueLimit + 1; i++) multiQueue.EnqueueMessage(new BaseMessage());
 
         // Assert
         var messageType = typeof(BaseMessage);
-        Assert.Equal(queueLimit, multiQueue.GetQueueSizeForType(messageType)); // Kun queueLimit beskeder bør være i køen
+        Assert.Equal(queueLimit,
+            multiQueue.GetQueueSizeForType(messageType)); // Kun queueLimit beskeder bør være i køen
     }
 
     [Fact]

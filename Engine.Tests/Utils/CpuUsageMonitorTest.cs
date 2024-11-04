@@ -32,7 +32,8 @@ public class CpuUsageMonitorTests
         // Assert
         Assert.NotNull(perCoreCpuUsage);
         Assert.True(perCoreCpuUsage.Length > 0, "Per-core CPU usage should return an array with at least one value.");
-        Assert.All(perCoreCpuUsage, usage => Assert.True(usage >= 0, "Each core's CPU usage should be a non-negative value."));
+        Assert.All(perCoreCpuUsage,
+            usage => Assert.True(usage >= 0, "Each core's CPU usage should be a non-negative value."));
     }
 
     [Fact]

@@ -1,6 +1,6 @@
 ﻿namespace Common.DTOs;
 
-public class SystemInfoModel: BaseMessage
+public class SystemInfoModel : BaseMessage
 {
     public required string OsName { get; set; }
     public required string OSVersion { get; set; }

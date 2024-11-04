@@ -9,81 +9,82 @@ public class WorkerService(
     EngineManager engineManager,
     CancellationService cancellationService)
 {
-private async Task<CommandResult<T>> HandleWorkerOperationWithDataAsync<T>(string operation, WorkerOperationMessage data,
-    int timeoutMilliseconds = 5000, bool setProcessing = true)
-{
-    CommandResult<T> result;
-    var msg = "";
-
-    if (!engineManager.TryGetEngine(data.EngineId, out var engine))
+    private async Task<CommandResult<T>> HandleWorkerOperationWithDataAsync<T>(string operation,
+        WorkerOperationMessage data,
+        int timeoutMilliseconds = 5000, bool setProcessing = true)
     {
-        msg = $"{operation}: Engine {data.EngineId} not found";
-        Console.WriteLine(msg);
-        return new CommandResult<T>(false, msg);
-    }
+        CommandResult<T> result;
+        var msg = "";
 
-    if (engine?.ConnectionInfo.ConnectionId == null)
-    {
-        msg = $"{operation}: Engine {data.EngineId} not connected";
-        Console.WriteLine(msg);
-        return new CommandResult<T>(false, msg);
-    }
-
-    var worker = engineManager.GetWorker(data.EngineId, data.WorkerId);
-    if (worker == null && operation != "CreateWorker")
-    {
-        msg = $"{operation}: Worker {data.WorkerId} not found";
-        Console.WriteLine(msg);
-        return new CommandResult<T>(false, msg);
-    }
-
-    if (setProcessing) worker.IsProcessing = true;
-
-    using var timeoutCts = new CancellationTokenSource(timeoutMilliseconds);
-    using var linkedCts =
-        CancellationTokenSource.CreateLinkedTokenSource(cancellationService.Token, timeoutCts.Token);
-
-    try
-    {
-        Console.WriteLine($"Forwarding {operation} request with data on engine {data.EngineId}");
-        result = await hubContext.Clients.Client(engine.ConnectionInfo.ConnectionId)
-            .InvokeAsync<CommandResult<T>>(operation, data, linkedCts.Token);
-
-        msg = $"{result.Message} Time: {DateTime.Now}";
-    }
-    catch (OperationCanceledException)
-    {
-        msg = $"Operation canceled for {operation} due to timeout or cancellation.";
-        result = new CommandResult<T>(false, msg);
-    }
-    catch (Exception ex)
-    {
-        msg = $"Error during {operation}: {ex.Message}";
-        result = new CommandResult<T>(false, msg);
-    }
-    finally
-    {
-        Console.WriteLine(msg);
-        if (setProcessing)
+        if (!engineManager.TryGetEngine(data.EngineId, out var engine))
         {
-            worker.OperationResult = msg;
-            worker.IsProcessing = false;
-
-            // Send SignalR-besked for at opdatere UI efter state er sat korrekt
-            await hubContext.Clients.Group("frontendClients")
-                .SendAsync($"WorkerLockEvent-{data.EngineId}-{data.WorkerId}", new {worker.IsProcessing, msg});
+            msg = $"{operation}: Engine {data.EngineId} not found";
+            Console.WriteLine(msg);
+            return new CommandResult<T>(false, msg);
         }
-    }
 
-    return result;
-}
+        if (engine?.ConnectionInfo.ConnectionId == null)
+        {
+            msg = $"{operation}: Engine {data.EngineId} not connected";
+            Console.WriteLine(msg);
+            return new CommandResult<T>(false, msg);
+        }
+
+        var worker = engineManager.GetWorker(data.EngineId, data.WorkerId);
+        if (worker == null && operation != "CreateWorker")
+        {
+            msg = $"{operation}: Worker {data.WorkerId} not found";
+            Console.WriteLine(msg);
+            return new CommandResult<T>(false, msg);
+        }
+
+        if (setProcessing) worker.IsProcessing = true;
+
+        using var timeoutCts = new CancellationTokenSource(timeoutMilliseconds);
+        using var linkedCts =
+            CancellationTokenSource.CreateLinkedTokenSource(cancellationService.Token, timeoutCts.Token);
+
+        try
+        {
+            Console.WriteLine($"Forwarding {operation} request with data on engine {data.EngineId}");
+            result = await hubContext.Clients.Client(engine.ConnectionInfo.ConnectionId)
+                .InvokeAsync<CommandResult<T>>(operation, data, linkedCts.Token);
+
+            msg = $"{result.Message} Time: {DateTime.Now}";
+        }
+        catch (OperationCanceledException)
+        {
+            msg = $"Operation canceled for {operation} due to timeout or cancellation.";
+            result = new CommandResult<T>(false, msg);
+        }
+        catch (Exception ex)
+        {
+            msg = $"Error during {operation}: {ex.Message}";
+            result = new CommandResult<T>(false, msg);
+        }
+        finally
+        {
+            Console.WriteLine(msg);
+            if (setProcessing)
+            {
+                worker.OperationResult = msg;
+                worker.IsProcessing = false;
+
+                // Send SignalR-besked for at opdatere UI efter state er sat korrekt
+                await hubContext.Clients.Group("frontendClients")
+                    .SendAsync($"WorkerLockEvent-{data.EngineId}-{data.WorkerId}", new {worker.IsProcessing, msg});
+            }
+        }
+
+        return result;
+    }
 
 // Ikke-generisk version, der kalder den generiske med `T = object`
-private async Task<CommandResult> HandleWorkerOperationWithDataAsync(string operation, WorkerOperationMessage data,
-    int timeoutMilliseconds = 5000, bool setProcessing = true)
-{
-    return await HandleWorkerOperationWithDataAsync<object>(operation, data, timeoutMilliseconds, setProcessing);
-}
+    private async Task<CommandResult> HandleWorkerOperationWithDataAsync(string operation, WorkerOperationMessage data,
+        int timeoutMilliseconds = 5000, bool setProcessing = true)
+    {
+        return await HandleWorkerOperationWithDataAsync<object>(operation, data, timeoutMilliseconds, setProcessing);
+    }
 
     public async Task<CommandResult> StopWorkerAsync(Guid engineId, string workerId)
     {
@@ -154,8 +155,9 @@ private async Task<CommandResult> HandleWorkerOperationWithDataAsync(string oper
 
         return await HandleWorkerOperationWithDataAsync("EnableDisableWorker", message);
     }
-    
-    public async Task<CommandResult<WorkerEventWithLogsDto>> GetWorkerEventsWithLogsAsync(Guid engineId, string workerId)
+
+    public async Task<CommandResult<WorkerEventWithLogsDto>> GetWorkerEventsWithLogsAsync(Guid engineId,
+        string workerId)
     {
         var message = new WorkerOperationMessage
         {
@@ -164,11 +166,12 @@ private async Task<CommandResult> HandleWorkerOperationWithDataAsync(string oper
         };
 
         // Brug den korrekte typeparameter WorkerEventWithLogsDto
-        var result = await HandleWorkerOperationWithDataAsync<WorkerEventWithLogsDto>("GetWorkerEventsWithLogs", message, setProcessing: false);
+        var result =
+            await HandleWorkerOperationWithDataAsync<WorkerEventWithLogsDto>("GetWorkerEventsWithLogs", message,
+                setProcessing: false);
 
         var workerEventWithLogsDto = result.Data;
         Console.WriteLine($"GetWorkerEventsWithLogsAsync: {workerEventWithLogsDto?.WorkerId}");
         return result;
     }
-
 }

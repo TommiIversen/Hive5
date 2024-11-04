@@ -39,7 +39,7 @@ public class MessageEnricherTest
         Assert.Equal(1, message1.SequenceNumber);
         Assert.Equal(2, message2.SequenceNumber);
     }
-    
+
     [Fact]
     public void Enrich_Should_Set_Timestamp_To_Current_Time()
     {

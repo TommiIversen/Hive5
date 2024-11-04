@@ -1,8 +1,5 @@
-﻿using System;
-using System.Diagnostics;
+﻿using Engine.Utils;
 using Xunit;
-using Engine.Utils;
-using Common.DTOs;
 
 public class SystemInfoCollectorTests
 {
@@ -35,7 +32,7 @@ public class SystemInfoCollectorTests
         var platform = systemInfoCollector.GetSystemInfo().Platform;
 
         // Assert
-        Assert.Contains(platform, new[] { "Windows", "Linux", "macOS", "Unknown" });
+        Assert.Contains(platform, new[] {"Windows", "Linux", "macOS", "Unknown"});
     }
 
     [Fact]

@@ -1,7 +1,6 @@
-﻿using System;
-using System.Runtime.InteropServices;
-using Xunit;
+﻿using System.Runtime.InteropServices;
 using Engine.Utils;
+using Xunit;
 
 public class ImageGeneratorTests
 {
@@ -23,7 +22,7 @@ public class ImageGeneratorTests
         else
         {
             // Hvis ikke på Windows, forvent en fake byte array [0, 0, 0]
-            Assert.Equal(new byte[] { 0, 0, 0 }, result);
+            Assert.Equal(new byte[] {0, 0, 0}, result);
         }
     }
 }

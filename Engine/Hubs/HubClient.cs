@@ -2,7 +2,6 @@
 
 namespace Engine.Hubs;
 
-
 public interface IHubClient
 {
     Task InvokeAsync(string methodName, params object[] args);

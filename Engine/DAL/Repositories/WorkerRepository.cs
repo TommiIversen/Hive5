@@ -74,10 +74,7 @@ public class WorkerRepository(ApplicationDbContext context) : IWorkerRepository
                 .Include(w => w.Events)
                 .FirstOrDefaultAsync(w => w.WorkerId == workerId);
 
-            if (worker == null)
-            {
-                throw new InvalidOperationException("Worker not found");
-            }
+            if (worker == null) throw new InvalidOperationException("Worker not found");
 
             var newEvent = new WorkerEvent
             {
@@ -114,7 +111,6 @@ public class WorkerRepository(ApplicationDbContext context) : IWorkerRepository
     }
 
 
-    
     public async Task<List<WorkerEventLogDto>> GetRecentWorkerEventsWithLogsAsync(string workerId, int maxEvents = 20)
     {
         return await context.WorkerEvents.AsNoTracking()
@@ -128,8 +124,8 @@ public class WorkerRepository(ApplicationDbContext context) : IWorkerRepository
                 Logs = e.EventLogs.Select(log => new EventLogEntry
                 {
                     Message = log.Message,
-                    LogLevel = (int)log.LogLevel,
-                    LogTimestamp = log.LogTimestamp,
+                    LogLevel = (int) log.LogLevel,
+                    LogTimestamp = log.LogTimestamp
                 }).ToList()
             })
             .ToListAsync();

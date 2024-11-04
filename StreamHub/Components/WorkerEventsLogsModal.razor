@@ -1,6 +1,5 @@
 ﻿@using System.Text
 @using Common.DTOs
-@using Microsoft.Extensions.Logging
 @inject IJSRuntime JsRuntime
 
 @code {
@@ -86,7 +85,7 @@
     // Toggles the open state of log details for each event
     private void ToggleLog(int index)
     {
-        openLogIndex = openLogIndex == index ? (int?) null : index;
+        openLogIndex = openLogIndex == index ? null : index;
     }
 
     // Method to determine CSS class based on log level
@@ -121,7 +120,7 @@
             {
                 // Indryk loglinjen og formatér kolonnerne
                 var logTime = log.LogTimestamp.ToString("dd/MM-yy HH:mm:ss.fff").PadRight(25);
-                var logLevel = ((LogLevel)log.LogLevel).ToString().PadRight(10);
+                var logLevel = ((LogLevel) log.LogLevel).ToString().PadRight(10);
                 var message = log.Message;
 
                 sb.AppendLine(("     " + $"{logTime} | {logLevel} | {message}").PadLeft(5));
@@ -130,8 +129,6 @@
 
         return sb.ToString();
     }
-
-
 
 
     private async Task DownloadLogFile()

@@ -3,7 +3,6 @@ using System.Runtime.InteropServices;
 
 namespace Engine.Utils;
 
-
 public interface ICpuStatReader
 {
     string[] GetCpuStatLines();
@@ -17,7 +16,7 @@ public class CpuUsageMonitor : IDisposable
     private PerformanceCounter[]? _perCoreCpuCounters;
     private PerformanceCounter? _totalCpuCounter;
 
-    
+
     public void Dispose()
     {
         Dispose(true);
@@ -65,7 +64,8 @@ public class CpuUsageMonitor : IDisposable
             return 0;
 
         // Beregn CPU-forbrug som en procentdel over det forløbne tidsinterval
-        var cpuUsage = cpuTimeElapsed.TotalMilliseconds / (timeElapsed.TotalMilliseconds * Environment.ProcessorCount) * 100;
+        var cpuUsage = cpuTimeElapsed.TotalMilliseconds / (timeElapsed.TotalMilliseconds * Environment.ProcessorCount) *
+                       100;
 
         return cpuUsage;
     }
@@ -77,6 +77,7 @@ public class CpuUsageMonitor : IDisposable
             _totalCpuCounter = new PerformanceCounter("Processor", "% Processor Time", "_Total");
             _totalCpuCounter.NextValue(); // Skipper første værdi
         }
+
         return _totalCpuCounter.NextValue();
     }
 
@@ -93,7 +94,7 @@ public class CpuUsageMonitor : IDisposable
                 _perCoreCpuCounters[i].NextValue(); // Skipper første værdi
             }
         }
-        
+
         // Hvis counters stadig er null eller ikke initialiseret korrekt, returnér en array med defaults (0'er)
         if (_perCoreCpuCounters == null || _perCoreCpuCounters.Any(counter => counter == null))
         {
@@ -102,10 +103,7 @@ public class CpuUsageMonitor : IDisposable
         }
 
         var cpuUsages = new double[_perCoreCpuCounters.Length];
-        for (var i = 0; i < _perCoreCpuCounters.Length; i++)
-        {
-            cpuUsages[i] = _perCoreCpuCounters[i].NextValue();
-        }
+        for (var i = 0; i < _perCoreCpuCounters.Length; i++) cpuUsages[i] = _perCoreCpuCounters[i].NextValue();
 
         return cpuUsages;
     }
@@ -129,6 +127,7 @@ public class CpuUsageMonitor : IDisposable
             var coreValues = ParseCpuStat(coreLines[i]);
             usages[i] = CalculateCpuUsage(coreValues);
         }
+
         return usages;
     }
 
@@ -164,13 +163,10 @@ public class CpuUsageMonitor : IDisposable
                 _totalCpuCounter?.Dispose();
 
                 if (_perCoreCpuCounters != null)
-                {
                     foreach (var counter in _perCoreCpuCounters)
-                    {
                         counter?.Dispose();
-                    }
-                }
             }
+
             _disposed = true;
         }
     }

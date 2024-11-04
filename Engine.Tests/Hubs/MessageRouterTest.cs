@@ -1,9 +1,9 @@
-﻿using Xunit;
-using Moq;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Common.DTOs;
 using Engine.Hubs;
 using Microsoft.AspNetCore.SignalR;
+using Moq;
+using Xunit;
 
 public class MessageRouterTests
 {
@@ -60,16 +60,20 @@ public class MessageRouterTests
     {
         // Arrange
         var mockHubClient = new Mock<IHubClient>();
-        var unknownMessage = new BaseMessage { /* initialiser nødvendige properties her */ };
+        var unknownMessage = new BaseMessage
+        {
+            /* initialiser nødvendige properties her */
+        };
 
         // Act
         await MessageRouter.RouteMessageToClientAsync(mockHubClient.Object, unknownMessage);
 
         // Assert
-        mockHubClient.Verify(client => client.InvokeAsync("ReceiveDeadLetter", 
-            $"Unknown message type received: {unknownMessage.GetType().Name}, WorkerId: {unknownMessage.EngineId}"), Times.Once);
+        mockHubClient.Verify(client => client.InvokeAsync("ReceiveDeadLetter",
+                $"Unknown message type received: {unknownMessage.GetType().Name}, WorkerId: {unknownMessage.EngineId}"),
+            Times.Once);
     }
-    
+
     [Fact]
     public async Task RouteMessageToClientAsync_Should_Call_HandleUnknownMessage_When_HubException_MethodNotFound()
     {
@@ -92,7 +96,7 @@ public class MessageRouterTests
             LinkSpeedGbps = 0,
             MeasureTimestamp = default
         };
-        
+
         // Konfigurer mock til at kaste en HubException med den specifikke besked
         mockHubClient
             .Setup(client => client.InvokeAsync("ReceiveMetric", metricMessage))
@@ -103,7 +107,7 @@ public class MessageRouterTests
 
         // Assert
         // Verificer, at HandleUnknownMessage bliver kaldt med beskeden "ReceiveDeadLetter"
-        mockHubClient.Verify(client => client.InvokeAsync("ReceiveDeadLetter", 
+        mockHubClient.Verify(client => client.InvokeAsync("ReceiveDeadLetter",
             It.Is<string>(msg => msg.Contains("Unknown message type received"))), Times.Once);
 
         // Verificer at `ReceiveMetric` blev forsøgt kaldt

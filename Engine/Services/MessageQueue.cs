@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Engine.Services;
 
-public class MessageQueue: IMessageQueue
+public class MessageQueue : IMessageQueue
 {
     private readonly Channel<BaseMessage> _messageChannel;
 
@@ -125,7 +125,7 @@ public class MultiQueue
         }
     }
 
-    
+
     public int GetQueueSizeForType(Type messageType)
     {
         return _queues.TryGetValue(messageType, out var queue) ? queue.Count : 0;

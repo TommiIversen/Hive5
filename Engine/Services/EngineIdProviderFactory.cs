@@ -21,12 +21,9 @@ public class EngineIdProviderFactory : IEngineIdProviderFactory
     {
         Console.WriteLine("CreateEngineIdProvider: Henter EngineId fra databasen...");
         using var dbContext = _dbContextFactory.CreateDbContext();
-            
+
         var engineEntity = dbContext.EngineEntities.FirstOrDefault();
-        if (engineEntity == null)
-        {
-            throw new InvalidOperationException("EngineId kunne ikke hentes fra databasen.");
-        }
+        if (engineEntity == null) throw new InvalidOperationException("EngineId kunne ikke hentes fra databasen.");
 
         return new EngineIdProvider(engineEntity.EngineId);
     }

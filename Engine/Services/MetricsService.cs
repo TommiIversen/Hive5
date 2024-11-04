@@ -6,12 +6,12 @@ namespace Engine.Services;
 
 public class MetricsService : IHostedService, IDisposable
 {
+    private readonly CpuUsageMonitor _cpuUsageMonitor = new();
+    private readonly TimeSpan _interval;
+    private readonly MemoryUsageMonitor _memoryUsageMonitor = new();
     private readonly IMessageQueue _messageQueue;
     private readonly INetworkInterfaceProvider _networkInterfaceProvider;
-    private readonly CpuUsageMonitor _cpuUsageMonitor = new();
-    private readonly MemoryUsageMonitor _memoryUsageMonitor = new();
     private readonly NetworkUsageMonitor _networkUsageMonitor;
-    private readonly TimeSpan _interval;
     private Timer? _timer;
 
     public MetricsService(
@@ -25,6 +25,11 @@ public class MetricsService : IHostedService, IDisposable
         _interval = interval ?? TimeSpan.FromSeconds(2);
     }
 
+    public void Dispose()
+    {
+        _timer?.Dispose();
+    }
+
 
     public Task StartAsync(CancellationToken cancellationToken)
     {
@@ -33,12 +38,16 @@ public class MetricsService : IHostedService, IDisposable
         return Task.CompletedTask;
     }
 
+    public Task StopAsync(CancellationToken cancellationToken)
+    {
+        Console.WriteLine("Metrics generation task stopped.");
+        _timer?.Change(Timeout.Infinite, 0);
+        return Task.CompletedTask;
+    }
+
     public async Task GenerateMetricsAsync(CancellationToken cancellationToken)
     {
-        if (cancellationToken.IsCancellationRequested)
-        {
-            return;
-        }
+        if (cancellationToken.IsCancellationRequested) return;
 
         // Hent CPU- og RAM-målinger
         var totalCpuUsage = await GetCpuUsageAsync(cancellationToken);
@@ -86,18 +95,6 @@ public class MetricsService : IHostedService, IDisposable
         };
 
         await _messageQueue.EnqueueMessageAsync(metric, cancellationToken);
-    }
-
-    public Task StopAsync(CancellationToken cancellationToken)
-    {
-        Console.WriteLine("Metrics generation task stopped.");
-        _timer?.Change(Timeout.Infinite, 0);
-        return Task.CompletedTask;
-    }
-
-    public void Dispose()
-    {
-        _timer?.Dispose();
     }
 
     private async Task<double> GetCpuUsageAsync(CancellationToken cancellationToken)

@@ -3,7 +3,6 @@ using Engine.DAL.Entities;
 using Engine.DAL.Repositories;
 using Engine.Interfaces;
 using Engine.Models;
-using Engine.Utils;
 using Serilog;
 
 namespace Engine.Services;
@@ -120,12 +119,12 @@ public class WorkerManager(
             IsEnabled = true,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow,
-            ImgWatchdogEnabled = workerCreateAndEdit.ImgWatchdogEnabled,
+            ImgWatchdogEnabled = workerCreateAndEdit.ImgWatchdogEnabled
         };
 
         // Tilføj worker til databasen asynkront
         await workerRepository.AddWorkerAsync(workerEntity);
-        
+
         IStreamerService streamerService = new FakeStreamerService
         {
             WorkerId = workerCreateAndEdit.WorkerId,
@@ -409,6 +408,21 @@ public class WorkerManager(
         return new CommandResult(false, "Worker not found.");
     }
 
+    public async Task<WorkerEventWithLogsDto> GetWorkerEventsWithLogsAsync(string workerId)
+    {
+        var workerRepository = repositoryFactory.CreateWorkerRepository();
+        var recentEvents = await workerRepository.GetRecentWorkerEventsWithLogsAsync(workerId);
+
+        if (recentEvents == null || !recentEvents.Any())
+            throw new InvalidOperationException($"Worker with ID {workerId} not found or has no events.");
+
+        return new WorkerEventWithLogsDto
+        {
+            WorkerId = workerId,
+            Events = recentEvents
+        };
+    }
+
 
     private WorkerState GetWorkerState(string workerId)
     {
@@ -457,23 +471,6 @@ public class WorkerManager(
         {
             LogInfo($"Worker with ID {workerId} not found.", workerId, LogLevel.Warning);
         }
-    }
-    
-    public async Task<WorkerEventWithLogsDto> GetWorkerEventsWithLogsAsync(string workerId)
-    {
-        var workerRepository = repositoryFactory.CreateWorkerRepository();
-        var recentEvents = await workerRepository.GetRecentWorkerEventsWithLogsAsync(workerId);
-
-        if (recentEvents == null || !recentEvents.Any())
-        {
-            throw new InvalidOperationException($"Worker with ID {workerId} not found or has no events.");
-        }
-
-        return new WorkerEventWithLogsDto
-        {
-            WorkerId = workerId,
-            Events = recentEvents
-        };
     }
 
     private IWorkerService? GetWorkerService(string workerId)

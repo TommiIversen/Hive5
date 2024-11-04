@@ -1,4 +1,5 @@
 ﻿using Common.DTOs;
+
 namespace Engine.Hubs;
 
 public interface IMessageEnricher
@@ -8,7 +9,7 @@ public interface IMessageEnricher
 
 public class MessageEnricher : IMessageEnricher
 {
-    private int _sequenceNumber = 0;
+    private int _sequenceNumber;
 
     public void Enrich(BaseMessage baseMessage, Guid engineId)
     {

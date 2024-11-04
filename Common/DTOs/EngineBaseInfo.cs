@@ -1,6 +1,6 @@
 ﻿namespace Common.DTOs;
 
-public class EngineBaseInfo: BaseMessage
+public class EngineBaseInfo : BaseMessage
 {
     public string EngineName { get; set; } = "New Engine";
     public string EngineVersion { get; set; } = "1.0";
@@ -8,11 +8,9 @@ public class EngineBaseInfo: BaseMessage
     public DateTime EngineStartDate { get; set; } = DateTime.Now;
     public string Version { get; set; }
     public DateTime InstallDate { get; set; }
-    
+
     public List<HubUrlInfo> HubUrls { get; set; } = new();
 }
-
-
 
 public class HubUrlInfo
 {
@@ -20,7 +18,6 @@ public class HubUrlInfo
     public string HubUrl { get; set; } = string.Empty;
     public string ApiKey { get; set; } = string.Empty;
 }
-
 
 public class EngineEvent : EngineBaseInfo
 {

@@ -84,7 +84,7 @@ public class EngineService : IEngineService
             if (engine != null) await _engineRepository.SaveEngineAsync(engine);
         }
     }
-    
+
     public async Task<EngineEvent> GetEngineBaseInfoAsEvent()
     {
         var engine = await GetEngineAsync(); // Hent de opdaterede data

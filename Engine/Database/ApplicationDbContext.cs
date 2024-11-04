@@ -26,13 +26,13 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<WorkerEntity>()
             .Property(w => w.ImgWatchdogInterval)
             .HasDefaultValue(TimeSpan.FromSeconds(5));
-        
+
         // Opret et unikt indeks på HubUrl i HubUrlEntity
         modelBuilder.Entity<HubUrlEntity>()
             .HasIndex(h => h.HubUrl)
             .IsUnique(); // Sørg for, at HubUrl er unik
-        
-        
+
+
         modelBuilder.Entity<WorkerEntity>()
             .HasMany(w => w.Events)
             .WithOne()

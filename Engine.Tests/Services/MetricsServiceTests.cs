@@ -10,15 +10,16 @@ using Xunit;
 
 public class MetricsServiceTests
 {
+    private readonly MetricsService _metricsService;
     private readonly Mock<IMessageQueue> _mockMessageQueue;
     private readonly Mock<INetworkInterfaceProvider> _mockNetworkInterfaceProvider;
-    private readonly MetricsService _metricsService;
 
     public MetricsServiceTests()
     {
         _mockMessageQueue = new Mock<IMessageQueue>();
         _mockNetworkInterfaceProvider = new Mock<INetworkInterfaceProvider>();
-        _metricsService = new MetricsService(_mockMessageQueue.Object, _mockNetworkInterfaceProvider.Object, TimeSpan.FromMilliseconds(100));
+        _metricsService = new MetricsService(_mockMessageQueue.Object, _mockNetworkInterfaceProvider.Object,
+            TimeSpan.FromMilliseconds(100));
     }
 
     [Fact]

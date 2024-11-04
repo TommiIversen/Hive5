@@ -1,16 +1,15 @@
-﻿
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 
 namespace PrintProjectStructure;
 
-class Program
+internal class Program
 {
-    static void Main(string[] args)
+    private static void Main(string[] args)
     {
         // Opret konfiguration
         var builder = new ConfigurationBuilder()
             .SetBasePath(Directory.GetCurrentDirectory())
-            .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
+            .AddJsonFile("appsettings.json", true, true);
         var configuration = builder.Build();
 
         // Få computerens navn og rootPath fra konfiguration
@@ -19,10 +18,11 @@ class Program
         var rootPath = @"C:\Users\Tommi\RiderProjects\Hive5";
 
         // Udelukkede mapper og filer
-        var excludeDirs = new HashSet<string> {".github", ".vs", ".git", ".idea", "bin", "obj", "lib", "Migrations", "Identity", "Properties" };
+        var excludeDirs = new HashSet<string>
+            {".github", ".vs", ".git", ".idea", "bin", "obj", "lib", "Migrations", "Identity", "Properties"};
         var excludeFiles = new HashSet<string>();
         var includeExtensions = new HashSet<string>
-            { ".cs", ".html", ".js", ".cshtml", ".razor" }; // Filtyper, der skal inkluderes
+            {".cs", ".html", ".js", ".cshtml", ".razor"}; // Filtyper, der skal inkluderes
 
         // Hent strukturen og antal linjer
         var (structure, totalLines) =
@@ -30,16 +30,13 @@ class Program
 
         // Udskriv resultatet
         Console.WriteLine($"{new DirectoryInfo(rootPath).Name}  ");
-        foreach (var line in structure)
-        {
-            Console.WriteLine($"{line}  ");
-        }
+        foreach (var line in structure) Console.WriteLine($"{line}  ");
 
         Console.WriteLine($"Total: {totalLines} lines  ");
     }
 
 
-    static (List<string>, int) ListStructureAndCountLines(string path, string prefix = "",
+    private static (List<string>, int) ListStructureAndCountLines(string path, string prefix = "",
         HashSet<string> excludeDirs = null, HashSet<string> excludeFiles = null,
         HashSet<string> includeExtensions = null)
     {
@@ -48,7 +45,7 @@ class Program
         includeExtensions ??= [];
 
         var output = new List<string>();
-        int totalLines = 0;
+        var totalLines = 0;
 
         var allEntries = Directory.EnumerateFileSystemEntries(path).OrderBy(n => n);
 

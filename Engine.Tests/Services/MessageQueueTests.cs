@@ -1,11 +1,10 @@
-﻿using Common.DTOs;
+﻿using System.Threading;
+using System.Threading.Tasks;
+using Common.DTOs;
 using Engine.Services;
+using Xunit;
 
 namespace Engine.Tests.Services;
-
-using System.Threading;
-using System.Threading.Tasks;
-using Xunit;
 
 public class MessageQueueTests
 {

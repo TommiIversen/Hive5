@@ -14,18 +14,15 @@ public interface IStreamerWatchdogService
 
 public class StreamerWatchdogService : IStreamerWatchdogService
 {
-    private TimeSpan _checkInterval;
+    public delegate Task AsyncEventHandler<TEventArgs>(object sender, TEventArgs e);
+
     private readonly Func<(bool, string)> _checkRestartCallback;
-    private TimeSpan _graceTime;
+    private readonly ILoggerService _loggerService;
     private readonly Func<string, Task> _restartCallback;
     private readonly string _workerId;
     private CancellationTokenSource _cancellationTokenSource;
-    private bool _running;
     private bool _enabled = true;
     private Task? _watchdogTask;
-    private readonly ILoggerService _loggerService;
-    public delegate Task AsyncEventHandler<TEventArgs>(object sender, TEventArgs e);
-    public event AsyncEventHandler<string>? StateChanged;
 
     public StreamerWatchdogService(
         string workerId,
@@ -38,40 +35,41 @@ public class StreamerWatchdogService : IStreamerWatchdogService
         _workerId = workerId;
         _checkRestartCallback = checkRestartCallback;
         _restartCallback = restartCallback;
-        _graceTime = graceTime;
-        _checkInterval = checkInterval;
+        GraceTime = graceTime;
+        CheckInterval = checkInterval;
         _cancellationTokenSource = new CancellationTokenSource();
         _loggerService = loggerService;
     }
 
+    // Offentlig egenskab for at teste om watchdoggen kører
+    public bool IsRunning { get; private set; }
+
+    // Offentlig egenskab for at tilgå grace time
+    public TimeSpan GraceTime { get; private set; }
+
+    // Offentlig egenskab for at tilgå check interval
+    public TimeSpan CheckInterval { get; private set; }
+
+    public event AsyncEventHandler<string>? StateChanged;
+
     public async Task StartAsync()
     {
-        if (_running) await StopAsync();
+        if (IsRunning) await StopAsync();
 
-        _running = true;
+        IsRunning = true;
         _cancellationTokenSource = new CancellationTokenSource();
         _watchdogTask = RunAsync(_cancellationTokenSource.Token);
     }
-    
-    // Offentlig egenskab for at teste om watchdoggen kører
-    public bool IsRunning => _running;
-
-    // Offentlig egenskab for at tilgå grace time
-    public TimeSpan GraceTime => _graceTime;
-
-    // Offentlig egenskab for at tilgå check interval
-    public TimeSpan CheckInterval => _checkInterval;
 
 
     public async Task StopAsync()
     {
-        if (!_running) return;
+        if (!IsRunning) return;
 
-        _running = false;
+        IsRunning = false;
         await _cancellationTokenSource.CancelAsync();
 
         if (_watchdogTask != null)
-        {
             try
             {
                 await _watchdogTask;
@@ -80,21 +78,20 @@ public class StreamerWatchdogService : IStreamerWatchdogService
             {
                 LogInfo("Watchdog task was cancelled.");
             }
-        }
 
         LogInfo($"RunnerWatchdog: {_workerId} stopped.");
     }
 
     public void UpdateGraceTime(TimeSpan newGraceTime)
     {
-        _graceTime = newGraceTime;
-        LogInfo($"Grace time updated to {_graceTime}");
+        GraceTime = newGraceTime;
+        LogInfo($"Grace time updated to {GraceTime}");
     }
 
     public void UpdateCheckInterval(TimeSpan newCheckInterval)
     {
-        _checkInterval = newCheckInterval;
-        LogInfo($"Check interval updated to {_checkInterval}");
+        CheckInterval = newCheckInterval;
+        LogInfo($"Check interval updated to {CheckInterval}");
     }
 
     public void SetEnabled(bool isEnabled)
@@ -105,10 +102,10 @@ public class StreamerWatchdogService : IStreamerWatchdogService
 
     private async Task RunAsync(CancellationToken cancellationToken)
     {
-        LogInfo($"RunnerWatchdog: {_workerId} started with a grace time of {_graceTime}.");
+        LogInfo($"RunnerWatchdog: {_workerId} started with a grace time of {GraceTime}.");
         try
         {
-            await Task.Delay(_graceTime, cancellationToken);
+            await Task.Delay(GraceTime, cancellationToken);
         }
         catch (TaskCanceledException)
         {
@@ -116,15 +113,14 @@ public class StreamerWatchdogService : IStreamerWatchdogService
             return;
         }
 
-        LogInfo($"RunnerWatchdog: {_workerId} finished grace time and is now monitoring every {_checkInterval}.");
+        LogInfo($"RunnerWatchdog: {_workerId} finished grace time and is now monitoring every {CheckInterval}.");
 
         while (!cancellationToken.IsCancellationRequested)
-        {
             try
             {
-                await Task.Delay(_checkInterval, cancellationToken);
+                await Task.Delay(CheckInterval, cancellationToken);
 
-                if (!_enabled) 
+                if (!_enabled)
                 {
                     LogInfo("Watchdog check skipped because it is disabled.");
                     continue;
@@ -148,7 +144,6 @@ public class StreamerWatchdogService : IStreamerWatchdogService
                 LogInfo("Watchdog task was cancelled.");
                 break;
             }
-        }
     }
 
     private async Task ExecuteRestartCallbackAsync(string message)
@@ -172,12 +167,8 @@ public class StreamerWatchdogService : IStreamerWatchdogService
             var tasks = new List<Task>();
 
             foreach (var handler in handlers)
-            {
                 if (handler is AsyncEventHandler<string> asyncHandler)
-                {
                     tasks.Add(asyncHandler(this, message));
-                }
-            }
 
             await Task.WhenAll(tasks);
         }
@@ -192,5 +183,4 @@ public class StreamerWatchdogService : IStreamerWatchdogService
             LogLevel = logLevel
         });
     }
-
 }

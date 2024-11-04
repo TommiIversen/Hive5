@@ -34,8 +34,7 @@
             class="px-4 py-2 rounded bg-indigo-500 text-white hover:bg-indigo-700">
         View Events & Logs
     </button>
-    
-    
+
 
     @if (!string.IsNullOrEmpty(Worker.OperationResult))
     {
@@ -46,7 +45,7 @@
 
 @if (_isLogsModalVisible)
 {
-<WorkerEventsLogsModal WorkerEventsWithLogs="_workerEventsWithLogs" OnClose="CloseLogsModal" />
+    <WorkerEventsLogsModal WorkerEventsWithLogs="_workerEventsWithLogs" OnClose="CloseLogsModal"/>
 }
 
 @code {
@@ -61,7 +60,7 @@
     private async Task ShowLogsModal()
     {
         var result = await WorkerService.GetWorkerEventsWithLogsAsync(EngineId, Worker.WorkerId);
-        if (result is { Success: true })
+        if (result is {Success: true})
         {
             _workerEventsWithLogs = result.Data;
             _isLogsModalVisible = true;
@@ -72,12 +71,14 @@
             Console.WriteLine($"Failed to fetch events and logs: {result.Data}");
             Console.WriteLine($"Failed to fetch events and logs: {result.Message}");
         }
-
     }
 
 
-    private void CloseLogsModal() => _isLogsModalVisible = false;
-    
+    private void CloseLogsModal()
+    {
+        _isLogsModalVisible = false;
+    }
+
     private string GetButtonCss()
     {
         return Worker.IsProcessing ? "bg-gray-400 text-gray-700 cursor-not-allowed"

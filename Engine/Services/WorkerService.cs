@@ -8,13 +8,12 @@ namespace Engine.Services;
 
 public interface IWorkerService
 {
+    string WorkerId { get; }
     Task<CommandResult> StartAsync();
     Task<CommandResult> StopAsync();
     WorkerState GetState();
-    string WorkerId { get;  }
     void SetGstCommand(string gstCommand);
     void UpdateWatchdogSettingsAsync(bool isEnabled, TimeSpan interval, TimeSpan graceTime);
-
 }
 
 public class WorkerService : IWorkerService
@@ -23,14 +22,14 @@ public class WorkerService : IWorkerService
     private readonly IMessageQueue _messageQueue;
     private readonly IRepositoryFactory _repositoryFactory;
     private readonly IStreamerService _streamerService;
-    private IStreamerWatchdogService _watchdogService;
     private WorkerState _desiredState;
     private int _imageCounter;
     private DateTime _lastImageUpdate;
-    
+    private IStreamerWatchdogService _watchdogService;
+
     public WorkerService(
-        ILoggerService loggerService, 
-        IMessageQueue messageQueue, 
+        ILoggerService loggerService,
+        IMessageQueue messageQueue,
         IStreamerService streamerService,
         IRepositoryFactory repositoryFactory,
         IStreamerWatchdogFactory watchdogFactory,
@@ -41,7 +40,7 @@ public class WorkerService : IWorkerService
         _streamerService.WorkerId = config.WorkerId;
         _repositoryFactory = repositoryFactory;
         _loggerService = loggerService;
-        
+
         //WorkerId = workerCreateWorkerId;
         WorkerId = config.WorkerId;
 
@@ -63,33 +62,20 @@ public class WorkerService : IWorkerService
 
         _desiredState = WorkerState.Idle;
     }
+
     public string WorkerId { set; get; }
-    
-    public void SetWatchdog(IStreamerWatchdogService newWatchdogService)
-    {
-        _watchdogService.StopAsync();  // Stop eksisterende Watchdog
-        _watchdogService = newWatchdogService;  // Udskift med ny
-        _watchdogService.StartAsync();  // Start den nye Watchdog
-    }
 
-    public  void UpdateWatchdogSettingsAsync(bool isEnabled, TimeSpan interval, TimeSpan graceTime)
+    public void UpdateWatchdogSettingsAsync(bool isEnabled, TimeSpan interval, TimeSpan graceTime)
     {
-
         _watchdogService.SetEnabled(isEnabled);
         _watchdogService.UpdateCheckInterval(interval);
         _watchdogService.UpdateGraceTime(graceTime);
     }
 
 
-
     public void SetGstCommand(string gstCommand)
     {
         _streamerService.GstCommand = gstCommand;
-    }
-
-    public async Task HandleStateChangeAsync(WorkerState newState)
-    {
-        await HandleStateChange(this, newState, EventType.Updated, "State changed in runner");
     }
 
     public async Task<CommandResult> StartAsync()
@@ -188,6 +174,23 @@ public class WorkerService : IWorkerService
         return new CommandResult(success, message);
     }
 
+    public WorkerState GetState()
+    {
+        return _streamerService.GetState();
+    }
+
+    public void SetWatchdog(IStreamerWatchdogService newWatchdogService)
+    {
+        _watchdogService.StopAsync(); // Stop eksisterende Watchdog
+        _watchdogService = newWatchdogService; // Udskift med ny
+        _watchdogService.StartAsync(); // Start den nye Watchdog
+    }
+
+    public async Task HandleStateChangeAsync(WorkerState newState)
+    {
+        await HandleStateChange(this, newState, EventType.Updated, "State changed in runner");
+    }
+
 
     private (bool, string) ShouldRestart()
     {
@@ -252,7 +255,7 @@ public class WorkerService : IWorkerService
             // Tæl op
             workerEntity.WatchdogEventCount++;
             await workerRepository.UpdateWorkerAsync(workerEntity); // Gem ændringerne asynkront
-            
+
             // Hent de sidste 20 logs og gem dem som en hændelse
             var logs = _loggerService.GetLastWorkerLogs(WorkerId).Take(20).ToList();
             await workerRepository.AddWorkerEventAsync(WorkerId, message, logs);
@@ -279,11 +282,6 @@ public class WorkerService : IWorkerService
         _lastImageUpdate = image.Timestamp;
     }
 
-    public WorkerState GetState()
-    {
-        return _streamerService.GetState();
-    }
-
     public void LogInfo(string message, LogLevel logLevel = LogLevel.Information)
     {
         _loggerService.LogMessage(new WorkerLogEntry
@@ -293,7 +291,7 @@ public class WorkerService : IWorkerService
             LogLevel = logLevel
         });
     }
-    
+
     private async Task HandleStateChange(WorkerService workerService, WorkerState newState,
         EventType eventType = EventType.Updated, string reason = "")
     {

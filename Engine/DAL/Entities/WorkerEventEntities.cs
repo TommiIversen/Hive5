@@ -5,8 +5,7 @@ namespace Engine.DAL.Entities;
 
 public class WorkerEvent
 {
-    [Key]
-    public int EventId { get; set; }
+    [Key] public int EventId { get; set; }
 
     public required string WorkerId { get; set; } // Foreign key reference
     public DateTime EventTimestamp { get; set; } = DateTime.UtcNow;
@@ -17,12 +16,12 @@ public class WorkerEvent
 
 public class WorkerEventLog
 {
-    [Key]
-    public int LogId { get; set; }
+    [Key] public int LogId { get; set; }
 
     [ForeignKey("WorkerEvent")]
     [ConcurrencyCheck] // Samtidig opdatering på fremmednøglefeltet
     public int EventId { get; set; } // Reference til WorkerEvent
+
     public DateTime LogTimestamp { get; set; }
     public LogLevel LogLevel { get; set; }
     public required string Message { get; set; } = string.Empty;

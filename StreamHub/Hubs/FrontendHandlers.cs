@@ -1,5 +1,4 @@
-﻿using Common.DTOs;
-using Microsoft.AspNetCore.SignalR;
+﻿using Microsoft.AspNetCore.SignalR;
 using StreamHub.Services;
 
 namespace StreamHub.Hubs;

@@ -128,18 +128,16 @@ public class StreamHub
             var messagePackOptions = MessagePackSerializerOptions.Standard
                 .WithResolver(TypelessContractlessStandardResolver.Instance);
             var hubConnection = new HubConnectionBuilder()
-                .WithUrl($"{hubUrl}?clientType=backend", connectionOptions =>
-                {
-                    connectionOptions.Transports = HttpTransportType.WebSockets;
-                })
+                .WithUrl($"{hubUrl}?clientType=backend",
+                    connectionOptions => { connectionOptions.Transports = HttpTransportType.WebSockets; })
                 .WithAutomaticReconnect(new[]
                 {
                     TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5),
                     TimeSpan.FromSeconds(5)
                 })
-                 .AddMessagePackProtocol(options =>
-                 {
-                     //options.SerializerOptions = messagePackOptions;
+                .AddMessagePackProtocol(options =>
+                {
+                    //options.SerializerOptions = messagePackOptions;
                 })
                 .Build();
 

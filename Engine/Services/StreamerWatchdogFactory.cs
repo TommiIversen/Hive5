@@ -26,6 +26,7 @@ public class StreamerWatchdogFactory : IStreamerWatchdogFactory
         TimeSpan graceTime,
         TimeSpan checkInterval)
     {
-        return new StreamerWatchdogService(workerId, checkRestartCallback, restartCallback, graceTime, checkInterval, _loggerService);
+        return new StreamerWatchdogService(workerId, checkRestartCallback, restartCallback, graceTime, checkInterval,
+            _loggerService);
     }
 }

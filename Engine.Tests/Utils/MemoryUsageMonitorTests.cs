@@ -1,7 +1,7 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
-using Xunit;
 using Engine.Utils;
+using Xunit;
 
 public class MemoryUsageMonitorTests
 {
