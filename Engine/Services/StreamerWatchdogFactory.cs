@@ -1,6 +1,16 @@
-﻿using Engine.Services;
+﻿namespace Engine.Services;
 
-public class StreamerWatchdogFactory
+public interface IStreamerWatchdogFactory
+{
+    IStreamerWatchdogService CreateWatchdog(
+        string workerId,
+        Func<(bool, string)> checkRestartCallback,
+        Func<string, Task> restartCallback,
+        TimeSpan graceTime,
+        TimeSpan checkInterval);
+}
+
+public class StreamerWatchdogFactory : IStreamerWatchdogFactory
 {
     private readonly ILoggerService _loggerService;
 

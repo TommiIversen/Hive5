@@ -27,4 +27,6 @@ public class RepositoryFactory : IRepositoryFactory
 
 public interface IRepositoryFactory
 {
+    IWorkerRepository CreateWorkerRepository();
+    IEngineRepository CreateEngineRepository();
 }

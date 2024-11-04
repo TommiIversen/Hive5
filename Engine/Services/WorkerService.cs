@@ -21,7 +21,7 @@ public class WorkerService : IWorkerService
 {
     private readonly ILoggerService _loggerService;
     private readonly IMessageQueue _messageQueue;
-    private readonly RepositoryFactory _repositoryFactory;
+    private readonly IRepositoryFactory _repositoryFactory;
     private readonly IStreamerService _streamerService;
     private IStreamerWatchdogService _watchdogService;
     private WorkerState _desiredState;
@@ -32,8 +32,8 @@ public class WorkerService : IWorkerService
         ILoggerService loggerService, 
         IMessageQueue messageQueue, 
         IStreamerService streamerService,
-        RepositoryFactory repositoryFactory,
-        StreamerWatchdogFactory watchdogFactory,
+        IRepositoryFactory repositoryFactory,
+        IStreamerWatchdogFactory watchdogFactory,
         WorkerConfiguration config)
     {
         _messageQueue = messageQueue;
@@ -87,7 +87,7 @@ public class WorkerService : IWorkerService
         _streamerService.GstCommand = gstCommand;
     }
 
-    private async Task HandleStateChangeAsync(WorkerState newState)
+    public async Task HandleStateChangeAsync(WorkerState newState)
     {
         await HandleStateChange(this, newState, EventType.Updated, "State changed in runner");
     }
@@ -206,14 +206,14 @@ public class WorkerService : IWorkerService
         return (false, string.Empty);
     }
 
-    private Task WatchdogRestartCallback(string reason)
+    public Task WatchdogRestartCallback(string reason)
     {
         _ = Task.Run(async () => await RestartWorkerAsync(reason));
         return Task.CompletedTask;
     }
 
-    
-    private async Task RestartWorkerAsync(string reason)
+
+    public async Task RestartWorkerAsync(string reason)
     {
         var logMessage = $"Restarting worker {WorkerId} due to: {reason}";
         LogInfo(logMessage, LogLevel.Error);
@@ -284,7 +284,7 @@ public class WorkerService : IWorkerService
         return _streamerService.GetState();
     }
 
-    private void LogInfo(string message, LogLevel logLevel = LogLevel.Information)
+    public void LogInfo(string message, LogLevel logLevel = LogLevel.Information)
     {
         _loggerService.LogMessage(new WorkerLogEntry
         {
