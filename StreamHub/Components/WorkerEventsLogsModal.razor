@@ -1,58 +1,152 @@
-﻿@using Common.DTOs
+﻿@using System.Text
+@using Common.DTOs
+@using Microsoft.Extensions.Logging
+@inject IJSRuntime JsRuntime
 
 @code {
     [Parameter] public EventCallback OnClose { get; set; }
     [Parameter] public WorkerEventWithLogsDto? WorkerEventsWithLogs { get; set; }
+    private int? openLogIndex = null; // Track which event log is open
 }
 
-<dialog open>
-    <div class="modal-overlay" @onclick="() => OnClose.InvokeAsync()"></div>
-    <div class="modal-content">
-        <h3 class="text-lg font-bold mb-4">Events & Logs for Worker @WorkerEventsWithLogs?.WorkerId</h3>
-
-        @if (WorkerEventsWithLogs != null && WorkerEventsWithLogs.Events.Any())
-        {
-            @foreach (var evt in WorkerEventsWithLogs.Events)
-            {
-                <div class="event mb-4">
-                    <h4 class="text-sm font-semibold">@evt.EventTimestamp - @evt.EventMessage</h4>
-                    <ul class="logs-list ml-4">
-                        @foreach (var log in evt.Logs)
-                        {
-                            <li>
-                                <span class="@GetLogLevelClass(log.LogLevel)">
-                                    @log.LogTimestamp - @log.LogLevel - @log.Message
-                                </span>
-                            </li>
-                        }
-                    </ul>
+<div class="fixed inset-0 bg-gray-800 bg-opacity-75 overflow-y-auto h-full w-full z-50" @onclick="() => OnClose.InvokeAsync()">
+    <!-- Modal indhold -->
+    <div class="relative top-20 mx-auto p-2 border w-3/4 shadow-lg rounded-md bg-gray-900 z-60" @onclick:stopPropagation>
+        <div class="mt-3 px-2">
+            <div class="flex items-center justify-center">
+                <div class="text-white text-xl font-bold py-2">
+                    Events & Logs for Worker @WorkerEventsWithLogs?.WorkerId
                 </div>
-            }
-        }
-        else
-        {
-            <p>No events or logs available.</p>
-        }
-        <button @onclick="() => OnClose.InvokeAsync()" class="mt-4 px-4 py-2 rounded bg-red-500 text-white hover:bg-red-700">
-            Close
-        </button>
-    </div>
-</dialog>
+            </div>
 
-<style>
-    /* Basic styling for modal */
-    .modal-overlay { /* overlay styles */ }
-    .modal-content { /* content styles */ }
-</style>
+            @if (WorkerEventsWithLogs != null && WorkerEventsWithLogs.Events.Any())
+            {
+                @foreach (var evt in WorkerEventsWithLogs.Events.Select((value, index) => new {value, index}))
+                {
+                    <div class="bg-gray-700 mb-3 rounded">
+                        <div class="event-item bg-gray-800 text-white mb-2 p-2 rounded cursor-pointer hover:bg-blue-900"
+                             @onclick="() => ToggleLog(evt.index)">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <span>@evt.value.EventTimestamp.ToString("dd/MM-yy HH:mm:ss")</span>
+                                    <span> | Reason: @evt.value.EventMessage</span>
+                                </div>
+                                <div>
+                                    <!-- Toggle arrow icons for expanded/collapsed state -->
+                                    @if (openLogIndex == evt.index)
+                                    {
+                                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                                        </svg>
+                                    }
+                                    else
+                                    {
+                                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+                                        </svg>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Log details, conditionally shown based on openLogIndex -->
+                        @if (openLogIndex == evt.index)
+                        {
+                            <div class="logs ml-4">
+                                @foreach (var log in evt.value.Logs)
+                                {
+                                    <div class="log-item text-white">
+                                        <span>@log.LogTimestamp.ToString("dd/MM-yy HH:mm:ss.fff")</span>
+                                        <span class="@GetLogLevelClass(log.LogLevel)"> | @log.Message</span>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+            }
+            else
+            {
+                <p class="text-gray-300">No events or logs available.</p>
+            }
+
+            <!-- Close button -->
+            <div class="flex items-center space-x-2 mt-4">
+                <button @onclick="() => OnClose.InvokeAsync()" class="px-4 py-2 rounded bg-gray-700 hover:bg-gray-600 text-white">Close</button>
+                <button @onclick="DownloadLogFile" class="px-4 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white">
+                    Download Log
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
 
 @code {
 
-    private string GetLogLevelClass(LogLevel logLevel) => logLevel switch
+    // Toggles the open state of log details for each event
+    private void ToggleLog(int index)
     {
-        LogLevel.Warning => "text-yellow-500",
-        LogLevel.Error => "text-red-500",
-        LogLevel.Critical => "text-red-700 font-bold",
-        _ => "text-gray-700"
-    };
+        openLogIndex = openLogIndex == index ? (int?) null : index;
+    }
+
+    // Method to determine CSS class based on log level
+    private string GetLogLevelClass(int logLevel)
+    {
+        return logLevel switch
+        {
+            >= 2 and < 4 => "text-yellow-500", // Warning
+            4 => "text-red-500", // Error
+            5 => "text-red-700 font-bold", // Critical
+            _ => "text-gray-300" // Information and default
+        };
+    }
+
+    private string GenerateLogFileContent()
+    {
+        if (WorkerEventsWithLogs == null)
+        {
+            return "No events or logs available.";
+        }
+
+        var sb = new StringBuilder();
+        sb.AppendLine($"Events & Logs for Worker: {WorkerEventsWithLogs.WorkerId}");
+        sb.AppendLine("-------------------------------------------------------------------------------");
+        sb.AppendLine("Event Time           | Level       | Message");
+        sb.AppendLine("-------------------------------------------------------------------------------");
+
+        foreach (var evt in WorkerEventsWithLogs.Events)
+        {
+            sb.AppendLine($"[{evt.EventTimestamp:dd/MM-yy HH:mm:ss}] Reason: {evt.EventMessage}");
+            foreach (var log in evt.Logs)
+            {
+                // Indryk loglinjen og formatér kolonnerne
+                var logTime = log.LogTimestamp.ToString("dd/MM-yy HH:mm:ss.fff").PadRight(25);
+                var logLevel = ((LogLevel)log.LogLevel).ToString().PadRight(10);
+                var message = log.Message;
+
+                sb.AppendLine(("     " + $"{logTime} | {logLevel} | {message}").PadLeft(5));
+            }
+        }
+
+        return sb.ToString();
+    }
+
+
+
+
+    private async Task DownloadLogFile()
+    {
+        var content = GenerateLogFileContent();
+        await TriggerFileDownload("WorkerLogs.txt", content);
+    }
+
+    private async Task TriggerFileDownload(string fileName, string content)
+    {
+        var bytes = Encoding.UTF8.GetBytes(content);
+        var base64 = Convert.ToBase64String(bytes);
+        var fileUrl = $"data:text/plain;base64,{base64}";
+        await JsRuntime.InvokeVoidAsync("triggerFileDownload", fileName, fileUrl);
+    }
+
 
 }

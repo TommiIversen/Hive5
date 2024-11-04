@@ -61,9 +61,9 @@
     private async Task ShowLogsModal()
     {
         var result = await WorkerService.GetWorkerEventsWithLogsAsync(EngineId, Worker.WorkerId);
-        if (result is { Success: true, Data: WorkerEventWithLogsDto workerEventsWithLogs })
+        if (result is { Success: true })
         {
-            _workerEventsWithLogs = workerEventsWithLogs;
+            _workerEventsWithLogs = result.Data;
             _isLogsModalVisible = true;
             await InvokeAsync(StateHasChanged);
         }
@@ -72,6 +72,7 @@
             Console.WriteLine($"Failed to fetch events and logs: {result.Data}");
             Console.WriteLine($"Failed to fetch events and logs: {result.Message}");
         }
+
     }
 
 

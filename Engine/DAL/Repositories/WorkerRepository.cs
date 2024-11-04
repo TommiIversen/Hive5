@@ -125,13 +125,11 @@ public class WorkerRepository(ApplicationDbContext context) : IWorkerRepository
             {
                 EventTimestamp = e.EventTimestamp,
                 EventMessage = e.Message,
-                Logs = e.EventLogs.Select(log => new WorkerLogEntry
+                Logs = e.EventLogs.Select(log => new EventLogEntry
                 {
-                    WorkerId = workerId,
                     Message = log.Message,
-                    LogLevel = log.LogLevel,
+                    LogLevel = (int)log.LogLevel,
                     LogTimestamp = log.LogTimestamp,
-                    LogSequenceNumber = log.LogId
                 }).ToList()
             })
             .ToListAsync();

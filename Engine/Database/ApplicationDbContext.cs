@@ -38,5 +38,17 @@ public class ApplicationDbContext : DbContext
             .WithOne()
             .HasForeignKey(e => e.WorkerId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<WorkerEntity>()
+            .HasMany(w => w.Events)
+            .WithOne()
+            .HasForeignKey(e => e.WorkerId)
+            .OnDelete(DeleteBehavior.Cascade); // Cascade delete på WorkerEvents
+
+        modelBuilder.Entity<WorkerEvent>()
+            .HasMany(e => e.EventLogs)
+            .WithOne()
+            .HasForeignKey(log => log.EventId)
+            .OnDelete(DeleteBehavior.Cascade); // Cascade delete på EventLogs
     }
 }

@@ -72,7 +72,7 @@ namespace Engine.Hubs
                 return result;
             });
             
-            hubConnection.On<WorkerOperationMessage>("GetWorkerEventsWithLogs", async (message) =>
+            hubConnection.On("GetWorkerEventsWithLogs", async (WorkerOperationMessage message) =>
             {
                 try
                 {
@@ -88,41 +88,42 @@ namespace Engine.Hubs
                     }
         
                     // Hvis du ønsker at returnere noget til klienten, brug en separat send eller invoke
-                    await hubConnection.InvokeAsync("ReturnWorkerEventsWithLogs", new CommandResult(true, "Success", eventsWithLogs));
+                    //await hubConnection.InvokeAsync("ReturnWorkerEventsWithLogs", new CommandResult<WorkerEventWithLogsDto>(true, "Success", eventsWithLogs));
+                    return new CommandResult<WorkerEventWithLogsDto>(true, $"OK.", eventsWithLogs);
                 }
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, $"Error fetching events with logs for worker {message.WorkerId}: {ex.Message}");
-                    await hubConnection.InvokeAsync("ReturnWorkerEventsWithLogs", new CommandResult(false, $"Error: {ex.Message}", null));
+                    return new CommandResult<WorkerEventWithLogsDto>(false, $"Error: {ex.Message}", null);
                 }
             });
             
-            hubConnection.On("GetWorkerEventsWithLogs", async (WorkerOperationMessage message) =>
-            {
-                try
-                {
-                    var eventsWithLogs = await _workerManager.GetWorkerEventsWithLogsAsync(message.WorkerId);
-                    
-                    // console
-                    
-                    foreach (var workerEventWithLogsDto in eventsWithLogs.Events)
-                    {
-                        Console.WriteLine($"åååååååååååååååEvent: {workerEventWithLogsDto.EventMessage}");
-                        foreach (var log in workerEventWithLogsDto.Logs)
-                        {
-                            Console.WriteLine($"Log: {log.Message}");
-                        }
-                    }
-                    await hubConnection.InvokeAsync("ReturnWorkerEventsWithLogs", eventsWithLogs);
-
-                    return new CommandResult(true, "Worker events and logs retrieved successfully.");
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, $"Error fetching events with logs for worker {message.WorkerId} {ex}");
-                    return new CommandResult(false, $"Failed to retrieve worker events and logs {ex}.", null);
-                }
-            });
+            // hubConnection.On("GetWorkerEventsWithLogs", async (WorkerOperationMessage message) =>
+            // {
+            //     try
+            //     {
+            //         var eventsWithLogs = await _workerManager.GetWorkerEventsWithLogsAsync(message.WorkerId);
+            //         
+            //         // console
+            //         
+            //         foreach (var workerEventWithLogsDto in eventsWithLogs.Events)
+            //         {
+            //             Console.WriteLine($"åååååååååååååååEvent: {workerEventWithLogsDto.EventMessage}");
+            //             foreach (var log in workerEventWithLogsDto.Logs)
+            //             {
+            //                 Console.WriteLine($"Log: {log.Message}");
+            //             }
+            //         }
+            //         //await hubConnection.InvokeAsync("ReturnWorkerEventsWithLogs", eventsWithLogs);
+            //
+            //         return new CommandResult(true, "Worker events and logs retrieved successfully.");
+            //     }
+            //     catch (Exception ex)
+            //     {
+            //         _logger.LogError(ex, $"Error fetching events with logs for worker {message.WorkerId} {ex}");
+            //         return new CommandResult(false, $"Failed to retrieve worker events and logs {ex}.", null);
+            //     }
+            // });
             
         }
     }

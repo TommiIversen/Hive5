@@ -5,6 +5,7 @@
         <Nullable>enable</Nullable>
     </PropertyGroup>
     <ItemGroup>
+      <PackageReference Include="MessagePack.Annotations" Version="3.0.238-rc.1" />
       <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.0-rc.2.24473.5" />
     </ItemGroup>
     <PropertyGroup>
