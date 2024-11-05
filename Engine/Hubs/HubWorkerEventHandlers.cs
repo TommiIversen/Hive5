@@ -60,13 +60,12 @@ public class HubWorkerWorkerEventHandlers : IHubWorkerEventHandlers
             return commandResult;
         });
 
-
         hubConnection.On("CreateWorker", async (WorkerCreateAndEdit workerCreate) =>
         {
-            var workerService = await _workerManager.AddWorkerAsync(workerCreate.EngineId, workerCreate);
-            if (workerService == null)
+            var workerManager = await _workerManager.AddWorkerAsync(workerCreate.EngineId, workerCreate);
+            if (workerManager == null)
                 return new CommandResult(false, $"Worker with ID {workerCreate.WorkerId} already exists.");
-            var result = await _workerManager.StartWorkerAsync(workerService.WorkerId);
+            var result = await _workerManager.StartWorkerAsync(workerManager.WorkerId);
             return result;
         });
 
@@ -75,15 +74,6 @@ public class HubWorkerWorkerEventHandlers : IHubWorkerEventHandlers
             try
             {
                 var eventsWithLogs = await _workerManager.GetWorkerEventsWithLogsAsync(message.WorkerId);
-
-                foreach (var workerEventWithLogsDto in eventsWithLogs.Events)
-                {
-                    Console.WriteLine($"Event: {workerEventWithLogsDto.EventMessage}");
-                    foreach (var log in workerEventWithLogsDto.Logs) Console.WriteLine($"Log: {log.Message}");
-                }
-
-                // Hvis du ønsker at returnere noget til klienten, brug en separat send eller invoke
-                //await hubConnection.InvokeAsync("ReturnWorkerEventsWithLogs", new CommandResult<WorkerEventWithLogsDto>(true, "Success", eventsWithLogs));
                 return new CommandResult<WorkerEventWithLogsDto>(true, "OK.", eventsWithLogs);
             }
             catch (Exception ex)
@@ -92,32 +82,20 @@ public class HubWorkerWorkerEventHandlers : IHubWorkerEventHandlers
                 return new CommandResult<WorkerEventWithLogsDto>(false, $"Error: {ex.Message}");
             }
         });
+        
+        hubConnection.On("GetWorkerChangeLogs", async (WorkerOperationMessage message) =>
+        {
+            try
+            {
+                var changeLogs = await _workerManager.GetWorkerChangeLogsAsync(message.WorkerId);
+                return new CommandResult<WorkerChangeLogsDto>(true, "OK.", changeLogs);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error fetching change logs for worker {message.WorkerId}: {ex.Message}");
+                return new CommandResult<WorkerChangeLogsDto>(false, $"Error: {ex.Message}");
+            }
+        });
 
-        // hubConnection.On("GetWorkerEventsWithLogs", async (WorkerOperationMessage message) =>
-        // {
-        //     try
-        //     {
-        //         var eventsWithLogs = await _workerManager.GetWorkerEventsWithLogsAsync(message.WorkerId);
-        //         
-        //         // console
-        //         
-        //         foreach (var workerEventWithLogsDto in eventsWithLogs.Events)
-        //         {
-        //             Console.WriteLine($"åååååååååååååååEvent: {workerEventWithLogsDto.EventMessage}");
-        //             foreach (var log in workerEventWithLogsDto.Logs)
-        //             {
-        //                 Console.WriteLine($"Log: {log.Message}");
-        //             }
-        //         }
-        //         //await hubConnection.InvokeAsync("ReturnWorkerEventsWithLogs", eventsWithLogs);
-        //
-        //         return new CommandResult(true, "Worker events and logs retrieved successfully.");
-        //     }
-        //     catch (Exception ex)
-        //     {
-        //         _logger.LogError(ex, $"Error fetching events with logs for worker {message.WorkerId} {ex}");
-        //         return new CommandResult(false, $"Failed to retrieve worker events and logs {ex}.", null);
-        //     }
-        // });
     }
 }

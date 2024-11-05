@@ -79,7 +79,7 @@ public class WorkerService(
         return result;
     }
 
-// Ikke-generisk version, der kalder den generiske med `T = object`
+    // Ikke-generisk version, der kalder den generiske med `T = object`
     private async Task<CommandResult> HandleWorkerOperationWithDataAsync(string operation, WorkerOperationMessage data,
         int timeoutMilliseconds = 5000, bool setProcessing = true)
     {
@@ -165,7 +165,6 @@ public class WorkerService(
             EngineId = engineId
         };
 
-        // Brug den korrekte typeparameter WorkerEventWithLogsDto
         var result =
             await HandleWorkerOperationWithDataAsync<WorkerEventWithLogsDto>("GetWorkerEventsWithLogs", message,
                 setProcessing: false);
@@ -174,4 +173,20 @@ public class WorkerService(
         Console.WriteLine($"GetWorkerEventsWithLogsAsync: {workerEventWithLogsDto?.WorkerId}");
         return result;
     }
+    
+    public async Task<CommandResult<WorkerChangeLogsDto>> GetWorkerChangeLogsAsync(Guid engineId, string workerId)
+    {
+        var message = new WorkerOperationMessage
+        {
+            WorkerId = workerId,
+            EngineId = engineId
+        };
+
+        var result = await HandleWorkerOperationWithDataAsync<WorkerChangeLogsDto>("GetWorkerChangeLogs", message, setProcessing: false);
+
+        var workerChangeLogsDto = result.Data;
+        Console.WriteLine($"GetWorkerChangeLogsAsync: {workerChangeLogsDto?.WorkerId}");
+        return result;
+    }
+
 }

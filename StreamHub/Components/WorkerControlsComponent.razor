@@ -35,6 +35,10 @@
         View Events & Logs
     </button>
 
+    <button @onclick="ShowChangeLogsModal"
+            class="px-4 py-2 rounded bg-green-500 text-white hover:bg-green-700">
+        View Change Logs
+    </button>
 
     @if (!string.IsNullOrEmpty(Worker.OperationResult))
     {
@@ -48,6 +52,11 @@
     <WorkerEventsLogsModal WorkerEventsWithLogs="_workerEventsWithLogs" OnClose="CloseLogsModal"/>
 }
 
+@if (_isChangeLogsModalVisible)
+{
+<WorkerChangeLogsModal WorkerChangeLogs="_workerChangeLogs" OnClose="CloseChangeLogsModal" />
+}
+
 @code {
     [Parameter] public Guid EngineId { get; set; }
     [Parameter] public required string WorkerId { get; init; }
@@ -55,7 +64,9 @@
 
     private bool _isLogsModalVisible;
     private WorkerEventWithLogsDto? _workerEventsWithLogs;
-
+    
+    private bool _isChangeLogsModalVisible;
+    private WorkerChangeLogsDto? _workerChangeLogs;
 
     private async Task ShowLogsModal()
     {
@@ -72,12 +83,46 @@
             Console.WriteLine($"Failed to fetch events and logs: {result.Message}");
         }
     }
-
-
+    
     private void CloseLogsModal()
     {
         _isLogsModalVisible = false;
     }
+    
+    private async Task ShowChangeLogsModal()
+    {
+        var result = await WorkerService.GetWorkerChangeLogsAsync(EngineId, Worker.WorkerId);
+        if (result.Success)
+        {
+            _workerChangeLogs = result.Data;
+        }
+        else
+        {
+            _workerChangeLogs = new WorkerChangeLogsDto
+            {
+                WorkerId = Worker.WorkerId,
+                Changes =
+                [
+                    new WorkerChangeLogDto
+                    {
+                        ChangeTimestamp = DateTime.UtcNow,
+                        ChangeDescription = "No change logs found for this worker."
+                    }
+                ]
+            };
+        }
+    
+        _isChangeLogsModalVisible = true;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    
+    private void CloseChangeLogsModal()
+    {
+        _isChangeLogsModalVisible = false;
+    }
+
+
 
     private string GetButtonCss()
     {
@@ -122,5 +167,4 @@
         Console.WriteLine("Disposing WorkerControlsComponent");
         SignalRService.HubConnection.Remove("WorkerChangeEvent");
     }
-
 }

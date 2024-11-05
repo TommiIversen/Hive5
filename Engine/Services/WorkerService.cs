@@ -179,13 +179,6 @@ public class WorkerService : IWorkerService
         return _streamerService.GetState();
     }
 
-    public void SetWatchdog(IStreamerWatchdogService newWatchdogService)
-    {
-        _watchdogService.StopAsync(); // Stop eksisterende Watchdog
-        _watchdogService = newWatchdogService; // Udskift med ny
-        _watchdogService.StartAsync(); // Start den nye Watchdog
-    }
-
     public async Task HandleStateChangeAsync(WorkerState newState)
     {
         await HandleStateChange(this, newState, EventType.Updated, "State changed in runner");
@@ -261,11 +254,11 @@ public class WorkerService : IWorkerService
             await workerRepository.AddWorkerEventAsync(WorkerId, message, logs);
 
             LogInfo(
-                $"------Watchdog state changed for worker {WorkerId}. Event count: {workerEntity.WatchdogEventCount}");
+                $"OnWatchdogStateChanged: Watchdog state changed for worker {WorkerId}. Event count: {workerEntity.WatchdogEventCount}");
         }
         else
         {
-            LogInfo($"Worker with ID {WorkerId} not found.", LogLevel.Error);
+            LogInfo($"OnWatchdogStateChanged: Worker with ID {WorkerId} not found.", LogLevel.Error);
         }
     }
 
@@ -304,12 +297,11 @@ public class WorkerService : IWorkerService
         if (workerEntity != null)
         {
             var workerEvent = workerEntity.ToWorkerEvent(newState, eventType);
-            //workerEvent.Reason = reason; // Tilføj årsag hvis relevant
             _messageQueue.EnqueueMessage(workerEvent);
         }
         else
         {
-            LogInfo($"Worker with ID {WorkerId} not found.", LogLevel.Warning);
+            LogInfo($"HandleStateChange: Worker with ID {WorkerId} not found.", LogLevel.Warning);
         }
     }
 }

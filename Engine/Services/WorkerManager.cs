@@ -23,6 +23,7 @@ public interface IWorkerManager
     Task<CommandResult> RemoveWorkerAsync(string workerId);
     Task<CommandResult> ResetWatchdogEventCountAsync(string workerId);
     Task<WorkerEventWithLogsDto> GetWorkerEventsWithLogsAsync(string workerId);
+    Task<WorkerChangeLogsDto> GetWorkerChangeLogsAsync(string workerId);
 }
 
 public class WorkerManager(
@@ -402,6 +403,27 @@ public class WorkerManager(
             Events = recentEvents
         };
     }
+    
+    public async Task<WorkerChangeLogsDto> GetWorkerChangeLogsAsync(string workerId)
+    {
+        var workerRepository = repositoryFactory.CreateWorkerRepository();
+        var changeLogs = await workerRepository.GetWorkerChangeLogAsync(workerId);
+
+        if (changeLogs == null || !changeLogs.Any())
+            throw new InvalidOperationException($"Worker with ID {workerId} not found or has no change logs.");
+
+        return new WorkerChangeLogsDto
+        {
+            WorkerId = workerId,
+            Changes = changeLogs.Select(log => new WorkerChangeLogDto
+            {
+                ChangeTimestamp = log.ChangeTimestamp,
+                ChangeDescription = log.ChangeDescription,
+                ChangeDetails = log.ChangeDetails
+            }).ToList()
+        };
+    }
+
 
 
     private WorkerState GetWorkerState(string workerId)
