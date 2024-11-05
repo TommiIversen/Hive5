@@ -2,6 +2,7 @@
 using Engine.DAL.Entities;
 using Engine.DAL.Repositories;
 using Engine.Interfaces;
+using Engine.Metrics;
 using Engine.Models;
 using Engine.Utils;
 using Serilog;

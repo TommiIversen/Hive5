@@ -1,7 +1,50 @@
-﻿using Common.DTOs;
+﻿using System.Text;
+using Common.DTOs;
 using Engine.DAL.Entities;
 
-namespace Engine.Utils;
+namespace Engine.Metrics;
+
+
+public static class TextDiffHelper
+{
+    public static string HighlightChanges(string original, string updated)
+    {
+        var sb = new StringBuilder();
+        int originalIndex = 0, updatedIndex = 0;
+
+        while (originalIndex < original.Length || updatedIndex < updated.Length)
+        {
+            if (originalIndex < original.Length && updatedIndex < updated.Length && original[originalIndex] == updated[updatedIndex])
+            {
+                sb.Append(original[originalIndex]); // Ingen ændring
+                originalIndex++;
+                updatedIndex++;
+            }
+            else if (originalIndex < original.Length && updatedIndex < updated.Length && original[originalIndex] != updated[updatedIndex])
+            {
+                // Opdag ændring
+                sb.Append("<span class='changed'>").Append(updated[updatedIndex]).Append("</span>");
+                originalIndex++;
+                updatedIndex++;
+            }
+            else if (originalIndex < original.Length)
+            {
+                // Tegn fjernet
+                sb.Append("<span class='removed'>").Append(original[originalIndex]).Append("</span>");
+                originalIndex++;
+            }
+            else if (updatedIndex < updated.Length)
+            {
+                // Tegn tilføjet
+                sb.Append("<span class='added'>").Append(updated[updatedIndex]).Append("</span>");
+                updatedIndex++;
+            }
+        }
+
+        return sb.ToString();
+    }
+}
+
 
 public class WorkerChangeDetector
 {
@@ -15,7 +58,7 @@ public class WorkerChangeDetector
             {
                 WorkerId = original.WorkerId,
                 ChangeDescription = "Name changed",
-                ChangeDetails = $"From '{original.Name}' to '{updated.Name}'"
+                ChangeDetails = $"From:\n'{original.Name}'\nTo:\n'{updated.Name}'"
             });
         }
 
@@ -25,7 +68,7 @@ public class WorkerChangeDetector
             {
                 WorkerId = original.WorkerId,
                 ChangeDescription = "Description changed",
-                ChangeDetails = $"From '{original.Description}' to '{updated.Description}'"
+                ChangeDetails = $"From:\n'{original.Description}'\nTo:\n'{updated.Description}'"
             });
         }
 
@@ -35,7 +78,7 @@ public class WorkerChangeDetector
             {
                 WorkerId = original.WorkerId,
                 ChangeDescription = "Command changed",
-                ChangeDetails = $"From '{original.Command}' to '{updated.Command}'"
+                ChangeDetails = $"From:\n{original.Command}\n\nTo:\n{TextDiffHelper.HighlightChanges(original.Command, updated.Command)}"
             });
         }
 
@@ -47,9 +90,9 @@ public class WorkerChangeDetector
             {
                 WorkerId = original.WorkerId,
                 ChangeDescription = "Watchdog settings changed",
-                ChangeDetails = $"Enabled: From '{original.ImgWatchdogEnabled}' to '{updated.ImgWatchdogEnabled}', " +
-                                $"Interval: From '{original.ImgWatchdogInterval}' to '{updated.ImgWatchdogInterval}', " +
-                                $"Grace Time: From '{original.ImgWatchdogGraceTime}' to '{updated.ImgWatchdogGraceTime}'"
+                ChangeDetails = $"Enabled:\nFrom '{original.ImgWatchdogEnabled}'\nTo '{updated.ImgWatchdogEnabled}'\n\n" +
+                                $"Interval:\nFrom '{original.ImgWatchdogInterval}'\nTo '{updated.ImgWatchdogInterval}'\n\n" +
+                                $"Grace Time:\nFrom '{original.ImgWatchdogGraceTime}'\nTo '{updated.ImgWatchdogGraceTime}'"
             });
         }
 
