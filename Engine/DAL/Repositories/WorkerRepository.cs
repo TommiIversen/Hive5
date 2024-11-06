@@ -1,4 +1,5 @@
 ﻿using Common.DTOs;
+using Common.DTOs.Events;
 using Engine.DAL.Entities;
 using Engine.Database;
 using Microsoft.EntityFrameworkCore;

@@ -1,12 +1,13 @@
 ﻿using System.Collections.Concurrent;
 using Common.DTOs;
+using Common.DTOs.Events;
 
 namespace StreamHub.Models;
 
 public class WorkerViewModel
 {
     public required string WorkerId { get; set; }
-    public required WorkerOut Worker { get; set; }
+    public required WorkerInfo Worker { get; set; }
     public ConcurrentQueue<WorkerLogEntry> LogMessages { get; set; } = new();
     public string? LastImage { get; set; }
     public bool IsProcessing { get; set; }

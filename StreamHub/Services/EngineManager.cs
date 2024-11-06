@@ -1,5 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using Common.DTOs;
+using Common.DTOs.Events;
 using StreamHub.Models;
 
 namespace StreamHub.Services;
@@ -28,52 +29,52 @@ public class EngineManager
         }
     }
 
-    public void AddOrUpdateWorker(WorkerOut workerOut)
+    public void AddOrUpdateWorker(WorkerInfo workerInfo)
     {
-        if (_engines.TryGetValue(workerOut.EngineId, out var engine))
+        if (_engines.TryGetValue(workerInfo.EngineId, out var engine))
         {
-            if (engine.Workers.TryGetValue(workerOut.WorkerId, out var workerViewModel))
+            if (engine.Workers.TryGetValue(workerInfo.WorkerId, out var workerViewModel))
             {
-                if (IsOutdatedEvent(workerViewModel, workerOut))
+                if (IsOutdatedEvent(workerViewModel, workerInfo))
                 {
-                    Console.WriteLine($"Skipping outdated event for worker {workerOut.WorkerId} - {workerOut.Name}");
+                    Console.WriteLine($"Skipping outdated event for worker {workerInfo.WorkerId} - {workerInfo.Name}");
                     return;
                 }
 
-                UpdateExistingWorker(workerViewModel, workerOut);
+                UpdateExistingWorker(workerViewModel, workerInfo);
             }
             else
             {
-                AddNewWorker(engine, workerOut);
+                AddNewWorker(engine, workerInfo);
             }
         }
         else
         {
-            Console.WriteLine($"Engine {workerOut.EngineId} not found. Cannot add or update worker.");
+            Console.WriteLine($"Engine {workerInfo.EngineId} not found. Cannot add or update worker.");
         }
     }
 
-    private bool IsOutdatedEvent(WorkerViewModel workerViewModel, WorkerOut workerOut)
+    private bool IsOutdatedEvent(WorkerViewModel workerViewModel, WorkerInfo workerInfo)
     {
-        return workerViewModel.EventProcessedTimestamp >= workerOut.Timestamp;
+        return workerViewModel.EventProcessedTimestamp >= workerInfo.Timestamp;
     }
 
-    private void UpdateExistingWorker(WorkerViewModel workerViewModel, WorkerOut workerOut)
+    private void UpdateExistingWorker(WorkerViewModel workerViewModel, WorkerInfo workerInfo)
     {
-        workerViewModel.Worker = workerOut;
-        workerViewModel.EventProcessedTimestamp = workerOut.Timestamp; // Opdater tidsstemplet
-        Console.WriteLine($"Worker {workerOut.WorkerId} updated.");
+        workerViewModel.Worker = workerInfo;
+        workerViewModel.EventProcessedTimestamp = workerInfo.Timestamp; // Opdater tidsstemplet
+        Console.WriteLine($"Worker {workerInfo.WorkerId} updated.");
     }
 
-    private void AddNewWorker(EngineViewModel engine, WorkerOut workerOut)
+    private void AddNewWorker(EngineViewModel engine, WorkerInfo workerInfo)
     {
-        engine.Workers[workerOut.WorkerId] = new WorkerViewModel
+        engine.Workers[workerInfo.WorkerId] = new WorkerViewModel
         {
-            WorkerId = workerOut.WorkerId,
-            Worker = workerOut,
-            EventProcessedTimestamp = workerOut.Timestamp
+            WorkerId = workerInfo.WorkerId,
+            Worker = workerInfo,
+            EventProcessedTimestamp = workerInfo.Timestamp
         };
-        Console.WriteLine($"Worker {workerOut.WorkerId} added.");
+        Console.WriteLine($"Worker {workerInfo.WorkerId} added.");
     }
 
 

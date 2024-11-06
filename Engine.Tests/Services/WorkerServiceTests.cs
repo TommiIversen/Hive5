@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Common.DTOs;
+using Common.DTOs.Enums;
+using Common.DTOs.Events;
 using Engine.DAL.Entities;
 using Engine.DAL.Repositories;
 using Engine.Interfaces;

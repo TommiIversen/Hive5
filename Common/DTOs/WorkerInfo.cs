@@ -1,6 +1,8 @@
-﻿namespace Common.DTOs;
+﻿using Common.DTOs.Enums;
 
-public class WorkerOut : BaseMessage
+namespace Common.DTOs;
+
+public class WorkerInfo : BaseMessage
 {
     public required string WorkerId { get; init; }
     public required string? Name { get; init; }
@@ -9,7 +11,6 @@ public class WorkerOut : BaseMessage
     public required bool IsEnabled { get; init; }
     public required int WatchdogEventCount { get; init; }
     public WorkerState State { get; init; }
-
     public bool ImgWatchdogEnabled { get; init; } = true;
     public required TimeSpan ImgWatchdogGraceTime { get; init; }
     public required TimeSpan ImgWatchdogInterval { get; init; }

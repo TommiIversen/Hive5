@@ -1,5 +1,4 @@
-﻿
-namespace Common.DTOs;
+﻿namespace Common.DTOs.Commands;
 
 // Ikke-generisk version uden Data
 public class CommandResult(bool success, string message)

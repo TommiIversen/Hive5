@@ -1,4 +1,6 @@
 ﻿using Common.DTOs;
+using Common.DTOs.Commands;
+using Common.DTOs.Queries;
 using Engine.Services;
 using Microsoft.AspNetCore.SignalR.Client;
 

@@ -1,4 +1,6 @@
 ﻿using Common.DTOs;
+using Common.DTOs.Enums;
+using Common.DTOs.Events;
 using Microsoft.AspNetCore.Http.Connections.Features;
 using Microsoft.AspNetCore.SignalR;
 using StreamHub.Services;
@@ -80,7 +82,7 @@ public class BackendHandlers
 
     public async Task ReceiveEngineEvent(EngineEvent engineEvent)
     {
-        switch (engineEvent.EventType)
+        switch (engineEvent.ChangeEventType)
         {
             // TODO implementer de andre eventtyper
             // case EventType.Deleted:
@@ -91,7 +93,7 @@ public class BackendHandlers
             //     engineManager.AddOrUpdateEngine(engineEvent);
             //     await hubContext.Clients.Group("frontendClients").SendAsync("EngineChange", cancellationService.Token);
             //     break;
-            case EventType.Updated:
+            case ChangeEventType.Updated:
                 _engineManager.UpdateBaseInfo(engineEvent);
                 await _hubContext.Clients.Group("frontendClients")
                     .SendAsync("EngineChange", _cancellationService.Token);
@@ -123,19 +125,19 @@ public class BackendHandlers
 
     public async Task ReceiveWorkerEvent(WorkerChangeEvent workerChangeEvent)
     {
-        switch (workerChangeEvent.EventType)
+        switch (workerChangeEvent.ChangeEventType)
         {
-            case EventType.Deleted:
+            case ChangeEventType.Deleted:
                 _engineManager.RemoveWorker(workerChangeEvent.EngineId, workerChangeEvent.WorkerId);
                 await _hubContext.Clients.Group("frontendClients")
                     .SendAsync("EngineChange", _cancellationService.Token);
                 break;
-            case EventType.Created:
+            case ChangeEventType.Created:
                 _engineManager.AddOrUpdateWorker(workerChangeEvent);
                 await _hubContext.Clients.Group("frontendClients")
                     .SendAsync("EngineChange", _cancellationService.Token);
                 break;
-            case EventType.Updated:
+            case ChangeEventType.Updated:
                 _engineManager.AddOrUpdateWorker(workerChangeEvent);
                 var workerEventTopic = $"WorkerChangeEvent-{workerChangeEvent.EngineId}-{workerChangeEvent.WorkerId}";
 

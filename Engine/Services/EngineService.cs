@@ -1,4 +1,6 @@
 ﻿using Common.DTOs;
+using Common.DTOs.Enums;
+using Common.DTOs.Events;
 using Engine.DAL.Entities;
 using Engine.DAL.Repositories;
 using Engine.Database;
@@ -105,7 +107,7 @@ public class EngineService : IEngineService
                     ApiKey = h.ApiKey
                 })
                 .ToList(),
-            EventType = EventType.Updated // Mapper de nyeste URL'er fra database til DTO
+            ChangeEventType = ChangeEventType.Updated // Mapper de nyeste URL'er fra database til DTO
         };
 
         return engineBaseInfo;

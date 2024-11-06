@@ -1,5 +1,6 @@
 ﻿using System.Threading.Tasks;
 using Common.DTOs;
+using Common.DTOs.Events;
 using Engine.Hubs;
 using Microsoft.AspNetCore.SignalR;
 using Moq;

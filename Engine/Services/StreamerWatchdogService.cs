@@ -1,4 +1,5 @@
 ﻿using Common.DTOs;
+using Common.DTOs.Events;
 
 namespace Engine.Services;
 

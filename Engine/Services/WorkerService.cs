@@ -1,4 +1,7 @@
 ﻿using Common.DTOs;
+using Common.DTOs.Commands;
+using Common.DTOs.Enums;
+using Common.DTOs.Events;
 using Engine.DAL.Repositories;
 using Engine.Interfaces;
 using Engine.Models;
@@ -181,7 +184,7 @@ public class WorkerService : IWorkerService
 
     public async Task HandleStateChangeAsync(WorkerState newState)
     {
-        await HandleStateChange(this, newState, EventType.Updated, "State changed in runner");
+        await HandleStateChange(this, newState, ChangeEventType.Updated, "State changed in runner");
     }
 
 
@@ -287,7 +290,7 @@ public class WorkerService : IWorkerService
     }
 
     private async Task HandleStateChange(WorkerService workerService, WorkerState newState,
-        EventType eventType = EventType.Updated, string reason = "")
+        ChangeEventType changeEventType = ChangeEventType.Updated, string reason = "")
     {
         var logMessage = $"Worker {workerService.WorkerId} state changed to {newState}: {reason}";
         Log.Information(logMessage);
@@ -297,7 +300,7 @@ public class WorkerService : IWorkerService
 
         if (workerEntity != null)
         {
-            var workerEvent = workerEntity.ToWorkerEvent(newState, eventType);
+            var workerEvent = workerEntity.ToWorkerEvent(newState, changeEventType);
             _messageQueue.EnqueueMessage(workerEvent);
         }
         else

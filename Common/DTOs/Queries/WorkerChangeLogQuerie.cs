@@ -1,4 +1,4 @@
-﻿namespace Common.DTOs;
+﻿namespace Common.DTOs.Queries;
 
 public class WorkerChangeLogDto
 {

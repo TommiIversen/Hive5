@@ -1,4 +1,6 @@
 ﻿using Common.DTOs;
+using Common.DTOs.Enums;
+using Common.DTOs.Events;
 using Engine.DAL.Entities;
 
 namespace Engine.Models;
@@ -6,7 +8,7 @@ namespace Engine.Models;
 public static class WorkerOutExtensions
 {
     public static WorkerChangeEvent ToWorkerEvent(this WorkerEntity workerEntity, Guid engineId,
-        WorkerState state, EventType eventType = EventType.Updated)
+        WorkerState state, ChangeEventType changeEventType = ChangeEventType.Updated)
     {
         return new WorkerChangeEvent
         {
@@ -19,7 +21,7 @@ public static class WorkerOutExtensions
             EngineId = engineId,
             Timestamp = DateTime.UtcNow,
             SequenceNumber = 0,
-            EventType = eventType,
+            ChangeEventType = changeEventType,
             WatchdogEventCount = workerEntity.WatchdogEventCount,
             ImgWatchdogEnabled = workerEntity.ImgWatchdogEnabled,
             ImgWatchdogGraceTime = workerEntity.ImgWatchdogGraceTime,
@@ -29,7 +31,7 @@ public static class WorkerOutExtensions
 
 
     public static WorkerChangeEvent ToWorkerEvent(this WorkerEntity workerEntity,
-        WorkerState state, EventType eventType = EventType.Updated)
+        WorkerState state, ChangeEventType changeEventType = ChangeEventType.Updated)
     {
         return new WorkerChangeEvent
         {
@@ -41,7 +43,7 @@ public static class WorkerOutExtensions
             State = state,
             Timestamp = DateTime.UtcNow,
             SequenceNumber = 0,
-            EventType = eventType,
+            ChangeEventType = changeEventType,
             WatchdogEventCount = workerEntity.WatchdogEventCount,
             ImgWatchdogEnabled = workerEntity.ImgWatchdogEnabled,
             ImgWatchdogGraceTime = workerEntity.ImgWatchdogGraceTime,

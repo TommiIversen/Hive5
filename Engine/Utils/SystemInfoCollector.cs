@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Common.DTOs;
+using Common.DTOs.Events;
 
 namespace Engine.Utils;
 

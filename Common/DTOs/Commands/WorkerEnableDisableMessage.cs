@@ -1,4 +1,4 @@
-﻿namespace Common.DTOs;
+﻿namespace Common.DTOs.Commands;
 
 public class WorkerEnableDisableMessage : WorkerOperationMessage
 {

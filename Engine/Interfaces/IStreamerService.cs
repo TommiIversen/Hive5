@@ -1,4 +1,6 @@
 ﻿using Common.DTOs;
+using Common.DTOs.Enums;
+using Common.DTOs.Events;
 
 namespace Engine.Interfaces;
 

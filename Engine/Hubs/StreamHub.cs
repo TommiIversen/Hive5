@@ -1,5 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using Common.DTOs;
+using Common.DTOs.Commands;
+using Common.DTOs.Events;
 using Engine.Interfaces;
 using Engine.Services;
 using Engine.Utils;
@@ -290,7 +292,7 @@ public class StreamHub
                 if (baseMessage is WorkerChangeEvent workerEvent && workerEvent.Timestamp < syncTimestamp)
                 {
                     LogInfo(
-                        $"Skipping outdated event for streamHub: {url} - {workerEvent.EventType} {workerEvent.Name}");
+                        $"Skipping outdated event for streamHub: {url} - {workerEvent.ChangeEventType} {workerEvent.Name}");
                     continue;
                 }
 

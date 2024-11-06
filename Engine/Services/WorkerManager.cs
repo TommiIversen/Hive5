@@ -1,4 +1,8 @@
 ﻿using Common.DTOs;
+using Common.DTOs.Commands;
+using Common.DTOs.Enums;
+using Common.DTOs.Events;
+using Common.DTOs.Queries;
 using Engine.DAL.Entities;
 using Engine.DAL.Repositories;
 using Engine.Interfaces;
@@ -137,7 +141,7 @@ public class WorkerManager(
             workerConfig);
         _workers[workerId] = workerService;
 
-        await SendWorkerEvent(workerId, EventType.Created);
+        await SendWorkerEvent(workerId, ChangeEventType.Created);
         return workerService;
     }
 
@@ -222,7 +226,7 @@ public class WorkerManager(
         }
 
         // Send event om at arbejderen er blevet enabled/disabled
-        await SendWorkerEvent(workerId, EventType.Updated);
+        await SendWorkerEvent(workerId, ChangeEventType.Updated);
 
         LogInfo($"Worker {workerId} has been successfully {(enable ? "enabled" : "disabled")}.", workerId);
         return new CommandResult(true, $"Worker {workerId} {(enable ? "enabled" : "disabled")} successfully");
@@ -297,7 +301,7 @@ public class WorkerManager(
             }
         }
 
-        await SendWorkerEvent(workerEdit.WorkerId, EventType.Updated);
+        await SendWorkerEvent(workerEdit.WorkerId, ChangeEventType.Updated);
         LogInfo($"Worker updated successfully: {string.Join(", ", changes.Select(c => c.ChangeDescription))}",
             workerEdit.WorkerId);
 
@@ -374,7 +378,7 @@ public class WorkerManager(
             workerEntity.WatchdogEventCount = 0;
             await workerRepository.UpdateWorkerAsync(workerEntity);
             LogInfo($"Watchdog event count reset for worker {workerId}.", workerId);
-            await SendWorkerEvent(workerId, EventType.Updated);
+            await SendWorkerEvent(workerId, ChangeEventType.Updated);
             return new CommandResult(true, "Watchdog event count reset successfully.");
         }
 
@@ -435,7 +439,7 @@ public class WorkerManager(
             Description = "Worker has been deleted",
             Command = "WorkerDeleted",
             WorkerId = workerId,
-            EventType = EventType.Deleted,
+            ChangeEventType = ChangeEventType.Deleted,
             Timestamp = DateTime.UtcNow,
             IsEnabled = false,
             WatchdogEventCount = 0,
@@ -446,9 +450,9 @@ public class WorkerManager(
         messageQueue.EnqueueMessage(workerEvent);
     }
 
-    private async Task SendWorkerEvent(string workerId, EventType eventType)
+    private async Task SendWorkerEvent(string workerId, ChangeEventType changeEventType)
     {
-        LogInfo($"SendWorkerEvent: Sending worker event: {eventType}", workerId);
+        LogInfo($"SendWorkerEvent: Sending worker event: {changeEventType}", workerId);
         var workerService = GetWorkerService(workerId);
 
         if (workerService != null)
@@ -457,7 +461,7 @@ public class WorkerManager(
             var workerEntity = await workerRepository.GetWorkerByIdAsync(workerId);
             if (workerEntity != null)
             {
-                var workerEvent = workerEntity.ToWorkerEvent(workerService.GetState(), eventType);
+                var workerEvent = workerEntity.ToWorkerEvent(workerService.GetState(), changeEventType);
                 messageQueue.EnqueueMessage(workerEvent);
             }
         }

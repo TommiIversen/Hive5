@@ -1,4 +1,4 @@
-﻿namespace Common.DTOs;
+﻿namespace Common.DTOs.Events;
 
 public class ImageData : BaseMessage
 {

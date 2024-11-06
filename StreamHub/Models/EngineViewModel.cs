@@ -1,5 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using Common.DTOs;
+using Common.DTOs.Events;
 
 namespace StreamHub.Models;
 
