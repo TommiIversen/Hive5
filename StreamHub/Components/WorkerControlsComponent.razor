@@ -49,7 +49,7 @@
 
 @if (_isLogsModalVisible)
 {
-    <WorkerEventsLogsModal WorkerEventsWithLogs="_workerEventsWithLogs" OnClose="CloseLogsModal"/>
+    <WorkerEventsLogsModal WorkerName="@Worker.Worker.Name" WorkerEventsWithLogs="_workerEventsWithLogs" OnClose="CloseLogsModal"/>
 }
 
 @if (_isChangeLogsModalVisible)
@@ -115,14 +115,11 @@
         _isChangeLogsModalVisible = true;
         await InvokeAsync(StateHasChanged);
     }
-
     
     private void CloseChangeLogsModal()
     {
         _isChangeLogsModalVisible = false;
     }
-
-
 
     private string GetButtonCss()
     {

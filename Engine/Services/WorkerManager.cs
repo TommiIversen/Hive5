@@ -392,7 +392,6 @@ public class WorkerManager(
 
         return new WorkerEventWithLogsDto
         {
-            WorkerId = workerId,
             Events = recentEvents
         };
     }

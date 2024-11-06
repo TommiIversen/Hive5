@@ -28,12 +28,6 @@ public class EngineHub(
         await frontendHandlers.SubscribeToEngineLogs(engineId, Context.ConnectionId);
     }
 
-    public async Task ReturnWorkerEventsWithLogs(WorkerEventWithLogsDto workerId)
-    {
-        Console.WriteLine($"øøøøøøøøøøøøøøReturnWorkerEventsWithLogs: {workerId.WorkerId}");
-        //workerId.Events.ForEach(e => Console.WriteLine($"Event: {e.EventMessage}"));
-    }
-
     public async Task UnsubscribeFromEngineLogs(Guid engineId)
     {
         await frontendHandlers.UnsubscribeFromEngineLogs(engineId, Context.ConnectionId);

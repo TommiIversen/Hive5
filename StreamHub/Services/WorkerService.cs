@@ -168,9 +168,7 @@ public class WorkerService(
         var result =
             await HandleWorkerOperationWithDataAsync<WorkerEventWithLogsDto>("GetWorkerEventsWithLogs", message,
                 setProcessing: false);
-
-        var workerEventWithLogsDto = result.Data;
-        Console.WriteLine($"GetWorkerEventsWithLogsAsync: {workerEventWithLogsDto?.WorkerId}");
+        
         return result;
     }
     
