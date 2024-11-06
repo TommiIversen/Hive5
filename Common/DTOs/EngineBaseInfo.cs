@@ -2,24 +2,22 @@
 
 public class EngineBaseInfo : BaseMessage
 {
-    public string EngineName { get; set; } = "New Engine";
-    public string EngineVersion { get; set; } = "1.0";
-    public string EngineDescription { get; set; } = "Beskrivelse";
-    public DateTime EngineStartDate { get; set; } = DateTime.Now;
-    public string Version { get; set; }
-    public DateTime InstallDate { get; set; }
-
-    public List<HubUrlInfo> HubUrls { get; set; } = new();
+    public required string EngineName { get; init; }
+    public required string EngineDescription { get; init; }
+    public DateTime EngineStartDate { get; init; } = DateTime.Now;
+    public required string Version { get; init; }
+    public required DateTime InstallDate { get; init; }
+    public List<HubUrlInfo> HubUrls { get; set; } = [];
 }
 
 public class HubUrlInfo
 {
-    public int Id { get; set; }
-    public string HubUrl { get; set; } = string.Empty;
-    public string ApiKey { get; set; } = string.Empty;
+    public required int Id { get; init; }
+    public required string HubUrl { get; init; } = string.Empty;
+    public required string ApiKey { get; init; } = string.Empty;
 }
 
 public class EngineEvent : EngineBaseInfo
 {
-    public required EventType EventType { get; set; }
+    public required EventType EventType { get; init; }
 }

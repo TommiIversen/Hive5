@@ -2,15 +2,15 @@
 
 public class WorkerOut : BaseMessage
 {
-    public required string WorkerId { get; set; }
-    public required string? Name { get; set; }
-    public required string? Description { get; set; }
-    public required string? Command { get; set; }
-    public required bool IsEnabled { get; set; }
-    public required int WatchdogEventCount { get; set; }
-    public WorkerState State { get; set; }
+    public required string WorkerId { get; init; }
+    public required string? Name { get; init; }
+    public required string? Description { get; init; }
+    public required string? Command { get; init; }
+    public required bool IsEnabled { get; init; }
+    public required int WatchdogEventCount { get; init; }
+    public WorkerState State { get; init; }
 
-    public bool ImgWatchdogEnabled { get; set; } = true;
-    public required TimeSpan ImgWatchdogGraceTime { get; set; }
-    public required TimeSpan ImgWatchdogInterval { get; set; }
+    public bool ImgWatchdogEnabled { get; init; } = true;
+    public required TimeSpan ImgWatchdogGraceTime { get; init; }
+    public required TimeSpan ImgWatchdogInterval { get; init; }
 }

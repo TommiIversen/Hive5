@@ -43,7 +43,7 @@ public class LoggerService : ILoggerService
             logEntry.EngineId = _engineId;
 
         //logEntry.Timestamp = DateTime.UtcNow;
-        logEntry.LogTimestamp = DateTime.UtcNow;
+        //logEntry.LogTimestamp = DateTime.UtcNow;
 
         if (logEntry is WorkerLogEntry workerLogEntry)
         {

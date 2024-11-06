@@ -83,39 +83,31 @@ public class WorkerManager(
     public async Task<IWorkerService?> AddWorkerAsync(Guid engineId, WorkerCreateAndEdit workerCreateAndEdit)
     {
         LogInfo($"Adding worker... {workerCreateAndEdit.Name}", workerCreateAndEdit.WorkerId);
-
+        var workerId = workerCreateAndEdit.WorkerId ?? Guid.NewGuid().ToString();
+        
         var workerRepository = repositoryFactory.CreateWorkerRepository();
-
-        // Tjek, om WorkerId allerede findes i databasen asynkront
-        var existingWorker = await workerRepository.GetWorkerByIdAsync(workerCreateAndEdit.WorkerId);
+        var existingWorker = await workerRepository.GetWorkerByIdAsync(workerId);
 
         // Hvis arbejderen allerede findes i databasen, returnér null
         if (existingWorker != null)
         {
-            LogInfo($"Worker with ID {workerCreateAndEdit.WorkerId} already exists in database.",
-                workerCreateAndEdit.WorkerId,
+            LogInfo($"Worker with ID {workerId} already exists in database.",
+                workerId,
                 LogLevel.Warning);
             return null;
         }
 
-        // Hvis WorkerId ikke er angivet, generer et random ID
-        if (string.IsNullOrWhiteSpace(workerCreateAndEdit.WorkerId))
-            workerCreateAndEdit.WorkerId = Guid.NewGuid().ToString();
-
-        // Hvis arbejderen allerede findes i databasen og i _workers, returner den eksisterende service
-        if (_workers.TryGetValue(workerCreateAndEdit.WorkerId, out var async))
+        // Hvis worker allerede findes i databasen og i _workers, returner den eksisterende service
+        if (_workers.TryGetValue(workerId, out var workerServiceOut))
         {
-            var logmessage =
-                $"Worker with ID {workerCreateAndEdit.WorkerId} already exists in memory. Returning existing service.";
-            LogInfo(logmessage, workerCreateAndEdit.WorkerId, LogLevel.Warning);
-            return async;
+            LogInfo($"Worker with ID {workerId} already exists in memory. Returning existing service.", workerId, LogLevel.Warning);
+            return workerServiceOut;
         }
-
-
-        LogInfo($"Adding worker to database.. {workerCreateAndEdit.WorkerId}", workerCreateAndEdit.WorkerId);
+        
+        LogInfo($"Adding worker to database.. {workerId}", workerId);
         var workerEntity = new WorkerEntity
         {
-            WorkerId = workerCreateAndEdit.WorkerId,
+            WorkerId = workerId,
             Name = workerCreateAndEdit.Name,
             Description = workerCreateAndEdit.Description,
             Command = workerCreateAndEdit.Command,
@@ -130,7 +122,7 @@ public class WorkerManager(
 
         IStreamerService streamerService = new FakeStreamerService
         {
-            WorkerId = workerCreateAndEdit.WorkerId,
+            WorkerId = workerId,
             GstCommand = workerCreateAndEdit.Command
         };
 
@@ -143,9 +135,9 @@ public class WorkerManager(
             repositoryFactory,
             watchdogFactory,
             workerConfig);
-        _workers[workerCreateAndEdit.WorkerId] = workerService;
+        _workers[workerId] = workerService;
 
-        await SendWorkerEvent(workerCreateAndEdit.WorkerId, EventType.Created);
+        await SendWorkerEvent(workerId, EventType.Created);
         return workerService;
     }
 
@@ -487,7 +479,8 @@ public class WorkerManager(
         {
             WorkerId = workerId,
             Message = $"WorkerManager: {message}",
-            LogLevel = logLevel
+            LogLevel = logLevel,
+            LogTimestamp = DateTime.UtcNow
         });
     }
 }

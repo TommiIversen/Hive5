@@ -87,7 +87,7 @@ public class EngineService : IEngineService
 
     public async Task<EngineEvent> GetEngineBaseInfoAsEvent()
     {
-        var engine = await GetEngineAsync(); // Hent de opdaterede data
+        var engine = await GetEngineAsync();
         if (engine == null) throw new InvalidOperationException("Engine not found");
 
         var engineBaseInfo = new EngineEvent

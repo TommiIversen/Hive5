@@ -281,7 +281,8 @@ public class WorkerService : IWorkerService
         {
             WorkerId = WorkerId,
             Message = $"WorkerService: {message}",
-            LogLevel = logLevel
+            LogLevel = logLevel,
+            LogTimestamp = DateTime.UtcNow
         });
     }
 

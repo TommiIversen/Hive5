@@ -119,7 +119,7 @@ public class FakeStreamerService : IStreamerService
         var log = new WorkerLogEntry
         {
             WorkerId = WorkerId,
-            Timestamp = DateTime.UtcNow,
+            LogTimestamp = DateTime.UtcNow,
             Message = message,
             LogLevel = logLevel
         };

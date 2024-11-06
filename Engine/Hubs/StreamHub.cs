@@ -317,6 +317,7 @@ public class StreamHub
     {
         _loggerService.LogMessage(new EngineLogEntry
         {
+            LogTimestamp = DateTime.UtcNow,
             Message = $"StreamHub: {message}",
             LogLevel = logLevel
         });

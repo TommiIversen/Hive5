@@ -180,7 +180,8 @@ public class StreamerWatchdogService : IStreamerWatchdogService
         {
             WorkerId = _workerId,
             Message = $"WatchDog: {message}",
-            LogLevel = logLevel
+            LogLevel = logLevel,
+            LogTimestamp = DateTime.UtcNow
         });
     }
 }
