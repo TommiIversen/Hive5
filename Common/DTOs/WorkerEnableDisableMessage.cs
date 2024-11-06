@@ -2,5 +2,5 @@
 
 public class WorkerEnableDisableMessage : WorkerOperationMessage
 {
-    public bool Enable { get; set; }
+    public bool Enable { get; init; }
 }
