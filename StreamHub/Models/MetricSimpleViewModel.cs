@@ -7,7 +7,7 @@ public class MetricSimpleViewModel
     // Constructor to map values from a Metric object
     public MetricSimpleViewModel(Metric metric)
     {
-        CPUUsage = metric.CPUUsage;
+        CPUUsage = metric.CpuUsage;
         RxMbps = metric.RxMbps;
         TxMbps = metric.TxMbps;
         RxUsagePercent = metric.RxUsagePercent;

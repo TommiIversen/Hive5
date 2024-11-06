@@ -15,7 +15,7 @@ public class SystemInfoCollectorTests
         // Assert
         Assert.NotNull(systemInfo);
         Assert.False(string.IsNullOrWhiteSpace(systemInfo.OsName), "OS name should not be empty.");
-        Assert.False(string.IsNullOrWhiteSpace(systemInfo.OSVersion), "OS version should not be empty.");
+        Assert.False(string.IsNullOrWhiteSpace(systemInfo.OsVersion), "OS version should not be empty.");
         Assert.False(string.IsNullOrWhiteSpace(systemInfo.Architecture), "Architecture should not be empty.");
         Assert.True(systemInfo.Uptime >= 0, "Uptime should be a non-negative value.");
         Assert.True(systemInfo.ProcessCount > 0, "Process count should be greater than zero.");

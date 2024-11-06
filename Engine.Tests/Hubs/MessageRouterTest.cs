@@ -14,7 +14,7 @@ public class MessageRouterTests
         var mockHubClient = new Mock<IHubClient>();
         var metricMessage = new Metric
         {
-            CPUUsage = 0,
+            CpuUsage = 0,
             PerCoreCpuUsage = null,
             CurrentProcessCpuUsage = 0,
             MemoryUsage = 0,
@@ -44,8 +44,9 @@ public class MessageRouterTests
         var mockHubClient = new Mock<IHubClient>();
         var workerLog = new WorkerLogEntry
         {
-            WorkerId = null,
-            Message = null
+            Message = "just a test",
+            LogTimestamp = default,
+            WorkerId = "worker1"
         };
 
         // Act
@@ -81,7 +82,7 @@ public class MessageRouterTests
         var mockHubClient = new Mock<IHubClient>();
         var metricMessage = new Metric
         {
-            CPUUsage = 0,
+            CpuUsage = 0,
             PerCoreCpuUsage = null,
             CurrentProcessCpuUsage = 0,
             MemoryUsage = 0,

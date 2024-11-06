@@ -2,10 +2,10 @@
 
 public class SystemInfoModel : BaseMessage
 {
-    public required string OsName { get; set; }
-    public required string OSVersion { get; set; }
-    public required string Architecture { get; set; }
-    public double Uptime { get; set; }
-    public int ProcessCount { get; set; }
-    public required string Platform { get; set; }
+    public required string OsName { get; init; }
+    public required string OsVersion { get; init; }
+    public required string Architecture { get; init; }
+    public required double Uptime { get; init; }
+    public required int ProcessCount { get; init; }
+    public required string Platform { get; init; }
 }

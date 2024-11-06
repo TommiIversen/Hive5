@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using Common.DTOs;
 using Engine.Interfaces;
 using Microsoft.Extensions.Logging;
@@ -29,7 +30,8 @@ public class LoggerServiceTests
         {
             WorkerId = "worker1",
             Message = "Test message",
-            LogLevel = LogLevel.Information
+            LogLevel = LogLevel.Information,
+            LogTimestamp = DateTime.Now
         };
 
         // Act
@@ -50,7 +52,8 @@ public class LoggerServiceTests
             {
                 WorkerId = workerId,
                 Message = $"Message {i}",
-                LogLevel = LogLevel.Information
+                LogLevel = LogLevel.Information,
+                LogTimestamp = DateTime.Now
             });
 
         // Act
@@ -71,7 +74,8 @@ public class LoggerServiceTests
         {
             WorkerId = workerId,
             Message = "Test message",
-            LogLevel = LogLevel.Information
+            LogLevel = LogLevel.Information,
+            LogTimestamp = DateTime.Now
         });
 
         // Act

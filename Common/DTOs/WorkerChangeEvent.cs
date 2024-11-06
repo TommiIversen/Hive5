@@ -2,5 +2,5 @@
 
 public class WorkerChangeEvent : WorkerOut
 {
-    public required EventType EventType { get; set; }
+    public required EventType EventType { get; init; }
 }

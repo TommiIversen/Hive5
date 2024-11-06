@@ -11,7 +11,7 @@ public class SystemInfoCollector
         return new SystemInfoModel
         {
             OsName = RuntimeInformation.OSDescription,
-            OSVersion = Environment.OSVersion.ToString(),
+            OsVersion = Environment.OSVersion.ToString(),
             Architecture = RuntimeInformation.OSArchitecture.ToString(),
             Uptime = GetSystemUptime(),
             ProcessCount = Process.GetProcesses().Length,

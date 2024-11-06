@@ -78,7 +78,7 @@ public class MetricsService : IHostedService, IDisposable
         var metric = new Metric
         {
             Timestamp = DateTime.UtcNow,
-            CPUUsage = totalCpuUsage,
+            CpuUsage = totalCpuUsage,
             PerCoreCpuUsage = perCoreCpuUsage,
             CurrentProcessCpuUsage = currentProcessCpuUsage,
             MemoryUsage = totalMemory - availableMemory,

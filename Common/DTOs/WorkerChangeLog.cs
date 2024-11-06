@@ -2,13 +2,13 @@
 
 public class WorkerChangeLogDto
 {
-    public DateTime ChangeTimestamp { get; set; }
-    public required string ChangeDescription { get; set; }
-    public string? ChangeDetails { get; set; }
+    public required DateTime ChangeTimestamp { get; init; }
+    public required string ChangeDescription { get; init; }
+    public required string ChangeDetails { get; init; }
 }
 
 public class WorkerChangeLogsDto
 {
-    public required string WorkerId { get; set; }
-    public List<WorkerChangeLogDto> Changes { get; set; } = new();
+    public required string WorkerId { get; init; }
+    public required List<WorkerChangeLogDto> Changes { get; init; } = [];
 }
