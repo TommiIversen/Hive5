@@ -1,8 +1,6 @@
-﻿using Common.DTOs.Enums;
+﻿namespace Common.DTOs.Events;
 
-namespace Common.DTOs.Events;
-
-public class EngineBaseInfo : BaseMessage
+public class BaseEngineInfo : BaseMessage
 {
     public required string EngineName { get; init; }
     public required string EngineDescription { get; init; }
@@ -17,9 +15,4 @@ public class HubUrlInfo
     public required int Id { get; init; }
     public required string HubUrl { get; init; } = string.Empty;
     public required string ApiKey { get; init; } = string.Empty;
-}
-
-public class EngineEvent : EngineBaseInfo
-{
-    public required ChangeEventType ChangeEventType { get; init; }
 }

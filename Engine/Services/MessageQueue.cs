@@ -46,7 +46,7 @@ public class MessageQueue : IMessageQueue
         return _messageChannel.Reader.Count;
     }
 
-    public void EnqueueMessage(BaseLogEntry logEntry)
+    public void EnqueueMessage(BaseLogEntry baseLogEntry)
     {
         throw new NotImplementedException();
     }

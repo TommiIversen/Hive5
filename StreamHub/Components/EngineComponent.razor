@@ -10,22 +10,22 @@
     {
         <div class="absolute inset-0 bg-black bg-opacity-50 flex flex-col rounded-lg justify-center items-center text-white px-4 py-2" style="backdrop-filter: blur(5px); z-index: 10;">
             <span class="text-2xl font-bold">OFFLINE</span>
-            <span>@Engine?.BaseInfo.EngineName</span>
-            @* <span>Last known IP: @Engine.BaseInfo.IpAddress</span> *@
-            @* <span>Last seen: @Engine.BaseInfo.LastSeen</span> *@
-            <button @onclick="() => RemoveEngine(Engine.BaseInfo.EngineId)" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded">Remove Engine</button>
+            <span>@Engine?.Info.EngineName</span>
+            @* <span>Last known IP: @Engine.Info.IpAddress</span> *@
+            @* <span>Last seen: @Engine.Info.LastSeen</span> *@
+            <button @onclick="() => RemoveEngine(Engine.Info.EngineId)" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded">Remove Engine</button>
         </div>
     }
 
     <div class="bg-slate-950 p-4 border border-slate-700 shadow-sm rounded-lg md:col-span-1">
-        <h2 class="text-xl font-semibold">@Engine?.BaseInfo.EngineName</h2>
-        <div class="text-gray-400">@Engine?.BaseInfo.EngineDescription</div>
+        <h2 class="text-xl font-semibold">@Engine?.Info.EngineName</h2>
+        <div class="text-gray-400">@Engine?.Info.EngineDescription</div>
         <EngineConnectionInfoComponent Engine="@Engine"/>
-        <MetricExpandPanelComponent EngineId="@Engine.BaseInfo.EngineId"/>
+        <MetricExpandPanelComponent EngineId="@Engine.Info.EngineId"/>
         <EngineLogPanel Engine="@Engine"></EngineLogPanel>
-        <EngineCreateWorker EngineId="@Engine.BaseInfo.EngineId"/>
+        <EngineCreateWorker EngineId="@Engine.Info.EngineId"/>
         <MetricLineChartComponent Engine="@Engine"/>
-        <MetricCpuUsageBarChart EngineId="@Engine.BaseInfo.EngineId"/>
+        <MetricCpuUsageBarChart EngineId="@Engine.Info.EngineId"/>
     </div>
 
     <div class="md:col-span-3">
@@ -34,7 +34,7 @@
             <div class="grid grid-cols-1">
                 @foreach (var worker in Engine.Workers.Values)
                 {
-                    <WorkerComponent  @key="@($"WorkerComponent-{Engine.BaseInfo.EngineId}-{worker.WorkerId}")" EngineId="Engine.BaseInfo.EngineId" Worker="worker"/>
+                    <WorkerComponent  @key="@($"WorkerComponent-{Engine.Info.EngineId}-{worker.WorkerId}")" EngineId="Engine.Info.EngineId" Worker="worker"/>
                 }
             </div>
         }

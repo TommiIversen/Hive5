@@ -5,15 +5,15 @@ namespace StreamHub.Models;
 
 public class MetricSimpleViewModel
 {
-    // Constructor to map values from a Metric object
-    public MetricSimpleViewModel(Metric metric)
+    // Constructor to map values from a EngineMetric object
+    public MetricSimpleViewModel(EngineMetric engineMetric)
     {
-        CPUUsage = metric.CpuUsage;
-        RxMbps = metric.RxMbps;
-        TxMbps = metric.TxMbps;
-        RxUsagePercent = metric.RxUsagePercent;
-        TxUsagePercent = metric.TxUsagePercent;
-        Timestamp = metric.MeasureTimestamp;
+        CPUUsage = engineMetric.CpuUsage;
+        RxMbps = engineMetric.RxMbps;
+        TxMbps = engineMetric.TxMbps;
+        RxUsagePercent = engineMetric.RxUsagePercent;
+        TxUsagePercent = engineMetric.TxUsagePercent;
+        Timestamp = engineMetric.MeasureTimestamp;
     }
 
     public double CPUUsage { get; set; }

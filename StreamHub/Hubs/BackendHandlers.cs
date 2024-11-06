@@ -21,25 +21,25 @@ public class BackendHandlers
         _cancellationService = cancellationService;
     }
 
-    public async Task<bool> RegisterEngineConnection(EngineBaseInfo engineInfo, HubCallerContext context)
+    public async Task<bool> RegisterEngineConnection(BaseEngineInfo baseEngineInfo, HubCallerContext context)
     {
         // Tjek om engine allerede er forbundet
-        if (_engineManager.TryGetEngine(engineInfo.EngineId, out var existingEngine) &&
+        if (_engineManager.TryGetEngine(baseEngineInfo.EngineId, out var existingEngine) &&
             existingEngine != null &&
             !string.IsNullOrEmpty(existingEngine.ConnectionInfo.ConnectionId))
         {
             Console.WriteLine(
-                $"RegisterEngineConnection Engine {engineInfo.EngineId} is already connected. Rejecting new connection.");
+                $"RegisterEngineConnection Engine {baseEngineInfo.EngineId} is already connected. Rejecting new connection.");
             return false; // Afvis forbindelsen, da engine allerede er aktiv
         }
 
-        Console.WriteLine($"RegisterEngineConnection Engine {engineInfo.EngineId} connected.");
+        Console.WriteLine($"RegisterEngineConnection Engine {baseEngineInfo.EngineId} connected.");
 
         // Tilføj eller opdater engine og sæt forbindelses ID
-        var engine = _engineManager.GetOrAddEngine(engineInfo);
+        var engine = _engineManager.GetOrAddEngine(baseEngineInfo);
         engine.ConnectionInfo.ConnectionId = context.ConnectionId;
         engine.ConnectionInfo.OnlineSince = DateTime.UtcNow;
-        engine.BaseInfo = engineInfo;
+        engine.Info = baseEngineInfo;
 
         // Få flere oplysninger om forbindelsen
         var httpContext = context.GetHttpContext();
@@ -67,7 +67,7 @@ public class BackendHandlers
         await _hubContext.Clients.Group("frontendClients").SendAsync("EngineChange", _cancellationService.Token);
     }
 
-    public async Task ReceiveEngineSystemInfo(SystemInfoModel systemInfo)
+    public async Task ReceiveEngineSystemInfo(EngineSystemInfoModel systemInfo)
     {
         if (_engineManager.TryGetEngine(systemInfo.EngineId, out var engine))
         {
@@ -80,21 +80,21 @@ public class BackendHandlers
         }
     }
 
-    public async Task ReceiveEngineEvent(EngineEvent engineEvent)
+    public async Task ReceiveEngineEvent(EngineChangeEvent engineChangeEvent)
     {
-        switch (engineEvent.ChangeEventType)
+        switch (engineChangeEvent.ChangeEventType)
         {
             // TODO implementer de andre eventtyper
             // case EventType.Deleted:
-            //     engineManager.RemoveEngine(engineEvent.EngineId);
+            //     engineManager.RemoveEngine(engineChangeEvent.EngineId);
             //     await hubContext.Clients.Group("frontendClients").SendAsync("EngineChange", cancellationService.Token);
             //     break;
             // case EventType.Created:
-            //     engineManager.AddOrUpdateEngine(engineEvent);
+            //     engineManager.AddOrUpdateEngine(engineChangeEvent);
             //     await hubContext.Clients.Group("frontendClients").SendAsync("EngineChange", cancellationService.Token);
             //     break;
             case ChangeEventType.Updated:
-                _engineManager.UpdateBaseInfo(engineEvent);
+                _engineManager.UpdateBaseInfo(engineChangeEvent);
                 await _hubContext.Clients.Group("frontendClients")
                     .SendAsync("EngineChange", _cancellationService.Token);
                 break;
@@ -102,48 +102,48 @@ public class BackendHandlers
     }
 
 
-    public async Task ReceiveMetric(Metric metric)
+    public async Task ReceiveMetric(EngineMetric engineMetric)
     {
-        if (_engineManager.TryGetEngine(metric.EngineId, out var engine))
+        if (_engineManager.TryGetEngine(engineMetric.EngineId, out var engine))
         {
-            engine?.AddMetric(metric);
+            engine?.AddMetric(engineMetric);
 
-            // first metric ?
+            // first engineMetric ?
             if (engine?.LastMetric == null)
                 await _hubContext.Clients.Group("frontendClients")
                     .SendAsync("EngineChange", _cancellationService.Token);
 
-            await _hubContext.Clients.All.SendAsync($"UpdateMetric-{metric.EngineId}", metric,
+            await _hubContext.Clients.All.SendAsync($"UpdateMetric-{engineMetric.EngineId}", engineMetric,
                 _cancellationService.Token);
         }
         else
         {
-            Console.WriteLine($"ReceiveMetric: Engine {metric.EngineId} not found");
+            Console.WriteLine($"ReceiveMetric: Engine {engineMetric.EngineId} not found");
         }
     }
 
 
-    public async Task ReceiveWorkerEvent(WorkerChangeEvent workerChangeEvent)
+    public async Task ReceiveWorkerEvent(WorkerChangeEvent workerBaseChangeEvent)
     {
-        Console.WriteLine($"ReceiveWorkerEvent: {workerChangeEvent.ChangeEventType} - {workerChangeEvent.WorkerId} - {workerChangeEvent.State}");
-        switch (workerChangeEvent.ChangeEventType)
+        Console.WriteLine($"ReceiveWorkerEvent: {workerBaseChangeEvent.ChangeEventType} - {workerBaseChangeEvent.WorkerId} - {workerBaseChangeEvent.State}");
+        switch (workerBaseChangeEvent.ChangeEventType)
         {
             case ChangeEventType.Deleted:
-                _engineManager.RemoveWorker(workerChangeEvent.EngineId, workerChangeEvent.WorkerId);
+                _engineManager.RemoveWorker(workerBaseChangeEvent.EngineId, workerBaseChangeEvent.WorkerId);
                 await _hubContext.Clients.Group("frontendClients")
                     .SendAsync("EngineChange", _cancellationService.Token);
                 break;
             case ChangeEventType.Created:
-                _engineManager.AddOrUpdateWorker(workerChangeEvent);
+                _engineManager.AddOrUpdateWorker(workerBaseChangeEvent);
                 await _hubContext.Clients.Group("frontendClients")
                     .SendAsync("EngineChange", _cancellationService.Token);
                 break;
             case ChangeEventType.Updated:
-                _engineManager.AddOrUpdateWorker(workerChangeEvent);
-                var workerEventTopic = $"WorkerChangeEvent-{workerChangeEvent.EngineId}-{workerChangeEvent.WorkerId}";
+                _engineManager.AddOrUpdateWorker(workerBaseChangeEvent);
+                var workerEventTopic = $"WorkerChangeEvent-{workerBaseChangeEvent.EngineId}-{workerBaseChangeEvent.WorkerId}";
 
                 await _hubContext.Clients.Group("frontendClients")
-                    .SendAsync(workerEventTopic, workerChangeEvent, _cancellationService.Token);
+                    .SendAsync(workerEventTopic, workerBaseChangeEvent, _cancellationService.Token);
                 break;
         }
     }
@@ -184,20 +184,20 @@ public class BackendHandlers
         }
     }
 
-    public async Task ReceiveImage(ImageData imageData)
+    public async Task ReceiveImage(WorkerImageData workerImageData)
     {
-        var worker = _engineManager.GetWorker(imageData.EngineId, imageData.WorkerId);
+        var worker = _engineManager.GetWorker(workerImageData.EngineId, workerImageData.WorkerId);
 
         if (worker != null)
         {
-            worker.LastImage = $"data:image/jpeg;base64,{Convert.ToBase64String(imageData.ImageBytes)}";
+            worker.LastImage = $"data:image/jpeg;base64,{Convert.ToBase64String(workerImageData.ImageBytes)}";
             await _hubContext.Clients.Group("frontendClients")
-                .SendAsync($"ReceiveImage-{imageData.EngineId}-{imageData.WorkerId}", imageData,
+                .SendAsync($"ReceiveImage-{workerImageData.EngineId}-{workerImageData.WorkerId}", workerImageData,
                     _cancellationService.Token);
         }
         else
         {
-            Console.WriteLine($"ReceiveImage: Worker {imageData.WorkerId} not found");
+            Console.WriteLine($"ReceiveImage: Worker {workerImageData.WorkerId} not found");
         }
     }
 }

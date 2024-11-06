@@ -13,7 +13,7 @@ public class MessageRouterTests
     {
         // Arrange
         var mockHubClient = new Mock<IHubClient>();
-        var metricMessage = new Metric
+        var metricMessage = new EngineMetric
         {
             CpuUsage = 0,
             PerCoreCpuUsage = null,
@@ -81,7 +81,7 @@ public class MessageRouterTests
     {
         // Arrange
         var mockHubClient = new Mock<IHubClient>();
-        var metricMessage = new Metric
+        var metricMessage = new EngineMetric
         {
             CpuUsage = 0,
             PerCoreCpuUsage = null,

@@ -14,7 +14,7 @@
         <!-- Worker Info -->
         <div class="flex-1 pr-4 space-y-2">
             <div class="font-bold text-lg flex items-center space-x-2">
-                <span>@Worker.Worker.Name</span>
+                <span>@Worker.BaseWorker.Name</span>
                 <!-- Tooltip med ID og Last Update -->
                 <span class="relative group">
                     <!-- SVG ikon -->
@@ -31,33 +31,33 @@
                             <strong>ID:</strong> @Worker.WorkerId
                         </p>
                         <p>
-                            <strong>Sidst opdateret:</strong> @Worker.Worker.Timestamp.ToLocalTime().ToString("dd.MM.yyyy HH:mm:ss")
+                            <strong>Sidst opdateret:</strong> @Worker.BaseWorker.Timestamp.ToLocalTime().ToString("dd.MM.yyyy HH:mm:ss")
                         </p>
                     </div>
                 </span>
             </div>
-            <div class="text-gray-400">Description: @Worker.Worker.Description</div>
+            <div class="text-gray-400">Description: @Worker.BaseWorker.Description</div>
 
             <!-- Worker Status Grid -->
             <div class="grid grid-cols-2 gap-x-4 mt-2 w-1/2">
                 <div class="text-gray-400">Is Running:</div>
-                <div class="font-bold @(Worker.Worker.IsEnabled ? Worker.Worker.State != WorkerState.Running ? "text-red-500" : "text-green-500" : "text-gray-400")">
-                    @(Worker.Worker.State)
+                <div class="font-bold @(Worker.BaseWorker.IsEnabled ? Worker.BaseWorker.State != WorkerState.Running ? "text-red-500" : "text-green-500" : "text-gray-400")">
+                    @(Worker.BaseWorker.State)
                 </div>
 
                 <div class="text-gray-400">Worker Enabled:</div>
-                <div class="font-bold @(Worker.Worker.IsEnabled ? "text-green-500" : "text-red-500")">
-                    @(Worker.Worker.IsEnabled ? "Yes" : "No")
+                <div class="font-bold @(Worker.BaseWorker.IsEnabled ? "text-green-500" : "text-red-500")">
+                    @(Worker.BaseWorker.IsEnabled ? "Yes" : "No")
                 </div>
 
                 <div class="text-gray-400">Watchdog Enabled:</div>
-                <div class="font-bold @(Worker.Worker.ImgWatchdogEnabled ? "text-green-500" : "text-red-500")">
-                    @(Worker.Worker.ImgWatchdogEnabled ? "Yes" : "No")
+                <div class="font-bold @(Worker.BaseWorker.ImgWatchdogEnabled ? "text-green-500" : "text-red-500")">
+                    @(Worker.BaseWorker.ImgWatchdogEnabled ? "Yes" : "No")
                 </div>
 
                 <div class="text-gray-400">Watchdog Event Count:</div>
-                <div class="font-bold @(Worker.Worker.WatchdogEventCount > 0 ? "text-red-500" : "text-green-500")">
-                    @Worker.Worker.WatchdogEventCount
+                <div class="font-bold @(Worker.BaseWorker.WatchdogEventCount > 0 ? "text-red-500" : "text-green-500")">
+                    @Worker.BaseWorker.WatchdogEventCount
                 </div>
             </div>
         </div>

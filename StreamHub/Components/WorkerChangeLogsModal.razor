@@ -3,7 +3,7 @@
 
 @code {
     [Parameter] public EventCallback OnClose { get; set; }
-    [Parameter] public WorkerChangeLogsDto? WorkerChangeLogs { get; set; }
+    [Parameter] public WorkerChangeLog? WorkerChangeLogs { get; set; }
     private int? openChangeIndex = null; // Track which change detail is open
 }
 

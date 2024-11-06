@@ -271,11 +271,11 @@ public class WorkerService : IWorkerService
         _loggerService.LogMessage(workerLog);
     }
 
-    private void OnImageGenerated(object? sender, ImageData image)
+    private void OnImageGenerated(object? sender, WorkerImageData workerImage)
     {
-        image.ImageSequenceNumber = Interlocked.Increment(ref _imageCounter);
-        _messageQueue.EnqueueMessage(image);
-        _lastImageUpdate = image.Timestamp;
+        workerImage.ImageSequenceNumber = Interlocked.Increment(ref _imageCounter);
+        _messageQueue.EnqueueMessage(workerImage);
+        _lastImageUpdate = workerImage.Timestamp;
     }
 
     public void LogInfo(string message, LogLevel logLevel = LogLevel.Information)

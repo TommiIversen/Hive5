@@ -11,6 +11,7 @@ using Engine.Metrics;
 using Engine.Models;
 using Engine.Utils;
 using Serilog;
+using WorkerChangeLog = Common.DTOs.Queries.WorkerChangeLog;
 
 namespace Engine.Services;
 
@@ -28,8 +29,8 @@ public interface IWorkerManager
     Task<List<WorkerChangeEvent>> GetAllWorkers(Guid engineId);
     Task<CommandResult> RemoveWorkerAsync(string workerId);
     Task<CommandResult> ResetWatchdogEventCountAsync(string workerId);
-    Task<WorkerEventWithLogsDto> GetWorkerEventsWithLogsAsync(string workerId);
-    Task<WorkerChangeLogsDto> GetWorkerChangeLogsAsync(string workerId);
+    Task<WorkerEventLogCollection> GetWorkerEventsWithLogsAsync(string workerId);
+    Task<WorkerChangeLog> GetWorkerChangeLogsAsync(string workerId);
 }
 
 
@@ -414,7 +415,7 @@ public class WorkerManager(
         return new CommandResult(false, "Worker not found.");
     }
 
-    public async Task<WorkerEventWithLogsDto> GetWorkerEventsWithLogsAsync(string workerId)
+    public async Task<WorkerEventLogCollection> GetWorkerEventsWithLogsAsync(string workerId)
     {
         var workerRepository = repositoryFactory.CreateWorkerRepository();
         var recentEvents = await workerRepository.GetRecentWorkerEventsWithLogsAsync(workerId);
@@ -422,13 +423,13 @@ public class WorkerManager(
         if (recentEvents == null || !recentEvents.Any())
             throw new InvalidOperationException($"Worker with ID {workerId} not found or has no events.");
 
-        return new WorkerEventWithLogsDto
+        return new WorkerEventLogCollection
         {
             Events = recentEvents
         };
     }
     
-    public async Task<WorkerChangeLogsDto> GetWorkerChangeLogsAsync(string workerId)
+    public async Task<WorkerChangeLog> GetWorkerChangeLogsAsync(string workerId)
     {
         var workerRepository = repositoryFactory.CreateWorkerRepository();
         var changeLogs = await workerRepository.GetWorkerChangeLogAsync(workerId);
@@ -436,10 +437,10 @@ public class WorkerManager(
         if (changeLogs == null || !changeLogs.Any())
             throw new InvalidOperationException($"Worker with ID {workerId} not found or has no change logs.");
 
-        return new WorkerChangeLogsDto
+        return new WorkerChangeLog
         {
             WorkerId = workerId,
-            Changes = changeLogs.Select(log => new WorkerChangeLogDto
+            Changes = changeLogs.Select(log => new WorkerChangeLogEntry
             {
                 ChangeTimestamp = log.ChangeTimestamp,
                 ChangeDescription = log.ChangeDescription,

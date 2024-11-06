@@ -9,72 +9,72 @@ public class EngineManager
 {
     private readonly ConcurrentDictionary<Guid, EngineViewModel> _engines = new();
 
-    public EngineViewModel GetOrAddEngine(EngineBaseInfo baseInfo)
+    public EngineViewModel GetOrAddEngine(BaseEngineInfo info)
     {
-        return _engines.GetOrAdd(baseInfo.EngineId, _ => new EngineViewModel {BaseInfo = baseInfo});
+        return _engines.GetOrAdd(info.EngineId, _ => new EngineViewModel {Info = info});
     }
 
     // method to update base info
-    public void UpdateBaseInfo(EngineBaseInfo baseInfo)
+    public void UpdateBaseInfo(BaseEngineInfo info)
     {
-        Console.WriteLine($"Updating base info for engine {baseInfo.EngineId}");
-        if (_engines.TryGetValue(baseInfo.EngineId, out var engine))
+        Console.WriteLine($"Updating base info for engine {info.EngineId}");
+        if (_engines.TryGetValue(info.EngineId, out var engine))
         {
-            Console.WriteLine($"Base info for engine {baseInfo.EngineId} updated.");
-            engine.BaseInfo = baseInfo;
-            engine.BaseInfo.HubUrls = new List<HubUrlInfo>(baseInfo.HubUrls); // Kopi af ny HubUrls-liste
+            Console.WriteLine($"Base info for engine {info.EngineId} updated.");
+            engine.Info = info;
+            engine.Info.HubUrls = new List<HubUrlInfo>(info.HubUrls); // Kopi af ny HubUrls-liste
 
             // print out urls
-            foreach (var url in engine.BaseInfo.HubUrls) Console.WriteLine($"UPDATEEEEE HubUrl: {url.HubUrl}");
+            foreach (var url in engine.Info.HubUrls) Console.WriteLine($"UPDATEEEEE HubUrl: {url.HubUrl}");
         }
     }
 
-    public void AddOrUpdateWorker(WorkerInfo workerInfo)
+    public void AddOrUpdateWorker(BaseWorkerInfo baseWorkerInfo)
     {
-        if (_engines.TryGetValue(workerInfo.EngineId, out var engine))
+        if (_engines.TryGetValue(baseWorkerInfo.EngineId, out var engine))
         {
-            if (engine.Workers.TryGetValue(workerInfo.WorkerId, out var workerViewModel))
+            if (engine.Workers.TryGetValue(baseWorkerInfo.WorkerId, out var workerViewModel))
             {
-                if (IsOutdatedEvent(workerViewModel, workerInfo))
+                if (IsOutdatedEvent(workerViewModel, baseWorkerInfo))
                 {
-                    Console.WriteLine($"Skipping outdated event for worker {workerInfo.WorkerId} - {workerInfo.Name}");
+                    Console.WriteLine($"Skipping outdated event for worker {baseWorkerInfo.WorkerId} - {baseWorkerInfo.Name}");
                     return;
                 }
 
-                UpdateExistingWorker(workerViewModel, workerInfo);
+                UpdateExistingWorker(workerViewModel, baseWorkerInfo);
             }
             else
             {
-                AddNewWorker(engine, workerInfo);
+                AddNewWorker(engine, baseWorkerInfo);
             }
         }
         else
         {
-            Console.WriteLine($"Engine {workerInfo.EngineId} not found. Cannot add or update worker.");
+            Console.WriteLine($"Engine {baseWorkerInfo.EngineId} not found. Cannot add or update worker.");
         }
     }
 
-    private bool IsOutdatedEvent(WorkerViewModel workerViewModel, WorkerInfo workerInfo)
+    private bool IsOutdatedEvent(WorkerViewModel workerViewModel, BaseWorkerInfo baseWorkerInfo)
     {
-        return workerViewModel.EventProcessedTimestamp >= workerInfo.Timestamp;
+        return workerViewModel.EventProcessedTimestamp >= baseWorkerInfo.Timestamp;
     }
 
-    private void UpdateExistingWorker(WorkerViewModel workerViewModel, WorkerInfo workerInfo)
+    private void UpdateExistingWorker(WorkerViewModel workerViewModel, BaseWorkerInfo baseWorkerInfo)
     {
-        workerViewModel.Worker = workerInfo;
-        workerViewModel.EventProcessedTimestamp = workerInfo.Timestamp; // Opdater tidsstemplet
-        Console.WriteLine($"Worker {workerInfo.WorkerId} updated.");
+        workerViewModel.BaseWorker = baseWorkerInfo;
+        workerViewModel.EventProcessedTimestamp = baseWorkerInfo.Timestamp; // Opdater tidsstemplet
+        Console.WriteLine($"Worker {baseWorkerInfo.WorkerId} updated.");
     }
 
-    private void AddNewWorker(EngineViewModel engine, WorkerInfo workerInfo)
+    private void AddNewWorker(EngineViewModel engine, BaseWorkerInfo baseWorkerInfo)
     {
-        engine.Workers[workerInfo.WorkerId] = new WorkerViewModel
+        engine.Workers[baseWorkerInfo.WorkerId] = new WorkerViewModel
         {
-            WorkerId = workerInfo.WorkerId,
-            Worker = workerInfo,
-            EventProcessedTimestamp = workerInfo.Timestamp
+            WorkerId = baseWorkerInfo.WorkerId,
+            BaseWorker = baseWorkerInfo,
+            EventProcessedTimestamp = baseWorkerInfo.Timestamp
         };
-        Console.WriteLine($"Worker {workerInfo.WorkerId} added.");
+        Console.WriteLine($"Worker {baseWorkerInfo.WorkerId} added.");
     }
 
 

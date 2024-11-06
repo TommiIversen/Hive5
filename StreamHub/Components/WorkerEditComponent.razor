@@ -86,14 +86,14 @@
     protected override void OnInitialized()
     {
         // Initialiser lokale variabler med de eksisterende værdier fra Worker
-        _workerName = Worker.Worker.Name;
-        _workerDescription = Worker.Worker.Description;
-        _workerCommand = Worker.Worker.Command;
+        _workerName = Worker.BaseWorker.Name;
+        _workerDescription = Worker.BaseWorker.Description;
+        _workerCommand = Worker.BaseWorker.Command;
 
         // Initialize the TimeSpan fields as seconds for UI binding
-        _imgWatchdogEnabled = Worker.Worker.ImgWatchdogEnabled;
-        _imgWatchdogGraceTimeSeconds = (int) Worker.Worker.ImgWatchdogGraceTime.TotalSeconds;
-        _imgWatchdogIntervalSeconds = (int) Worker.Worker.ImgWatchdogInterval.TotalSeconds;
+        _imgWatchdogEnabled = Worker.BaseWorker.ImgWatchdogEnabled;
+        _imgWatchdogGraceTimeSeconds = (int) Worker.BaseWorker.ImgWatchdogGraceTime.TotalSeconds;
+        _imgWatchdogIntervalSeconds = (int) Worker.BaseWorker.ImgWatchdogInterval.TotalSeconds;
 
         var workerEventTopic = $"WorkerChangeEvent-{EngineId}-{Worker.WorkerId}";
         SignalRService.HubConnection.On<WorkerChangeEvent>(workerEventTopic, async _ => { await InvokeAsync(StateHasChanged); });
@@ -112,10 +112,10 @@
         var editWorker = new WorkerCreateAndEdit
         {
             EngineId = EngineId,
-            WorkerId = Worker.Worker.WorkerId,
+            WorkerId = Worker.BaseWorker.WorkerId,
             Name = _workerName ?? string.Empty,
             Description = _workerDescription ?? string.Empty,
-            IsEnabled = Worker.Worker.IsEnabled,
+            IsEnabled = Worker.BaseWorker.IsEnabled,
             Command = _workerCommand ?? string.Empty,
             ImgWatchdogEnabled = _imgWatchdogEnabled,
             ImgWatchdogGraceTime = TimeSpan.FromSeconds(_imgWatchdogGraceTimeSeconds),

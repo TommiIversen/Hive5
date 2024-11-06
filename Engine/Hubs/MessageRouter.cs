@@ -13,7 +13,7 @@ public static class MessageRouter
         {
             switch (baseMessage)
             {
-                case Metric metric:
+                case EngineMetric metric:
                     await hubClient.InvokeAsync("ReceiveMetric", metric);
                     break;
                 case WorkerLogEntry log:
@@ -22,13 +22,13 @@ public static class MessageRouter
                 case EngineLogEntry engineLog:
                     await hubClient.InvokeAsync("ReceiveEngineLog", engineLog);
                     break;
-                case ImageData image:
+                case WorkerImageData image:
                     await hubClient.InvokeAsync("ReceiveImage", image);
                     break;
                 case WorkerChangeEvent workerEvent:
                     await hubClient.InvokeAsync("ReceiveWorkerEvent", workerEvent);
                     break;
-                case EngineEvent engineEvent:
+                case EngineChangeEvent engineEvent:
                     await hubClient.InvokeAsync("ReceiveEngineEvent", engineEvent);
                     break;
                 default:

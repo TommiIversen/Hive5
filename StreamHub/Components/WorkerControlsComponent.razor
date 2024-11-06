@@ -8,10 +8,10 @@
 @inject BlazorSignalRService SignalRService
 
 <div class="mt-4 space-x-2">
-    <button @onclick="() => ToggleStartStopWorker(EngineId, Worker.WorkerId, Worker.Worker.State)"
+    <button @onclick="() => ToggleStartStopWorker(EngineId, Worker.WorkerId, Worker.BaseWorker.State)"
             class="px-4 py-2 rounded @(GetButtonCss())"
             disabled="@Worker.IsProcessing">
-        @(Worker.Worker.State == WorkerState.Running ? "Stop" : "Start")
+        @(Worker.BaseWorker.State == WorkerState.Running ? "Stop" : "Start")
     </button>
 
     <button @onclick="() => RemoveWorker(EngineId, Worker.WorkerId)"
@@ -26,10 +26,10 @@
         Reset Watchdog Count
     </button>
 
-    <button @onclick="() => ToggleEnableDisableWorker(EngineId, Worker.WorkerId, Worker.Worker.IsEnabled)"
+    <button @onclick="() => ToggleEnableDisableWorker(EngineId, Worker.WorkerId, Worker.BaseWorker.IsEnabled)"
             class="px-4 py-2 rounded @(Worker.IsProcessing ? "bg-gray-400 text-gray-700 cursor-not-allowed" : "bg-purple-500 text-white hover:bg-purple-700")"
             disabled="@Worker.IsProcessing">
-        @(Worker.Worker.IsEnabled ? "Disable" : "Enable")
+        @(Worker.BaseWorker.IsEnabled ? "Disable" : "Enable")
     </button>
 
     <button @onclick="ShowLogsModal"
@@ -51,7 +51,7 @@
 
 @if (_isLogsModalVisible)
 {
-    <WorkerEventsLogsModal WorkerName="@Worker.Worker.Name" WorkerEventsWithLogs="_workerEventsWithLogs" OnClose="CloseLogsModal"/>
+    <WorkerEventsLogsModal WorkerName="@Worker.BaseWorker.Name" WorkerEventsWithLogs="_workerEventsWithLogs" OnClose="CloseLogsModal"/>
 }
 
 @if (_isChangeLogsModalVisible)
@@ -65,10 +65,10 @@
     [Parameter] public required WorkerViewModel Worker { get; init; }
 
     private bool _isLogsModalVisible;
-    private WorkerEventWithLogsDto? _workerEventsWithLogs;
+    private WorkerEventLogCollection? _workerEventsWithLogs;
     
     private bool _isChangeLogsModalVisible;
-    private WorkerChangeLogsDto? _workerChangeLogs;
+    private WorkerChangeLog? _workerChangeLogs;
 
     private async Task ShowLogsModal()
     {
@@ -100,12 +100,12 @@
         }
         else
         {
-            _workerChangeLogs = new WorkerChangeLogsDto
+            _workerChangeLogs = new WorkerChangeLog
             {
                 WorkerId = Worker.WorkerId,
                 Changes =
                 [
-                    new WorkerChangeLogDto
+                    new WorkerChangeLogEntry
                     {
                         ChangeTimestamp = DateTime.UtcNow,
                         ChangeDescription = "No change logs found for this worker.",
@@ -127,7 +127,7 @@
     private string GetButtonCss()
     {
         return Worker.IsProcessing ? "bg-gray-400 text-gray-700 cursor-not-allowed"
-            : Worker.Worker.State == WorkerState.Running ? "bg-red-500 text-white hover:bg-red-700"
+            : Worker.BaseWorker.State == WorkerState.Running ? "bg-red-500 text-white hover:bg-red-700"
             : "bg-green-500 text-white hover:bg-green-700";
     }
 

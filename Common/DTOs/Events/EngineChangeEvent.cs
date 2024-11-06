@@ -2,7 +2,7 @@
 
 namespace Common.DTOs.Events;
 
-public class WorkerChangeEvent : BaseWorkerInfo
+public class EngineChangeEvent : BaseEngineInfo
 {
     public required ChangeEventType ChangeEventType { get; init; }
 }

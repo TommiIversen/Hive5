@@ -1,8 +1,11 @@
 ﻿using Common.DTOs;
 using Common.DTOs.Events;
+using Common.DTOs.Queries;
 using Engine.DAL.Entities;
 using Engine.Database;
 using Microsoft.EntityFrameworkCore;
+using WorkerChangeLog = Engine.DAL.Entities.WorkerChangeLog;
+using WorkerEventLog = Common.DTOs.Queries.WorkerEventLog;
 
 namespace Engine.DAL.Repositories;
 
@@ -14,7 +17,7 @@ public interface IWorkerRepository
     Task UpdateWorkerAsync(WorkerEntity worker);
     Task DeleteWorkerAsync(string workerId);
     Task AddWorkerEventAsync(string workerId, string message, List<BaseLogEntry> logs);
-    Task<List<WorkerEventLogDto>> GetRecentWorkerEventsWithLogsAsync(string workerId, int maxEvents = 20);
+    Task<List<WorkerEventLog>> GetRecentWorkerEventsWithLogsAsync(string workerId, int maxEvents = 20);
     Task<List<WorkerChangeLog>> GetWorkerChangeLogAsync(string workerId, int maxEntries = 50);
     Task AddWorkerChangeLogsAsync(IEnumerable<WorkerChangeLog> changeLogs);
 }
@@ -83,7 +86,7 @@ public class WorkerRepository(ApplicationDbContext context) : IWorkerRepository
             {
                 WorkerId = workerId,
                 Message = message,
-                EventLogs = logs.Select(log => new WorkerEventLog
+                EventLogs = logs.Select(log => new Entities.WorkerEventLog
                 {
                     LogTimestamp = log.LogTimestamp,
                     LogLevel = log.LogLevel,
@@ -114,13 +117,13 @@ public class WorkerRepository(ApplicationDbContext context) : IWorkerRepository
     }
 
 
-    public async Task<List<WorkerEventLogDto>> GetRecentWorkerEventsWithLogsAsync(string workerId, int maxEvents = 20)
+    public async Task<List<WorkerEventLog>> GetRecentWorkerEventsWithLogsAsync(string workerId, int maxEvents = 20)
     {
         return await context.WorkerEvents.AsNoTracking()
             .Where(e => e.WorkerId == workerId)
             .OrderByDescending(e => e.EventTimestamp)
             .Take(maxEvents)
-            .Select(e => new WorkerEventLogDto
+            .Select(e => new WorkerEventLog
             {
                 EventTimestamp = e.EventTimestamp,
                 EventMessage = e.Message,

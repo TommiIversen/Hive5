@@ -1,10 +1,11 @@
 ﻿@using System.Text
 @using Common.DTOs
+@using Common.DTOs.Queries
 @inject IJSRuntime JsRuntime
 
 @code {
     [Parameter] public EventCallback OnClose { get; set; }
-    [Parameter] public WorkerEventWithLogsDto? WorkerEventsWithLogs { get; set; }
+    [Parameter] public WorkerEventLogCollection? WorkerEventsWithLogs { get; set; }
     [Parameter] public required string WorkerName { get; init; }
 
     private int? _openLogIndex = null; // Track which event log is open

@@ -14,7 +14,7 @@ else
         <div class="space-y-4">
             @foreach (var engine in EngineManager.GetAllEngines())
             {
-                <EngineComponent @key="@($"EngineComponent-{engine.BaseInfo.EngineId}")" Engine="engine"/>
+                <EngineComponent @key="@($"EngineComponent-{engine.Info.EngineId}")" Engine="engine"/>
             }
         </div>
     </div>

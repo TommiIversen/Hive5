@@ -15,7 +15,7 @@ public interface IEngineService
     Task AddHubUrlAsync(string hubUrl, string apiKey);
     Task RemoveHubUrlAsync(int hubUrlId);
     Task EditHubUrlAsync(int hubUrlId, string newHubUrl, string newApiKey);
-    Task<EngineEvent> GetEngineBaseInfoAsEvent();
+    Task<EngineChangeEvent> GetEngineBaseInfoAsEvent();
 }
 
 public class EngineService : IEngineService
@@ -87,12 +87,12 @@ public class EngineService : IEngineService
         }
     }
 
-    public async Task<EngineEvent> GetEngineBaseInfoAsEvent()
+    public async Task<EngineChangeEvent> GetEngineBaseInfoAsEvent()
     {
         var engine = await GetEngineAsync();
         if (engine == null) throw new InvalidOperationException("Engine not found");
 
-        var engineBaseInfo = new EngineEvent
+        var engineBaseInfo = new EngineChangeEvent
         {
             EngineId = engine.EngineId,
             EngineName = engine.Name,

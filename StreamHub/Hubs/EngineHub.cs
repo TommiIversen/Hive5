@@ -46,9 +46,9 @@ public class EngineHub(
 
 
     // Backend engine handlers
-    public async Task<bool> RegisterEngineConnection(EngineBaseInfo engineInfo)
+    public async Task<bool> RegisterEngineConnection(BaseEngineInfo baseEngineInfo)
     {
-        return await backendHandlers.RegisterEngineConnection(engineInfo, Context);
+        return await backendHandlers.RegisterEngineConnection(baseEngineInfo, Context);
     }
 
     public async Task SynchronizeWorkers(List<WorkerChangeEvent> workers, Guid engineId)
@@ -57,27 +57,27 @@ public class EngineHub(
     }
 
 
-    public async Task ReceiveEngineSystemInfo(SystemInfoModel systemInfo)
+    public async Task ReceiveEngineSystemInfo(EngineSystemInfoModel systemInfo)
     {
         await backendHandlers.ReceiveEngineSystemInfo(systemInfo);
     }
 
 
-    public async Task ReceiveEngineEvent(EngineEvent engineEvent)
+    public async Task ReceiveEngineEvent(EngineChangeEvent engineChangeEvent)
     {
-        await backendHandlers.ReceiveEngineEvent(engineEvent);
+        await backendHandlers.ReceiveEngineEvent(engineChangeEvent);
     }
 
 
-    public async Task ReceiveWorkerEvent(WorkerChangeEvent workerChangeEvent)
+    public async Task ReceiveWorkerEvent(WorkerChangeEvent workerBaseChangeEvent)
     {
-        await backendHandlers.ReceiveWorkerEvent(workerChangeEvent);
+        await backendHandlers.ReceiveWorkerEvent(workerBaseChangeEvent);
     }
 
 
-    public async Task ReceiveMetric(Metric metric)
+    public async Task ReceiveMetric(EngineMetric engineMetric)
     {
-        await backendHandlers.ReceiveMetric(metric);
+        await backendHandlers.ReceiveMetric(engineMetric);
     }
 
     public async Task ReceiveWorkerLog(WorkerLogEntry workerLogMessage)
@@ -92,9 +92,9 @@ public class EngineHub(
     }
 
 
-    public async Task ReceiveImage(ImageData imageData)
+    public async Task ReceiveImage(WorkerImageData workerImageData)
     {
-        await backendHandlers.ReceiveImage(imageData);
+        await backendHandlers.ReceiveImage(workerImageData);
     }
 
     public Task ReceiveDeadLetter(string deadLetter)

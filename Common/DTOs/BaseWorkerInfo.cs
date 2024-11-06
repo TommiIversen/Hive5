@@ -2,7 +2,7 @@
 
 namespace Common.DTOs;
 
-public class WorkerInfo : BaseMessage
+public class BaseWorkerInfo : BaseMessage
 {
     public required string WorkerId { get; init; }
     public required string? Name { get; init; }

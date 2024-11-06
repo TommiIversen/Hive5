@@ -259,7 +259,7 @@ public class StreamHub
             var baseMessage = await _globalMessageQueue.DequeueMessageAsync(cancellationToken);
             foreach (var connectionInfo in _hubConnections.Values)
             {
-                if (baseMessage is ImageData imageMessage)
+                if (baseMessage is WorkerImageData imageMessage)
                 {
                     connectionInfo.MessageQueue.EnqueueMessage(imageMessage, $"IMAGE-{imageMessage.WorkerId}");
                     continue;

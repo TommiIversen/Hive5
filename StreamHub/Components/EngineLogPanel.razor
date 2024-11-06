@@ -123,7 +123,7 @@
     {
         if (!_isSubscribed)
         {
-            await SignalRService.HubConnection.SendAsync("SubscribeToEngineLogs", Engine.BaseInfo.EngineId);
+            await SignalRService.HubConnection.SendAsync("SubscribeToEngineLogs", Engine.Info.EngineId);
             _isSubscribed = true;
         }
     }
@@ -132,7 +132,7 @@
     {
         if (_isSubscribed)
         {
-            await SignalRService.HubConnection.SendAsync("UnsubscribeFromEngineLogs", Engine.BaseInfo.EngineId);
+            await SignalRService.HubConnection.SendAsync("UnsubscribeFromEngineLogs", Engine.Info.EngineId);
             _isSubscribed = false;
         }
     }
@@ -152,7 +152,7 @@
     private async void DownloadLogs()
     {
         var logContent = new StringBuilder();
-        logContent.AppendLine($"EngineId: {Engine.BaseInfo.EngineId}");
+        logContent.AppendLine($"EngineId: {Engine.Info.EngineId}");
         logContent.AppendLine("Timestamp,LogLevel,Message");
 
         foreach (var logEntry in Engine.EngineLogMessages)
@@ -160,7 +160,7 @@
             logContent.AppendLine($"{logEntry.Timestamp},{logEntry.LogLevel},{logEntry.Message}");
         }
 
-        var logFileName = $"logs_{Engine.BaseInfo.EngineId}_{DateTime.UtcNow:yyyyMMdd_HHmmss}.txt";
+        var logFileName = $"logs_{Engine.Info.EngineId}_{DateTime.UtcNow:yyyyMMdd_HHmmss}.txt";
         await TriggerFileDownload(logFileName, logContent.ToString());
     }
 

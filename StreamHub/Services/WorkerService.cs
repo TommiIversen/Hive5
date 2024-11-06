@@ -158,7 +158,7 @@ public class WorkerService(
         return await HandleWorkerOperationWithDataAsync("EnableDisableWorker", message);
     }
 
-    public async Task<CommandResult<WorkerEventWithLogsDto>> GetWorkerEventsWithLogsAsync(Guid engineId,
+    public async Task<CommandResult<WorkerEventLogCollection>> GetWorkerEventsWithLogsAsync(Guid engineId,
         string workerId)
     {
         var message = new WorkerOperationMessage
@@ -168,13 +168,13 @@ public class WorkerService(
         };
 
         var result =
-            await HandleWorkerOperationWithDataAsync<WorkerEventWithLogsDto>("GetWorkerEventsWithLogs", message,
+            await HandleWorkerOperationWithDataAsync<WorkerEventLogCollection>("GetWorkerEventsWithLogs", message,
                 setProcessing: false);
         
         return result;
     }
     
-    public async Task<CommandResult<WorkerChangeLogsDto>> GetWorkerChangeLogsAsync(Guid engineId, string workerId)
+    public async Task<CommandResult<WorkerChangeLog>> GetWorkerChangeLogsAsync(Guid engineId, string workerId)
     {
         var message = new WorkerOperationMessage
         {
@@ -182,7 +182,7 @@ public class WorkerService(
             EngineId = engineId
         };
 
-        var result = await HandleWorkerOperationWithDataAsync<WorkerChangeLogsDto>("GetWorkerChangeLogs", message, setProcessing: false);
+        var result = await HandleWorkerOperationWithDataAsync<WorkerChangeLog>("GetWorkerChangeLogs", message, setProcessing: false);
 
         var workerChangeLogsDto = result.Data;
         Console.WriteLine($"GetWorkerChangeLogsAsync: {workerChangeLogsDto?.WorkerId}");

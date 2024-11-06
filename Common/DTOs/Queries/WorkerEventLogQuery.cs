@@ -1,6 +1,6 @@
 ﻿using MessagePack;
 
-namespace Common.DTOs;
+namespace Common.DTOs.Queries;
 
 [MessagePackObject]
 public class EventLogEntry
@@ -13,7 +13,7 @@ public class EventLogEntry
 }
 
 [MessagePackObject]
-public class WorkerEventLogDto
+public class WorkerEventLog
 {
     [Key(0)] public DateTime EventTimestamp { get; init; }
 
@@ -23,7 +23,7 @@ public class WorkerEventLogDto
 }
 
 [MessagePackObject]
-public class WorkerEventWithLogsDto
+public class WorkerEventLogCollection
 {
-    [Key(1)] public List<WorkerEventLogDto> Events { get; init; } = [];
+    [Key(1)] public List<WorkerEventLog> Events { get; init; } = [];
 }

@@ -31,7 +31,7 @@
             </li>
             <li class="flex justify-between">
                 <span class="font-semibold">EngineId:</span>
-                <span>@Engine.BaseInfo.EngineId</span>
+                <span>@Engine.Info.EngineId</span>
             </li>
 
             <li class="flex justify-between">
@@ -41,12 +41,12 @@
 
             <li class="flex justify-between">
                 <span class="font-semibold">Engine InstallDate:</span>
-                <span>@Engine.BaseInfo.InstallDate</span>
+                <span>@Engine.Info.InstallDate</span>
             </li>
 
             <li class="flex justify-between">
                 <span class="font-semibold">Engine StartDate:</span>
-                <span>@Engine.BaseInfo.EngineStartDate.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")</span>
+                <span>@Engine.Info.EngineStartDate.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")</span>
             </li>
 
 
@@ -83,9 +83,9 @@
 
         <h4 class="mt-4 font-semibold">Hub URLs:</h4>
         <div class="space-y-4">
-            @if (Engine.BaseInfo.HubUrls.Any())
+            @if (Engine.Info.HubUrls.Any())
             {
-                @foreach (var url in Engine.BaseInfo.HubUrls)
+                @foreach (var url in Engine.Info.HubUrls)
                 {
                     <div class="bg-slate-800 p-4 rounded-lg shadow-md">
                         <div class="flex mb-2 items-center">
@@ -135,7 +135,7 @@
     private async Task DeleteUrl(string urlId)
     {
         Console.WriteLine($"Deleting URL with ID: {urlId}");
-        await SignalRService.HubConnection.SendAsync("RemoveHubUrl", urlId, Engine.BaseInfo.EngineId);
+        await SignalRService.HubConnection.SendAsync("RemoveHubUrl", urlId, Engine.Info.EngineId);
     }
 
     private void AddUrl()

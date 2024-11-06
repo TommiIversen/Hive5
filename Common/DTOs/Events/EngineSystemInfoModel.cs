@@ -1,6 +1,6 @@
 ﻿namespace Common.DTOs.Events;
 
-public class SystemInfoModel : BaseMessage
+public class EngineSystemInfoModel : BaseMessage
 {
     public required string OsName { get; init; }
     public required string OsVersion { get; init; }

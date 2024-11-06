@@ -8,7 +8,7 @@ namespace Engine.Services;
 
 public interface ILoggerService
 {
-    void LogMessage(BaseLogEntry logEntry);
+    void LogMessage(BaseLogEntry baseLogEntry);
     void SetEngineId(Guid engineId);
     IEnumerable<BaseLogEntry> GetLastWorkerLogs(string workerId);
     void DeleteWorkerLogs(string workerId);
@@ -36,17 +36,17 @@ public class LoggerService : ILoggerService
         _engineId = engineId;
     }
 
-    public void LogMessage(BaseLogEntry logEntry)
+    public void LogMessage(BaseLogEntry baseLogEntry)
     {
         if (_engineId == Guid.Empty)
             _logger.Warning("EngineId er ikke sat. Logning uden EngineId.");
         else
-            logEntry.EngineId = _engineId;
+            baseLogEntry.EngineId = _engineId;
 
-        //logEntry.Timestamp = DateTime.UtcNow;
-        //logEntry.LogTimestamp = DateTime.UtcNow;
+        //baseLogEntry.Timestamp = DateTime.UtcNow;
+        //baseLogEntry.LogTimestamp = DateTime.UtcNow;
 
-        if (logEntry is WorkerLogEntry workerLogEntry)
+        if (baseLogEntry is WorkerLogEntry workerLogEntry)
         {
             _workerLogCounters.TryAdd(workerLogEntry.WorkerId, 0);
 
@@ -67,13 +67,13 @@ public class LoggerService : ILoggerService
             // Bevar kun de sidste 20 logs
             while (logQueue.Count > 20) logQueue.TryDequeue(out _);
         }
-        else if (logEntry is EngineLogEntry)
+        else if (baseLogEntry is EngineLogEntry)
         {
-            logEntry.SequenceNumber = Interlocked.Increment(ref _engineLogCounter);
+            baseLogEntry.SequenceNumber = Interlocked.Increment(ref _engineLogCounter);
         }
 
-        _messageQueue.EnqueueMessage(logEntry);
-        LogToSerilog(logEntry);
+        _messageQueue.EnqueueMessage(baseLogEntry);
+        LogToSerilog(baseLogEntry);
     }
 
     public IEnumerable<BaseLogEntry> GetLastWorkerLogs(string workerId)
@@ -89,11 +89,11 @@ public class LoggerService : ILoggerService
         _workerLogs.TryRemove(workerId, out _);
     }
 
-    private void LogToSerilog(BaseLogEntry logEntry)
+    private void LogToSerilog(BaseLogEntry baseLogEntry)
     {
-        var logMessage = $"{logEntry.GetType().Name} - Message: {logEntry.Message}";
+        var logMessage = $"{baseLogEntry.GetType().Name} - Message: {baseLogEntry.Message}";
 
-        switch (logEntry.LogLevel)
+        switch (baseLogEntry.LogLevel)
         {
             case LogLevel.Trace:
                 _logger.Verbose(logMessage);

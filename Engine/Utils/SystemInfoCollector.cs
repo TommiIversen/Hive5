@@ -7,9 +7,9 @@ namespace Engine.Utils;
 
 public class SystemInfoCollector
 {
-    public SystemInfoModel GetSystemInfo()
+    public EngineSystemInfoModel GetSystemInfo()
     {
-        return new SystemInfoModel
+        return new EngineSystemInfoModel
         {
             OsName = RuntimeInformation.OSDescription,
             OsVersion = Environment.OSVersion.ToString(),

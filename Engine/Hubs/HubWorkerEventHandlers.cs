@@ -76,12 +76,12 @@ public class HubWorkerWorkerEventHandlers : IHubWorkerEventHandlers
             try
             {
                 var eventsWithLogs = await _workerManager.GetWorkerEventsWithLogsAsync(message.WorkerId);
-                return new CommandResult<WorkerEventWithLogsDto>(true, "OK.", eventsWithLogs);
+                return new CommandResult<WorkerEventLogCollection>(true, "OK.", eventsWithLogs);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Error fetching events with logs for worker {message.WorkerId}: {ex.Message}");
-                return new CommandResult<WorkerEventWithLogsDto>(false, $"Error: {ex.Message}");
+                return new CommandResult<WorkerEventLogCollection>(false, $"Error: {ex.Message}");
             }
         });
         
@@ -90,12 +90,12 @@ public class HubWorkerWorkerEventHandlers : IHubWorkerEventHandlers
             try
             {
                 var changeLogs = await _workerManager.GetWorkerChangeLogsAsync(message.WorkerId);
-                return new CommandResult<WorkerChangeLogsDto>(true, "OK.", changeLogs);
+                return new CommandResult<WorkerChangeLog>(true, "OK.", changeLogs);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Error fetching change logs for worker {message.WorkerId}: {ex.Message}");
-                return new CommandResult<WorkerChangeLogsDto>(false, $"Error: {ex.Message}");
+                return new CommandResult<WorkerChangeLog>(false, $"Error: {ex.Message}");
             }
         });
 

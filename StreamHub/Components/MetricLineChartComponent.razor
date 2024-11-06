@@ -23,9 +23,9 @@
 
     protected override Task OnInitializedAsync()
     {
-        SignalRService.HubConnection.On<Metric>($"UpdateMetric-{Engine.BaseInfo.EngineId}", async metric =>
+        SignalRService.HubConnection.On<EngineMetric>($"UpdateMetric-{Engine.Info.EngineId}", async metric =>
         {
-            if (metric.EngineId == Engine.BaseInfo.EngineId)
+            if (metric.EngineId == Engine.Info.EngineId)
             {
                 var metricData = new MetricSimpleViewModel(metric);
                 await UpdateChartData(metricData);
@@ -36,14 +36,14 @@
 
     public void Dispose()
     {
-        Console.WriteLine($"Disposing Historic Line chart for engine {Engine.BaseInfo.EngineId}");
+        Console.WriteLine($"Disposing Historic Line chart for engine {Engine.Info.EngineId}");
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
-            Console.WriteLine($"First LineGraph render for engine {Engine.BaseInfo.EngineName}");
+            Console.WriteLine($"First LineGraph render for engine {Engine.Info.EngineName}");
             var initialMetrics = Engine.MetricsQueue.ToList(); // Konverter til liste for at sikre korrekt rækkefølge
 
             var initialData = new
@@ -69,7 +69,7 @@
 
     private string GetCanvasId()
     {
-        return $"cpuChart-{Engine.BaseInfo.EngineId}";
+        return $"cpuChart-{Engine.Info.EngineId}";
     }
 
 }

@@ -17,9 +17,9 @@ public class ConnectionInfo
 
 public class EngineViewModel
 {
-    public required EngineBaseInfo BaseInfo { get; set; }
-    public SystemInfoModel? SystemInfo { get; set; }
-    public Metric? LastMetric { get; set; }
+    public required BaseEngineInfo Info { get; set; }
+    public EngineSystemInfoModel? SystemInfo { get; set; }
+    public EngineMetric? LastMetric { get; set; }
     public ConcurrentDictionary<string, WorkerViewModel> Workers { get; } = new();
     public ConcurrentQueue<EngineLogEntry> EngineLogMessages { get; set; } = new();
     public ConnectionInfo ConnectionInfo { get; set; } = new();
@@ -44,11 +44,11 @@ public class EngineViewModel
         EngineLogMessages = new ConcurrentQueue<EngineLogEntry>();
     }
 
-    public void AddMetric(Metric metric)
+    public void AddMetric(EngineMetric engineMetric)
     {
-        var simplifiedMetric = new MetricSimpleViewModel(metric);
+        var simplifiedMetric = new MetricSimpleViewModel(engineMetric);
         MetricsQueue.Enqueue(simplifiedMetric);
         if (MetricsQueue.Count > 20) MetricsQueue.TryDequeue(out _);
-        LastMetric = metric;
+        LastMetric = engineMetric;
     }
 }

@@ -29,7 +29,7 @@ public class MetricsServiceTests
         // Arrange
         var cancellationToken = new CancellationTokenSource().Token;
         _mockMessageQueue
-            .Setup(mq => mq.EnqueueMessageAsync(It.IsAny<Metric>(), cancellationToken))
+            .Setup(mq => mq.EnqueueMessageAsync(It.IsAny<EngineMetric>(), cancellationToken))
             .Returns(Task.CompletedTask)
             .Verifiable();
 
@@ -37,6 +37,6 @@ public class MetricsServiceTests
         await _metricsService.GenerateMetricsAsync(cancellationToken);
 
         // Assert
-        _mockMessageQueue.Verify(mq => mq.EnqueueMessageAsync(It.IsAny<Metric>(), cancellationToken), Times.Once);
+        _mockMessageQueue.Verify(mq => mq.EnqueueMessageAsync(It.IsAny<EngineMetric>(), cancellationToken), Times.Once);
     }
 }

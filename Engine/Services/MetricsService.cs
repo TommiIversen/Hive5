@@ -76,7 +76,7 @@ public class MetricsService : IHostedService, IDisposable
             linkSpeedGbps = primaryNetworkUsage.LinkSpeedGbps;
         }
 
-        var metric = new Metric
+        var metric = new EngineMetric
         {
             Timestamp = DateTime.UtcNow,
             CpuUsage = totalCpuUsage,

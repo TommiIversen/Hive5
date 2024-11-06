@@ -27,7 +27,7 @@ public class FakeStreamerService : IStreamerService
     public required string GstCommand { get; set; }
 
     public event EventHandler<WorkerLogEntry>? LogGenerated;
-    public event EventHandler<ImageData>? ImageGenerated;
+    public event EventHandler<WorkerImageData>? ImageGenerated;
     public Func<WorkerState, Task>? StateChangedAsync { get; set; }
 
 
@@ -137,7 +137,7 @@ public class FakeStreamerService : IStreamerService
         if (_imageCounter != 0 && _imageCounter % 30 == 0 && !_isPauseActive)
         {
             _isPauseActive = true;
-            var imageData = new ImageData
+            var imageData = new WorkerImageData
             {
                 WorkerId = WorkerId,
                 Timestamp = DateTime.UtcNow,
@@ -151,7 +151,7 @@ public class FakeStreamerService : IStreamerService
 
         if (!_isPauseActive)
         {
-            var imageData = new ImageData
+            var imageData = new WorkerImageData
             {
                 WorkerId = WorkerId,
                 Timestamp = DateTime.UtcNow,

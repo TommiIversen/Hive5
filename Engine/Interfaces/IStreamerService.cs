@@ -13,6 +13,6 @@ public interface IStreamerService
     Task<(WorkerState, string)> StopAsync();
 
     event EventHandler<WorkerLogEntry> LogGenerated;
-    event EventHandler<ImageData> ImageGenerated;
+    event EventHandler<WorkerImageData> ImageGenerated;
     WorkerState GetState();
 }
