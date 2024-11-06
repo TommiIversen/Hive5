@@ -1,4 +1,5 @@
-﻿using Common.DTOs;
+﻿using System.Text.RegularExpressions;
+using Common.DTOs;
 using Common.DTOs.Commands;
 using Common.DTOs.Enums;
 using Common.DTOs.Events;
@@ -30,6 +31,7 @@ public interface IWorkerManager
     Task<WorkerEventWithLogsDto> GetWorkerEventsWithLogsAsync(string workerId);
     Task<WorkerChangeLogsDto> GetWorkerChangeLogsAsync(string workerId);
 }
+
 
 public class WorkerManager(
     IMessageQueue messageQueue,
@@ -84,10 +86,34 @@ public class WorkerManager(
         Log.Information("Workers initialized successfully.");
     }
 
+    private static string SanitizeString(string input)
+    {
+        if (string.IsNullOrWhiteSpace(input))
+        {
+            return string.Empty; // Returnér tom streng, hvis input er null eller kun whitespace
+        }
+    
+        // Trim whitespace i starten og slutningen
+        input = input.Trim();
+
+        // Erstat mellemrum og specialtegn i strengen med underscore
+        string sanitized = Regex.Replace(input, @"\s+", "_"); // Erstatter alle mellemrum med underscore
+        sanitized = Regex.Replace(sanitized, @"[^\w]", "_"); // Erstatter specialtegn med underscore
+
+        // Fjern eventuelle ekstra underscores i træk
+        sanitized = Regex.Replace(sanitized, @"_+", "_");
+
+        return sanitized;
+    }
+
+
     public async Task<IWorkerService?> AddWorkerAsync(Guid engineId, WorkerCreateAndEdit workerCreateAndEdit)
     {
         LogInfo($"Adding worker... {workerCreateAndEdit.Name}", workerCreateAndEdit.WorkerId);
-        var workerId = workerCreateAndEdit.WorkerId ?? Guid.NewGuid().ToString();
+        
+        var workerId = string.IsNullOrWhiteSpace(SanitizeString(workerCreateAndEdit.WorkerId))
+            ? Guid.NewGuid().ToString()
+            : workerCreateAndEdit.WorkerId;
         
         var workerRepository = repositoryFactory.CreateWorkerRepository();
         var existingWorker = await workerRepository.GetWorkerByIdAsync(workerId);
@@ -118,7 +144,9 @@ public class WorkerManager(
             IsEnabled = true,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow,
-            ImgWatchdogEnabled = workerCreateAndEdit.ImgWatchdogEnabled
+            ImgWatchdogEnabled = workerCreateAndEdit.ImgWatchdogEnabled,
+            ImgWatchdogInterval = workerCreateAndEdit.ImgWatchdogInterval,
+            ImgWatchdogGraceTime = workerCreateAndEdit.ImgWatchdogGraceTime
         };
 
         // Tilføj worker til databasen asynkront

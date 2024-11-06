@@ -125,6 +125,7 @@ public class BackendHandlers
 
     public async Task ReceiveWorkerEvent(WorkerChangeEvent workerChangeEvent)
     {
+        Console.WriteLine($"ReceiveWorkerEvent: {workerChangeEvent.ChangeEventType} - {workerChangeEvent.WorkerId} - {workerChangeEvent.State}");
         switch (workerChangeEvent.ChangeEventType)
         {
             case ChangeEventType.Deleted:

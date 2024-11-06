@@ -34,7 +34,7 @@
             <div class="grid grid-cols-1">
                 @foreach (var worker in Engine.Workers.Values)
                 {
-                    <WorkerComponent EngineId="Engine.BaseInfo.EngineId" Worker="worker"/>
+                    <WorkerComponent  @key="@($"WorkerComponent-{Engine.BaseInfo.EngineId}-{worker.WorkerId}")" EngineId="Engine.BaseInfo.EngineId" Worker="worker"/>
                 }
             </div>
         }
