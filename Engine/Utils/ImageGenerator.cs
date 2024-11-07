@@ -16,6 +16,10 @@ public class ImageGenerator
     private readonly Brush _brush;
     private readonly Font _font;
     private readonly StringFormat _format;
+    private readonly Color _startColor;
+    private readonly Color _endColor;
+    private readonly Color _baseStartColor;
+    private readonly Color _baseEndColor;
 
     [SupportedOSPlatform("windows")]
     public ImageGenerator()
@@ -29,6 +33,11 @@ public class ImageGenerator
             LineAlignment = StringAlignment.Center
         };
         _arrayPool = ArrayPool<byte>.Shared; // Genbrug array pool
+        
+        // Generér tilfældige grundfarver
+        var random = new Random();
+        _baseStartColor = Color.FromArgb(random.Next(256), random.Next(256), random.Next(256));
+        _baseEndColor = Color.FromArgb(random.Next(256), random.Next(256), random.Next(256));
     }
 
     public byte[] GenerateImageWithNumber(int number, string extraText = "")
@@ -36,26 +45,25 @@ public class ImageGenerator
         // Hvis vi ikke er på Windows, returner en fake bytearray
         if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) return GenerateFakeImage();
 
-        // Beregn farver baseret på nummeret ved hjælp af modulus 255
-        var r1 = number % 255;
-        var g1 = number * 2 % 255;
-        var b1 = number * 3 % 255;
+        // Beregn farver baseret på nummeret og tilføj grundfarve
+        var r1 = (_baseStartColor.R + number % 255) % 255;
+        var g1 = (_baseStartColor.G + number * 2 % 255) % 255;
+        var b1 = (_baseStartColor.B + number * 3 % 255) % 255;
 
-        var r2 = (number + 100) % 255;
-        var g2 = (number + 150) % 255;
-        var b2 = (number + 200) % 255;
+        var r2 = (_baseEndColor.R + (number + 100) % 255) % 255;
+        var g2 = (_baseEndColor.G + (number + 150) % 255) % 255;
+        var b2 = (_baseEndColor.B + (number + 200) % 255) % 255;
 
         using var bitmap = new Bitmap(Width, Height);
         using (var graphics = Graphics.FromImage(bitmap))
         {
-            // Opret en gradient baggrund (fra blå til hvid)
+            // Opret en gradient baggrund med farver baseret på input
             using (var gradientBrush = new LinearGradientBrush(
                        new Rectangle(0, 0, Width, Height),
                        Color.FromArgb(r1, g1, b1), // Startfarve
                        Color.FromArgb(r2, g2, b2), // Slutfarve
                        LinearGradientMode.Horizontal))
             {
-                // Fyld baggrunden med gradienten
                 graphics.FillRectangle(gradientBrush, 0, 0, Width, Height);
             }
 

@@ -12,9 +12,9 @@ else
 {
     <div class="p-5">
         <div class="space-y-4">
-            @foreach (var engine in EngineManager.GetAllEngines())
+            @foreach (var engine in EngineManager.GetAllEngines().OrderBy(e => e.Info.EngineName))
             {
-                <EngineComponent @key="@($"EngineComponent-{engine.Info.EngineId}")" Engine="engine"/>
+            <EngineComponent @key="@($"EngineComponent-{engine.Info.EngineId}")" Engine="engine"/>
             }
         </div>
     </div>
