@@ -1,11 +1,12 @@
 ﻿@using System.Text
-@using Common.DTOs
 @using Common.DTOs.Events
 @using Microsoft.AspNetCore.SignalR.Client
 @using StreamHub.Models
 @using StreamHub.Services
 @inject BlazorSignalRService SignalRService
 @inject IJSRuntime JsRuntime
+@implements IAsyncDisposable
+
 
 <!-- Pause/Unpause Button -->
 <button
@@ -84,15 +85,13 @@
     protected override async Task OnInitializedAsync()
     {
         await SubscribeToLogs();
-
-        SignalRService.HubConnection.On<WorkerLogEntry>("ReceiveWorkerLog", async logLine =>
+        SignalRService.HubConnection.On<WorkerLogEntry>($"ReceiveWorkerLog-{EngineId}-{Worker.WorkerId}", async _ =>
         {
-            if (Worker.WorkerId == logLine.WorkerId)
-            {
-                await InvokeAsync(StateHasChanged);
-            }
+            Console.WriteLine($"Received log message for WorkerId: {Worker.WorkerId}");
+            await InvokeAsync(StateHasChanged);
         });
     }
+    
 
     private string GetLogLevelClass(LogLevel logLevel)
     {
@@ -174,5 +173,13 @@
         var fileUrl = $"data:text/plain;base64,{base64}";
         await JsRuntime.InvokeVoidAsync("triggerFileDownload", fileName, fileUrl);
     }
-
+    public async ValueTask DisposeAsync()
+    {
+        if (_isSubscribed)
+        {
+            await UnsubscribeFromLogs();
+            SignalRService.HubConnection.Remove($"ReceiveWorkerLog-{EngineId}-{Worker.WorkerId}");
+            Console.WriteLine("Unsubscribed from logs during component disposal.");
+        }
+    }
 }

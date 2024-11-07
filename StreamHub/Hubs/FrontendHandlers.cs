@@ -1,5 +1,4 @@
-﻿using Common.DTOs;
-using Common.DTOs.Commands;
+﻿using Common.DTOs.Commands;
 using Microsoft.AspNetCore.SignalR;
 using StreamHub.Services;
 
@@ -35,7 +34,7 @@ public class FrontendHandlers
         if (_engineManager.TryGetEngine(engineId, out var existingEngine) &&
             string.IsNullOrEmpty(existingEngine?.ConnectionInfo.ConnectionId))
             Console.WriteLine("Engine is not connected.");
-        //return new CommandResult(false, "Engine is not connected");
+
         using var timeoutCts = new CancellationTokenSource(5000);
         using var linkedCts =
             CancellationTokenSource.CreateLinkedTokenSource(_cancellationService.Token, timeoutCts.Token);
@@ -45,7 +44,6 @@ public class FrontendHandlers
             CommandResult result;
             result = await _hubContext.Clients.Client(existingEngine.ConnectionInfo.ConnectionId)
                 .InvokeAsync<CommandResult>("RemoveHubConnection", hubUrl, linkedCts.Token);
-            Console.WriteLine($"RemoveHubUrlRemoveHubUrlRemoveHubUrlRemoveHubUrl Result: {result.Message}");
         }
 
         await _hubContext.Clients.Group("frontendClients").SendAsync("EngineChange", _cancellationService.Token);
@@ -54,24 +52,25 @@ public class FrontendHandlers
     public async Task SubscribeToWorkerLogs(string workerId, string engineId, string connectionId)
     {
         Console.WriteLine($"Subscribing to logs for worker {workerId}");
-        await _hubContext.Groups.AddToGroupAsync(connectionId, $"worker-{engineId}-{workerId}");
+        await _hubContext.Groups.AddToGroupAsync(connectionId, $"WorkerLogGroup-{engineId}-{workerId}");
     }
 
     public async Task UnsubscribeFromWorkerLogs(string workerId, string engineId, string connectionId)
     {
         Console.WriteLine($"Unsubscribing from logs for worker {workerId}");
-        await _hubContext.Groups.RemoveFromGroupAsync(connectionId, $"worker-{engineId}-{workerId}");
+
+        await _hubContext.Groups.RemoveFromGroupAsync(connectionId, $"WorkerLogGroup-{engineId}-{workerId}");
     }
 
     public async Task SubscribeToEngineLogs(Guid engineId, string connectionId)
     {
         Console.WriteLine($"Subscribing to logs for engine {engineId}");
-        await _hubContext.Groups.AddToGroupAsync(connectionId, $"enginelog-{engineId}");
+        await _hubContext.Groups.AddToGroupAsync(connectionId, $"EngineLogGroup-{engineId}");
     }
 
     public async Task UnsubscribeFromEngineLogs(Guid engineId, string connectionId)
     {
         Console.WriteLine($"Unsubscribing to logs for engine {engineId}");
-        await _hubContext.Groups.RemoveFromGroupAsync(connectionId, $"enginelog-{engineId}");
+        await _hubContext.Groups.RemoveFromGroupAsync(connectionId, $"EngineLogGroup-{engineId}");
     }
 }

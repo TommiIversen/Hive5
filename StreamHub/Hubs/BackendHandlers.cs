@@ -159,8 +159,8 @@ public class BackendHandlers
             var wasAdded = engine != null && engine.AddWorkerLog(workerLogMessage.WorkerId, workerLogMessage);
 
             if (wasAdded)
-                await _hubContext.Clients.Group($"worker-{workerLogMessage.EngineId}-{workerLogMessage.WorkerId}")
-                    .SendAsync("ReceiveWorkerLog", workerLogMessage);
+                await _hubContext.Clients.Group($"WorkerLogGroup-{workerLogMessage.EngineId}-{workerLogMessage.WorkerId}")
+                    .SendAsync($"ReceiveWorkerLog-{workerLogMessage.EngineId}-{workerLogMessage.WorkerId}", workerLogMessage);
             else
                 Console.WriteLine($"ReceiveLog: Worker {workerLogMessage.WorkerId} not found");
         }

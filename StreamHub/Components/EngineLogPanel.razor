@@ -6,6 +6,8 @@
 @using StreamHub.Services
 @inject BlazorSignalRService SignalRService
 @inject IJSRuntime JsRuntime
+@implements IAsyncDisposable
+
 
 <!-- Pause/Unpause Button -->
 
@@ -170,6 +172,11 @@
         var base64 = Convert.ToBase64String(bytes);
         var fileUrl = $"data:text/plain;base64,{base64}";
         await JsRuntime.InvokeVoidAsync("triggerFileDownload", fileName, fileUrl);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await UnsubscribeFromLogs();
     }
 
 }
