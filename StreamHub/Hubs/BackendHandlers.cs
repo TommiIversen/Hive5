@@ -151,22 +151,24 @@ public class BackendHandlers
 
     public async Task ReceiveWorkerLog(WorkerLogEntry workerLogMessage)
     {
-        if (_engineManager.TryGetEngine(workerLogMessage.EngineId, out var engine))
+        if (!_engineManager.TryGetEngine(workerLogMessage.EngineId, out var engine))
         {
-            // For debugging msg sequence + delay in the system
-            //TimeSpan delay = DateTime.UtcNow - workerLogMessage.Timestamp;
-            //Console.WriteLine($"Time delay: {delay.TotalMilliseconds} Milliseconds - {workerLogMessage.Timestamp} - {DateTime.UtcNow} - LogSeq {workerLogMessage.LogSequenceNumber} GlobalSeq {workerLogMessage.SequenceNumber}");
-            var wasAdded = engine != null && engine.AddWorkerLog(workerLogMessage.WorkerId, workerLogMessage);
+            Console.WriteLine($"ReceiveLog: Engine {workerLogMessage.EngineId} not found");
+            return;
+        }
 
-            if (wasAdded)
-                await _hubContext.Clients.Group($"WorkerLogGroup-{workerLogMessage.EngineId}-{workerLogMessage.WorkerId}")
-                    .SendAsync($"ReceiveWorkerLog-{workerLogMessage.EngineId}-{workerLogMessage.WorkerId}", workerLogMessage);
-            else
-                Console.WriteLine($"ReceiveLog: Worker {workerLogMessage.WorkerId} not found");
+        var wasAdded = engine?.AddWorkerLog(workerLogMessage.WorkerId, workerLogMessage) ?? false;
+
+        if (wasAdded)
+        {
+            var groupName = $"WorkerLogGroup-{workerLogMessage.EngineId}-{workerLogMessage.WorkerId}";
+            var methodName = $"ReceiveWorkerLog-{workerLogMessage.EngineId}-{workerLogMessage.WorkerId}";
+
+            await _hubContext.Clients.Group(groupName).SendAsync(methodName, workerLogMessage);
         }
         else
         {
-            Console.WriteLine($"ReceiveLog: Engine {workerLogMessage.EngineId} not found");
+            Console.WriteLine($"ReceiveLog: Worker {workerLogMessage.WorkerId} not found");
         }
     }
 
