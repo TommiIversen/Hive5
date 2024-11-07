@@ -1,5 +1,4 @@
 ﻿@using System.Text
-@using Common.DTOs
 @using Common.DTOs.Events
 @using Microsoft.AspNetCore.SignalR.Client
 @using StreamHub.Models
@@ -9,9 +8,7 @@
 @implements IAsyncDisposable
 
 
-<!-- Pause/Unpause Button -->
-
-<ExpandablePanel Title="Engine Logs">
+<EngineExpandablePanel Title="Engine Logs">
     <button
         @onclick="TogglePauseRendering"
         class="px-2 py-1 text-xs rounded 
@@ -56,7 +53,7 @@
         <p>Ingen logbeskeder.</p>
     }
 
-</ExpandablePanel>
+</EngineExpandablePanel>
 
 @code {
     [Parameter] public required EngineViewModel Engine { get; init; }

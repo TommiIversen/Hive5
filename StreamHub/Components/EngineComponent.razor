@@ -21,11 +21,11 @@
         <h2 class="text-xl font-semibold">@Engine?.Info.EngineName</h2>
         <div class="text-gray-400">@Engine?.Info.EngineDescription</div>
         <EngineConnectionInfoComponent Engine="@Engine"/>
-        <MetricExpandPanelComponent EngineId="@Engine.Info.EngineId"/>
+        <EngineMetricExpandPanelComponent EngineId="@Engine.Info.EngineId"/>
         <EngineLogPanel Engine="@Engine"></EngineLogPanel>
         <EngineCreateWorker EngineId="@Engine.Info.EngineId"/>
-        <MetricLineChartComponent Engine="@Engine"/>
-        <MetricCpuUsageBarChart EngineId="@Engine.Info.EngineId"/>
+        <EngineMetricLineChartComponent Engine="@Engine"/>
+        <EngineMetricCpuUsageBarChart EngineId="@Engine.Info.EngineId"/>
     </div>
 
     <div class="md:col-span-3">

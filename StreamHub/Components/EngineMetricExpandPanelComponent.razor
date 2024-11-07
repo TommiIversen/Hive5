@@ -1,10 +1,9 @@
-﻿@using Common.DTOs
-@using Common.DTOs.Events
+﻿@using Common.DTOs.Events
 @using Microsoft.AspNetCore.SignalR.Client
 @using StreamHub.Services
 @inject BlazorSignalRService SignalRService
 
-<ExpandablePanel Title="Metrics">
+<EngineExpandablePanel Title="Metrics">
     @if (Metric != null)
     {
         <ul class="p-2 space-y1 rounded-lg">
@@ -66,7 +65,7 @@
             </li>
         </ul>
     }
-</ExpandablePanel>
+</EngineExpandablePanel>
 
 @code {
     private EngineMetric? Metric { get; set; }
