@@ -129,7 +129,7 @@ public class StreamerWatchdogService : IStreamerWatchdogService
                 var (needRestart, message) = _checkRestartCallback();
                 if (needRestart)
                 {
-                    LogInfo($"Watchdog detected a need for restart: {message}");
+                    LogInfo($"Watchdog detected a need for restart: {message}", LogLevel.Critical);
                     LogInfo("Calling _restartCallback...");
                     await ExecuteRestartCallbackAsync(message);
                     LogInfo("Finished _restartCallback.");

@@ -12,7 +12,7 @@
                 <span class="font-semibold">IP Address:</span>
                 <span>@(string.IsNullOrEmpty(Engine.ConnectionInfo.IpAddress) ? "N/A" : Engine.ConnectionInfo.IpAddress)</span>
             </li>
-            <li class="flex justify-between">
+            <li class="flex justify-between" data-testid="portinfo">
                 <span class="font-semibold">Port:</span>
                 <span>@(Engine.ConnectionInfo.Port.HasValue ? Engine.ConnectionInfo.Port.Value.ToString() : "N/A")</span>
             </li>

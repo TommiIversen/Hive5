@@ -13,6 +13,13 @@ dotnet tool install --global dotnet-ef
 
 dotnet ef migrations add workerChangeLog
 
+
+# Playwright
+dotnet tool update --global PowerShell
+pwsh bin/Debug/net9.0/playwright.ps1 install
+
+
+
 Debug msgpack:
 
 try

@@ -16,8 +16,9 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 builder.Services.AddSignalR(options =>
 {
-    // options.EnableDetailedErrors = true;
-    options.MaximumReceiveMessageSize = 1024 * 1024;
+    options.MaximumReceiveMessageSize = 1024 * 256;
+    options.MaximumParallelInvocationsPerClient = 10;
+    options.EnableDetailedErrors = true;
 }).AddMessagePackProtocol();
 builder.Services.AddSingleton<EngineManager>(); // Singleton for shared state
 builder.Services.AddSingleton<CancellationService>(); // Singleton for shared cancellation token

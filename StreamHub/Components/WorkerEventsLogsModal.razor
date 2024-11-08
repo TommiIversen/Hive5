@@ -56,7 +56,7 @@
                                 @foreach (var log in evt.value.Logs)
                                 {
                                     <div class="log-item text-white">
-                                        <span>@log.LogTimestamp..ToLocalTime().ToString("dd/MM-yy HH:mm:ss.fff")</span>
+                                        <span>@log.LogTimestamp.ToLocalTime().ToString("dd/MM-yy HH:mm:ss.fff")</span>
                                         <span class="@GetLogLevelClass(log.LogLevel)"> | @log.Message</span>
                                     </div>
                                 }
@@ -95,7 +95,7 @@
     {
         return logLevel switch
         {
-            >= 2 and < 4 => "text-yellow-500", // Warning
+            >= 3 and < 4 => "text-yellow-500", // Warning
             4 => "text-red-500", // Error
             5 => "text-red-700 font-bold", // Critical
             _ => "text-gray-300" // Information and default
