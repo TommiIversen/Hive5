@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Common.DTOs;
 using Common.DTOs.Events;
 using Engine.Interfaces;
 using Engine.Services;

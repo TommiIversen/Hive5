@@ -60,11 +60,11 @@
     </ItemGroup>
 
     <ItemGroup>
-      <AdditionalFiles Include="Components\EngineComponent.razor" />
-      <AdditionalFiles Include="Components\EngineConnectionInfoComponent.razor" />
-      <AdditionalFiles Include="Components\EngineCreateWorker.razor" />
-      <AdditionalFiles Include="Components\EngineLogPanel.razor" />
-      <AdditionalFiles Include="Components\EngineMetricLineChartComponent.razor" />
+        <AdditionalFiles Include="Components\EngineComponent.razor"/>
+        <AdditionalFiles Include="Components\EngineConnectionInfoComponent.razor"/>
+        <AdditionalFiles Include="Components\EngineCreateWorker.razor"/>
+        <AdditionalFiles Include="Components\EngineLogPanel.razor"/>
+        <AdditionalFiles Include="Components\EngineMetricLineChartComponent.razor"/>
     </ItemGroup>
 
 

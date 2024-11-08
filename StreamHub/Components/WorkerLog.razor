@@ -1,10 +1,10 @@
-﻿@using System.Text
+﻿@inject BlazorSignalRService SignalRService
+@inject IJSRuntime JsRuntime
+@using System.Text
 @using Common.DTOs.Events
 @using Microsoft.AspNetCore.SignalR.Client
 @using StreamHub.Models
 @using StreamHub.Services
-@inject BlazorSignalRService SignalRService
-@inject IJSRuntime JsRuntime
 @implements IAsyncDisposable
 
 
@@ -91,7 +91,7 @@
             await InvokeAsync(StateHasChanged);
         });
     }
-    
+
 
     private string GetLogLevelClass(LogLevel logLevel)
     {
@@ -173,6 +173,7 @@
         var fileUrl = $"data:text/plain;base64,{base64}";
         await JsRuntime.InvokeVoidAsync("triggerFileDownload", fileName, fileUrl);
     }
+
     public async ValueTask DisposeAsync()
     {
         if (_isSubscribed)
@@ -182,4 +183,5 @@
             Console.WriteLine("Unsubscribed from logs during component disposal.");
         }
     }
+
 }

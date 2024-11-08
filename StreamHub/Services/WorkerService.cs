@@ -1,5 +1,4 @@
-﻿using Common.DTOs;
-using Common.DTOs.Commands;
+﻿using Common.DTOs.Commands;
 using Common.DTOs.Queries;
 using Microsoft.AspNetCore.SignalR;
 using StreamHub.Hubs;
@@ -74,7 +73,7 @@ public class WorkerService(
 
                 // Send SignalR-besked for at opdatere UI efter state er sat korrekt
                 await hubContext.Clients.Group("frontendClients")
-                    .SendAsync($"WorkerLockEvent-{data.EngineId}-{data.WorkerId}", new {worker.IsProcessing, msg});
+                    .SendAsync($"WorkerLockEvent-{data.EngineId}-{data.WorkerId}", new { worker.IsProcessing, msg });
             }
         }
 
@@ -170,10 +169,10 @@ public class WorkerService(
         var result =
             await HandleWorkerOperationWithDataAsync<WorkerEventLogCollection>("GetWorkerEventsWithLogs", message,
                 setProcessing: false);
-        
+
         return result;
     }
-    
+
     public async Task<CommandResult<WorkerChangeLog>> GetWorkerChangeLogsAsync(Guid engineId, string workerId)
     {
         var message = new WorkerOperationMessage
@@ -182,11 +181,12 @@ public class WorkerService(
             EngineId = engineId
         };
 
-        var result = await HandleWorkerOperationWithDataAsync<WorkerChangeLog>("GetWorkerChangeLogs", message, setProcessing: false);
+        var result =
+            await HandleWorkerOperationWithDataAsync<WorkerChangeLog>("GetWorkerChangeLogs", message,
+                setProcessing: false);
 
         var workerChangeLogsDto = result.Data;
         Console.WriteLine($"GetWorkerChangeLogsAsync: {workerChangeLogsDto?.WorkerId}");
         return result;
     }
-
 }

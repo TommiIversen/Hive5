@@ -1,5 +1,4 @@
-﻿@using Common.DTOs
-@using Common.DTOs.Queries
+﻿@using Common.DTOs.Queries
 
 @code {
     [Parameter] public EventCallback OnClose { get; set; }
@@ -23,7 +22,7 @@
                     <div class="bg-gray-700 mb-3 rounded p-2">
                         <div class="flex justify-between items-center cursor-pointer" @onclick="() => ToggleChangeDetails(change.index)">
                             <div>
-                                <span class="text-gray-400">@change.value.ChangeTimestamp.ToString("dd/MM-yy HH:mm:ss")</span>
+                                <span class="text-gray-400">@change.value.ChangeTimestamp.ToLocalTime().ToString("dd/MM-yy HH:mm:ss")</span>
                                 <span class="text-white"> | @change.value.ChangeDescription</span>
                             </div>
                             <div>
@@ -44,7 +43,7 @@
                         </div>
                         @if (openChangeIndex == change.index)
                         {
-                        <pre class="text-gray-300 ml-4 break-words whitespace-pre-wrap overflow-x-auto">
+                            <pre class="text-gray-300 ml-4 break-words whitespace-pre-wrap overflow-x-auto">
                                 @((MarkupString)change.value.ChangeDetails)
                             </pre>
                         }

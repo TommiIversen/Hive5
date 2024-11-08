@@ -11,7 +11,7 @@ public class EngineManager
 
     public EngineViewModel GetOrAddEngine(BaseEngineInfo info)
     {
-        return _engines.GetOrAdd(info.EngineId, _ => new EngineViewModel {Info = info});
+        return _engines.GetOrAdd(info.EngineId, _ => new EngineViewModel { Info = info });
     }
 
     // method to update base info
@@ -37,7 +37,8 @@ public class EngineManager
             {
                 if (IsOutdatedEvent(workerViewModel, baseWorkerInfo))
                 {
-                    Console.WriteLine($"Skipping outdated event for worker {baseWorkerInfo.WorkerId} - {baseWorkerInfo.Name}");
+                    Console.WriteLine(
+                        $"Skipping outdated event for worker {baseWorkerInfo.WorkerId} - {baseWorkerInfo.Name}");
                     return;
                 }
 

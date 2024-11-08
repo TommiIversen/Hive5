@@ -1,5 +1,4 @@
-﻿@using Common.DTOs
-@using Common.DTOs.Commands
+﻿@using Common.DTOs.Commands
 @using Common.DTOs.Events
 @using Microsoft.AspNetCore.SignalR.Client
 @using StreamHub.Models
@@ -92,8 +91,8 @@
 
         // Initialize the TimeSpan fields as seconds for UI binding
         _imgWatchdogEnabled = Worker.BaseWorker.ImgWatchdogEnabled;
-        _imgWatchdogGraceTimeSeconds = (int) Worker.BaseWorker.ImgWatchdogGraceTime.TotalSeconds;
-        _imgWatchdogIntervalSeconds = (int) Worker.BaseWorker.ImgWatchdogInterval.TotalSeconds;
+        _imgWatchdogGraceTimeSeconds = (int)Worker.BaseWorker.ImgWatchdogGraceTime.TotalSeconds;
+        _imgWatchdogIntervalSeconds = (int)Worker.BaseWorker.ImgWatchdogInterval.TotalSeconds;
 
         var workerEventTopic = $"WorkerChangeEvent-{EngineId}-{Worker.WorkerId}";
         SignalRService.HubConnection.On<WorkerChangeEvent>(workerEventTopic, async _ => { await InvokeAsync(StateHasChanged); });

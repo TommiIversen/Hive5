@@ -24,5 +24,4 @@ public class WorkerEntity
 
     public List<WorkerEvent> Events { get; set; } = new();
     public List<WorkerChangeLog> ChangeLogs { get; set; } = new();
-
 }

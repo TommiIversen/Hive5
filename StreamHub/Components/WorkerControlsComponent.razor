@@ -1,5 +1,4 @@
-﻿@using Common.DTOs
-@using Common.DTOs.Enums
+﻿@using Common.DTOs.Enums
 @using Common.DTOs.Queries
 @using StreamHub.Models
 @using StreamHub.Services
@@ -56,7 +55,7 @@
 
 @if (_isChangeLogsModalVisible)
 {
-<WorkerChangeLogsModal WorkerChangeLogs="_workerChangeLogs" OnClose="CloseChangeLogsModal" />
+    <WorkerChangeLogsModal WorkerChangeLogs="_workerChangeLogs" OnClose="CloseChangeLogsModal"/>
 }
 
 @code {
@@ -66,14 +65,14 @@
 
     private bool _isLogsModalVisible;
     private WorkerEventLogCollection? _workerEventsWithLogs;
-    
+
     private bool _isChangeLogsModalVisible;
     private WorkerChangeLog? _workerChangeLogs;
 
     private async Task ShowLogsModal()
     {
         var result = await WorkerService.GetWorkerEventsWithLogsAsync(EngineId, Worker.WorkerId);
-        if (result is {Success: true})
+        if (result is { Success: true })
         {
             _workerEventsWithLogs = result.Data;
             _isLogsModalVisible = true;
@@ -85,12 +84,12 @@
             Console.WriteLine($"Failed to fetch events and logs: {result.Message}");
         }
     }
-    
+
     private void CloseLogsModal()
     {
         _isLogsModalVisible = false;
     }
-    
+
     private async Task ShowChangeLogsModal()
     {
         var result = await WorkerService.GetWorkerChangeLogsAsync(EngineId, Worker.WorkerId);
@@ -114,11 +113,11 @@
                 ]
             };
         }
-    
+
         _isChangeLogsModalVisible = true;
         await InvokeAsync(StateHasChanged);
     }
-    
+
     private void CloseChangeLogsModal()
     {
         _isChangeLogsModalVisible = false;
@@ -167,4 +166,5 @@
         Console.WriteLine("Disposing WorkerControlsComponent");
         SignalRService.HubConnection.Remove("WorkerChangeEvent");
     }
+
 }

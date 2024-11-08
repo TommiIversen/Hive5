@@ -80,7 +80,7 @@ public class MemoryUsageMonitor
     // Helper method to parse memory values in /proc/meminfo on Linux
     private double ParseMemoryValue(string memInfoLine)
     {
-        var parts = memInfoLine.Split(new[] {' '}, StringSplitOptions.RemoveEmptyEntries);
+        var parts = memInfoLine.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
         return double.Parse(parts[1]); // Memory is in KB in /proc/meminfo
     }
 
@@ -100,7 +100,7 @@ public class MemoryUsageMonitor
 
         public MEMORYSTATUSEX()
         {
-            dwLength = (uint) Marshal.SizeOf(typeof(MEMORYSTATUSEX));
+            dwLength = (uint)Marshal.SizeOf(typeof(MEMORYSTATUSEX));
         }
     }
 }

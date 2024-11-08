@@ -19,10 +19,10 @@ internal class Program
 
         // Udelukkede mapper og filer
         var excludeDirs = new HashSet<string>
-            {".github", ".vs", ".git", ".idea", "bin", "obj", "lib", "Migrations", "Identity", "Properties"};
+            { ".github", ".vs", ".git", ".idea", "bin", "obj", "lib", "Migrations", "Identity", "Properties" };
         var excludeFiles = new HashSet<string>();
         var includeExtensions = new HashSet<string>
-            {".cs", ".html", ".js", ".cshtml", ".razor"}; // Filtyper, der skal inkluderes
+            { ".cs", ".html", ".js", ".cshtml", ".razor" }; // Filtyper, der skal inkluderes
 
         // Hent strukturen og antal linjer
         var (structure, totalLines) =

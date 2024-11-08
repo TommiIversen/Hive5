@@ -19,7 +19,7 @@ public static class DbInitializer
                 InstallDate = DateTime.Now,
                 HubUrls = new List<HubUrlEntity>
                 {
-                    new() {HubUrl = "http://127.0.0.1:9000/streamhub"}
+                    new() { HubUrl = "http://127.0.0.1:9000/streamhub" }
                 }
             };
 
@@ -28,7 +28,7 @@ public static class DbInitializer
         }
         else if (!engineEntity.HubUrls.Any())
         {
-            engineEntity.HubUrls.Add(new HubUrlEntity {HubUrl = "http://127.0.0.1:9000/streamhub"});
+            engineEntity.HubUrls.Add(new HubUrlEntity { HubUrl = "http://127.0.0.1:9000/streamhub" });
             context.SaveChanges();
         }
     }

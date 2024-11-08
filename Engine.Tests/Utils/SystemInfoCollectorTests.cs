@@ -32,7 +32,7 @@ public class SystemInfoCollectorTests
         var platform = systemInfoCollector.GetSystemInfo().Platform;
 
         // Assert
-        Assert.Contains(platform, new[] {"Windows", "Linux", "macOS", "Unknown"});
+        Assert.Contains(platform, new[] { "Windows", "Linux", "macOS", "Unknown" });
     }
 
     [Fact]

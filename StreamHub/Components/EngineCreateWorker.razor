@@ -12,7 +12,7 @@
             <input type="text" @bind="_newWorkerId" @oninput="ValidateWorkerId" class="w-full p-2 mt-1 rounded-lg bg-gray-900 text-white"/>
             @if (!string.IsNullOrEmpty(_workerIdError))
             {
-            <span class="text-red-500 text-sm">@_workerIdError</span>
+                <span class="text-red-500 text-sm">@_workerIdError</span>
             }
 
             <label class="block text-gray-400 mt-4">Navn:</label>
@@ -31,12 +31,13 @@
 
         @if (!string.IsNullOrEmpty(_commandResultMessage))
         {
-        <div class="mt-4 p-2 bg-gray-800 text-white rounded">
-            @_commandResultMessage
-        </div>
+            <div class="mt-4 p-2 bg-gray-800 text-white rounded">
+                @_commandResultMessage
+            </div>
         }
     </div>
 </EngineExpandablePanel>
+
 @code {
     [Parameter] public Guid EngineId { get; set; }
 
@@ -47,11 +48,11 @@
     private string _commandResultMessage = string.Empty;
     private string _workerIdError = string.Empty;
 
-    
+
     private void ValidateWorkerId(ChangeEventArgs e)
     {
         _newWorkerId = e.Value?.ToString() ?? string.Empty;
-        
+
         // Check if WorkerId is empty or has at least 4 characters
         if (!string.IsNullOrEmpty(_newWorkerId) && _newWorkerId.Length < 4)
         {
@@ -62,7 +63,7 @@
             _workerIdError = string.Empty;
         }
     }
-    
+
     private async Task CreateNewWorker()
     {
         var workerCreate = new WorkerCreateAndEdit

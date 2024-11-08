@@ -102,7 +102,13 @@ public class WorkerServiceTests
     {
         // Arrange
         var workerRepositoryMock = new Mock<IWorkerRepository>();
-        var workerEntity = new WorkerEntity {Name = "kk", WorkerId = _config.WorkerId};
+        var workerEntity = new WorkerEntity
+        {
+            Name = "kk",
+            WorkerId = _config.WorkerId,
+            ImgWatchdogGraceTime = default,
+            ImgWatchdogInterval = default
+        };
 
         // Konfigurer mock for repository og entity
         workerRepositoryMock.Setup(repo => repo.GetWorkerByIdAsync(It.IsAny<string>()))

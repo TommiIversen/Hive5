@@ -10,10 +10,15 @@ builder.Services.AddSingleton<CircuitHandler>(sp =>
     sp.GetRequiredService<TrackingCircuitHandler>()); // As CircuitHandler
 builder.Services.AddScoped<BlazorSignalRService>();
 
+
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
-builder.Services.AddSignalR().AddMessagePackProtocol();
+builder.Services.AddSignalR(options =>
+{
+    // options.EnableDetailedErrors = true;
+    options.MaximumReceiveMessageSize = 1024 * 1024;
+}).AddMessagePackProtocol();
 builder.Services.AddSingleton<EngineManager>(); // Singleton for shared state
 builder.Services.AddSingleton<CancellationService>(); // Singleton for shared cancellation token
 builder.Services.AddSingleton<WorkerService>(); // Singleton for shared cancellation token

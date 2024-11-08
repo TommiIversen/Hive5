@@ -1,5 +1,4 @@
-﻿using Common.DTOs;
-using Common.DTOs.Commands;
+﻿using Common.DTOs.Commands;
 using Common.DTOs.Queries;
 using Engine.Services;
 using Microsoft.AspNetCore.SignalR.Client;
@@ -75,29 +74,37 @@ public class HubWorkerWorkerEventHandlers : IHubWorkerEventHandlers
         {
             try
             {
+                Console.WriteLine($"Try GetWorkerEventsWithLogs: {message.WorkerId}");
                 var eventsWithLogs = await _workerManager.GetWorkerEventsWithLogsAsync(message.WorkerId);
                 return new CommandResult<WorkerEventLogCollection>(true, "OK.", eventsWithLogs);
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"Error fetching events with logs for worker {message.WorkerId}: {ex.Message}");
                 _logger.LogError(ex, $"Error fetching events with logs for worker {message.WorkerId}: {ex.Message}");
                 return new CommandResult<WorkerEventLogCollection>(false, $"Error: {ex.Message}");
             }
         });
-        
+
         hubConnection.On("GetWorkerChangeLogs", async (WorkerOperationMessage message) =>
         {
             try
             {
+                Console.WriteLine($"Try GetWorkerChangeLogs: {message.WorkerId}");
                 var changeLogs = await _workerManager.GetWorkerChangeLogsAsync(message.WorkerId);
-                return new CommandResult<WorkerChangeLog>(true, "OK.", changeLogs);
+
+                var result = new CommandResult<WorkerChangeLog>(true, "OK.", changeLogs);
+
+
+                return result;
             }
             catch (Exception ex)
             {
+                Console.WriteLine(
+                    $"GetWorkerChangeLogs -Error fetching change logs for worker {message.WorkerId}: {ex.Message}");
                 _logger.LogError(ex, $"Error fetching change logs for worker {message.WorkerId}: {ex.Message}");
                 return new CommandResult<WorkerChangeLog>(false, $"Error: {ex.Message}");
             }
         });
-
     }
 }

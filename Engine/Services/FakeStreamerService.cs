@@ -1,5 +1,4 @@
 ﻿using System.Runtime.InteropServices;
-using Common.DTOs;
 using Common.DTOs.Enums;
 using Common.DTOs.Events;
 using Engine.Interfaces;
@@ -166,7 +165,7 @@ public class FakeStreamerService : IStreamerService
         // Fake image data (placeholder)
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             return _generator.GenerateImageWithNumber(_imageCounter++, text);
-        return new byte[] {0, 0, 0};
+        return new byte[] { 0, 0, 0 };
     }
 
     private async Task OnStateChangedAsync(WorkerState newState)

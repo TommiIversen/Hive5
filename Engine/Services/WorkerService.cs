@@ -1,5 +1,4 @@
-﻿using Common.DTOs;
-using Common.DTOs.Commands;
+﻿using Common.DTOs.Commands;
 using Common.DTOs.Enums;
 using Common.DTOs.Events;
 using Engine.DAL.Repositories;
@@ -28,7 +27,7 @@ public class WorkerService : IWorkerService
     private WorkerState _desiredState;
     private int _imageCounter;
     private DateTime _lastImageUpdate;
-    private IStreamerWatchdogService _watchdogService;
+    private readonly IStreamerWatchdogService _watchdogService;
 
     public WorkerService(
         ILoggerService loggerService,

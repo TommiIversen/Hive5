@@ -1,5 +1,4 @@
 ﻿using System.Collections.Concurrent;
-using Common.DTOs;
 using Common.DTOs.Events;
 using Engine.Interfaces;
 using ILogger = Serilog.ILogger;

@@ -1,5 +1,4 @@
-﻿using Common.DTOs;
-using Common.DTOs.Enums;
+﻿using Common.DTOs.Enums;
 using Common.DTOs.Events;
 using Engine.DAL.Entities;
 using Engine.DAL.Repositories;
@@ -52,7 +51,7 @@ public class EngineService : IEngineService
         var engine = await _engineRepository.GetEngineAsync();
         if (engine != null)
         {
-            engine.HubUrls.Add(new HubUrlEntity {HubUrl = hubUrl, ApiKey = apiKey});
+            engine.HubUrls.Add(new HubUrlEntity { HubUrl = hubUrl, ApiKey = apiKey });
             await _engineRepository.SaveEngineAsync(engine);
         }
     }

@@ -32,7 +32,7 @@ public class NetworkUsageMonitorTest
             .Returns(500_000); // Anden måling med højere værdi
 
         mockInterface.Setup(i => i.GetIPv4Statistics()).Returns(mockStats.Object);
-        mockProvider.Setup(p => p.GetAllNetworkInterfaces()).Returns(new[] {mockInterface.Object});
+        mockProvider.Setup(p => p.GetAllNetworkInterfaces()).Returns(new[] { mockInterface.Object });
 
         var monitor = new NetworkUsageMonitor(mockProvider.Object);
 

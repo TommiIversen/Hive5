@@ -13,13 +13,13 @@ public class ImageGenerator
     private const int Height = 168;
     private const int BufferSize = 32 * 1024;
     private readonly ArrayPool<byte> _arrayPool;
+    private readonly Color _baseEndColor;
+    private readonly Color _baseStartColor;
     private readonly Brush _brush;
+    private readonly Color _endColor;
     private readonly Font _font;
     private readonly StringFormat _format;
     private readonly Color _startColor;
-    private readonly Color _endColor;
-    private readonly Color _baseStartColor;
-    private readonly Color _baseEndColor;
 
     [SupportedOSPlatform("windows")]
     public ImageGenerator()
@@ -33,7 +33,7 @@ public class ImageGenerator
             LineAlignment = StringAlignment.Center
         };
         _arrayPool = ArrayPool<byte>.Shared; // Genbrug array pool
-        
+
         // Generér tilfældige grundfarver
         var random = new Random();
         _baseStartColor = Color.FromArgb(random.Next(256), random.Next(256), random.Next(256));
@@ -87,7 +87,7 @@ public class ImageGenerator
             using var memoryStream = new MemoryStream(buffer);
             bitmap.Save(memoryStream, ImageFormat.Jpeg);
 
-            var lengthUsed = (int) memoryStream.Position;
+            var lengthUsed = (int)memoryStream.Position;
             var result = new byte[lengthUsed];
             Array.Copy(buffer, result, lengthUsed);
 
@@ -102,6 +102,6 @@ public class ImageGenerator
     private byte[] GenerateFakeImage()
     {
         // Returner en simpel fake bytearray som placeholder på ikke-Windows platforme
-        return new byte[] {0, 0, 0};
+        return new byte[] { 0, 0, 0 };
     }
 }

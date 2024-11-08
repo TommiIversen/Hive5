@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Linq;
-using Common.DTOs;
 using Common.DTOs.Events;
 using Engine.Interfaces;
 using Microsoft.Extensions.Logging;

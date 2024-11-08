@@ -1,5 +1,4 @@
-﻿using Common.DTOs;
-using Common.DTOs.Events;
+﻿using Common.DTOs.Events;
 using Engine.Interfaces;
 using Engine.Utils;
 

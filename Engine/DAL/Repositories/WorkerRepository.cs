@@ -1,5 +1,4 @@
-﻿using Common.DTOs;
-using Common.DTOs.Events;
+﻿using Common.DTOs.Events;
 using Common.DTOs.Queries;
 using Engine.DAL.Entities;
 using Engine.Database;
@@ -130,13 +129,13 @@ public class WorkerRepository(ApplicationDbContext context) : IWorkerRepository
                 Logs = e.EventLogs.Select(log => new EventLogEntry
                 {
                     Message = log.Message,
-                    LogLevel = (int) log.LogLevel,
+                    LogLevel = (int)log.LogLevel,
                     LogTimestamp = log.LogTimestamp
                 }).ToList()
             })
             .ToListAsync();
     }
-    
+
     public async Task<List<WorkerChangeLog>> GetWorkerChangeLogAsync(string workerId, int maxEntries = 50)
     {
         return await context.WorkerChangeLogs
@@ -145,7 +144,7 @@ public class WorkerRepository(ApplicationDbContext context) : IWorkerRepository
             .Take(maxEntries)
             .ToListAsync();
     }
-    
+
     public async Task AddWorkerChangeLogsAsync(IEnumerable<WorkerChangeLog> changeLogs)
     {
         await context.WorkerChangeLogs.AddRangeAsync(changeLogs);

@@ -52,8 +52,8 @@ public class ApplicationDbContext : DbContext
             .WithOne()
             .HasForeignKey(log => log.EventId)
             .OnDelete(DeleteBehavior.Cascade); // Cascade delete på EventLogs
-        
-        
+
+
         modelBuilder.Entity<WorkerEntity>()
             .HasMany(w => w.ChangeLogs)
             .WithOne()

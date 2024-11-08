@@ -1,5 +1,4 @@
-﻿using Common.DTOs;
-using Common.DTOs.Events;
+﻿using Common.DTOs.Events;
 
 namespace StreamHub.Models;
 

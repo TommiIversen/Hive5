@@ -1,5 +1,4 @@
 ﻿@using System.Text
-@using Common.DTOs
 @using Common.DTOs.Queries
 @inject IJSRuntime JsRuntime
 
@@ -23,14 +22,14 @@
 
             @if (WorkerEventsWithLogs != null && WorkerEventsWithLogs.Events.Any())
             {
-                @foreach (var evt in WorkerEventsWithLogs.Events.Select((value, index) => new {value, index}))
+                @foreach (var evt in WorkerEventsWithLogs.Events.Select((value, index) => new { value, index }))
                 {
                     <div class="bg-gray-700 mb-3 rounded">
                         <div class="event-item bg-gray-800 text-white mb-2 p-2 rounded cursor-pointer hover:bg-blue-900"
                              @onclick="() => ToggleLog(evt.index)">
                             <div class="flex justify-between items-center">
                                 <div>
-                                    <span>@evt.value.EventTimestamp.ToString("dd/MM-yy HH:mm:ss")</span>
+                                    <span>@evt.value.EventTimestamp.ToLocalTime().ToString("dd/MM-yy HH:mm:ss")</span>
                                     <span> | Reason: @evt.value.EventMessage</span>
                                 </div>
                                 <div>
@@ -57,7 +56,7 @@
                                 @foreach (var log in evt.value.Logs)
                                 {
                                     <div class="log-item text-white">
-                                        <span>@log.LogTimestamp.ToString("dd/MM-yy HH:mm:ss.fff")</span>
+                                        <span>@log.LogTimestamp..ToLocalTime().ToString("dd/MM-yy HH:mm:ss.fff")</span>
                                         <span class="@GetLogLevelClass(log.LogLevel)"> | @log.Message</span>
                                     </div>
                                 }
@@ -123,7 +122,7 @@
             {
                 // Indryk loglinjen og formatér kolonnerne
                 var logTime = log.LogTimestamp.ToString("dd/MM-yy HH:mm:ss.fff").PadRight(25);
-                var logLevel = ((LogLevel) log.LogLevel).ToString().PadRight(10);
+                var logLevel = ((LogLevel)log.LogLevel).ToString().PadRight(10);
                 var message = log.Message;
 
                 sb.AppendLine(("     " + $"{logTime} | {logLevel} | {message}").PadLeft(5));

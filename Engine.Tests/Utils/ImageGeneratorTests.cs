@@ -22,7 +22,7 @@ public class ImageGeneratorTests
         else
         {
             // Hvis ikke på Windows, forvent en fake byte array [0, 0, 0]
-            Assert.Equal(new byte[] {0, 0, 0}, result);
+            Assert.Equal(new byte[] { 0, 0, 0 }, result);
         }
     }
 }

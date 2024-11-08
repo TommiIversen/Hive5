@@ -1,5 +1,4 @@
 ﻿using System.Collections.Concurrent;
-using Common.DTOs;
 using Common.DTOs.Commands;
 using Common.DTOs.Events;
 using Engine.Interfaces;
@@ -136,10 +135,6 @@ public class StreamHub
                 {
                     TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5),
                     TimeSpan.FromSeconds(5)
-                })
-                .AddMessagePackProtocol(options =>
-                {
-                    //options.SerializerOptions = messagePackOptions;
                 })
                 .Build();
 

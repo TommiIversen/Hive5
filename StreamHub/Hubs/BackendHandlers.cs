@@ -1,5 +1,4 @@
-﻿using Common.DTOs;
-using Common.DTOs.Enums;
+﻿using Common.DTOs.Enums;
 using Common.DTOs.Events;
 using Microsoft.AspNetCore.Http.Connections.Features;
 using Microsoft.AspNetCore.SignalR;
@@ -125,7 +124,8 @@ public class BackendHandlers
 
     public async Task ReceiveWorkerEvent(WorkerChangeEvent workerBaseChangeEvent)
     {
-        Console.WriteLine($"ReceiveWorkerEvent: {workerBaseChangeEvent.ChangeEventType} - {workerBaseChangeEvent.WorkerId} - {workerBaseChangeEvent.State}");
+        Console.WriteLine(
+            $"ReceiveWorkerEvent: {workerBaseChangeEvent.ChangeEventType} - {workerBaseChangeEvent.WorkerId} - {workerBaseChangeEvent.State}");
         switch (workerBaseChangeEvent.ChangeEventType)
         {
             case ChangeEventType.Deleted:
@@ -140,7 +140,8 @@ public class BackendHandlers
                 break;
             case ChangeEventType.Updated:
                 _engineManager.AddOrUpdateWorker(workerBaseChangeEvent);
-                var workerEventTopic = $"WorkerChangeEvent-{workerBaseChangeEvent.EngineId}-{workerBaseChangeEvent.WorkerId}";
+                var workerEventTopic =
+                    $"WorkerChangeEvent-{workerBaseChangeEvent.EngineId}-{workerBaseChangeEvent.WorkerId}";
 
                 await _hubContext.Clients.Group("frontendClients")
                     .SendAsync(workerEventTopic, workerBaseChangeEvent, _cancellationService.Token);

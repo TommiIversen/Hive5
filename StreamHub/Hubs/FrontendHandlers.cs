@@ -39,7 +39,7 @@ public class FrontendHandlers
         using var linkedCts =
             CancellationTokenSource.CreateLinkedTokenSource(_cancellationService.Token, timeoutCts.Token);
 
-        if (existingEngine is {ConnectionInfo.ConnectionId: not null})
+        if (existingEngine is { ConnectionInfo.ConnectionId: not null })
         {
             CommandResult result;
             result = await _hubContext.Clients.Client(existingEngine.ConnectionInfo.ConnectionId)

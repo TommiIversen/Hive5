@@ -1,5 +1,4 @@
 ﻿using System.Text.RegularExpressions;
-using Common.DTOs;
 using Common.DTOs.Commands;
 using Common.DTOs.Enums;
 using Common.DTOs.Events;
@@ -7,7 +6,6 @@ using Common.DTOs.Queries;
 using Engine.DAL.Entities;
 using Engine.DAL.Repositories;
 using Engine.Interfaces;
-using Engine.Metrics;
 using Engine.Models;
 using Engine.Utils;
 using Serilog;
@@ -32,7 +30,6 @@ public interface IWorkerManager
     Task<WorkerEventLogCollection> GetWorkerEventsWithLogsAsync(string workerId);
     Task<WorkerChangeLog> GetWorkerChangeLogsAsync(string workerId);
 }
-
 
 public class WorkerManager(
     IMessageQueue messageQueue,
@@ -87,35 +84,15 @@ public class WorkerManager(
         Log.Information("Workers initialized successfully.");
     }
 
-    private static string SanitizeString(string input)
-    {
-        if (string.IsNullOrWhiteSpace(input))
-        {
-            return string.Empty; // Returnér tom streng, hvis input er null eller kun whitespace
-        }
-    
-        // Trim whitespace i starten og slutningen
-        input = input.Trim();
-
-        // Erstat mellemrum og specialtegn i strengen med underscore
-        string sanitized = Regex.Replace(input, @"\s+", "_"); // Erstatter alle mellemrum med underscore
-        sanitized = Regex.Replace(sanitized, @"[^\w]", "_"); // Erstatter specialtegn med underscore
-
-        // Fjern eventuelle ekstra underscores i træk
-        sanitized = Regex.Replace(sanitized, @"_+", "_");
-
-        return sanitized;
-    }
-
 
     public async Task<IWorkerService?> AddWorkerAsync(Guid engineId, WorkerCreateAndEdit workerCreateAndEdit)
     {
         LogInfo($"Adding worker... {workerCreateAndEdit.Name}", workerCreateAndEdit.WorkerId);
-        
+
         var workerId = string.IsNullOrWhiteSpace(SanitizeString(workerCreateAndEdit.WorkerId))
             ? Guid.NewGuid().ToString()
             : workerCreateAndEdit.WorkerId;
-        
+
         var workerRepository = repositoryFactory.CreateWorkerRepository();
         var existingWorker = await workerRepository.GetWorkerByIdAsync(workerId);
 
@@ -131,10 +108,11 @@ public class WorkerManager(
         // Hvis worker allerede findes i databasen og i _workers, returner den eksisterende service
         if (_workers.TryGetValue(workerId, out var workerServiceOut))
         {
-            LogInfo($"Worker with ID {workerId} already exists in memory. Returning existing service.", workerId, LogLevel.Warning);
+            LogInfo($"Worker with ID {workerId} already exists in memory. Returning existing service.", workerId,
+                LogLevel.Warning);
             return workerServiceOut;
         }
-        
+
         LogInfo($"Adding worker to database.. {workerId}", workerId);
         var workerEntity = new WorkerEntity
         {
@@ -428,7 +406,7 @@ public class WorkerManager(
             Events = recentEvents
         };
     }
-    
+
     public async Task<WorkerChangeLog> GetWorkerChangeLogsAsync(string workerId)
     {
         var workerRepository = repositoryFactory.CreateWorkerRepository();
@@ -436,6 +414,7 @@ public class WorkerManager(
 
         if (changeLogs == null || !changeLogs.Any())
             throw new InvalidOperationException($"Worker with ID {workerId} not found or has no change logs.");
+        Console.WriteLine("WorkerChangeLogs: " + changeLogs.Count);
 
         return new WorkerChangeLog
         {
@@ -449,6 +428,23 @@ public class WorkerManager(
         };
     }
 
+    private static string SanitizeString(string input)
+    {
+        if (string.IsNullOrWhiteSpace(input))
+            return string.Empty; // Returnér tom streng, hvis input er null eller kun whitespace
+
+        // Trim whitespace i starten og slutningen
+        input = input.Trim();
+
+        // Erstat mellemrum og specialtegn i strengen med underscore
+        var sanitized = Regex.Replace(input, @"\s+", "_"); // Erstatter alle mellemrum med underscore
+        sanitized = Regex.Replace(sanitized, @"[^\w]", "_"); // Erstatter specialtegn med underscore
+
+        // Fjern eventuelle ekstra underscores i træk
+        sanitized = Regex.Replace(sanitized, @"_+", "_");
+
+        return sanitized;
+    }
 
 
     private WorkerState GetWorkerState(string workerId)
