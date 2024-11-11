@@ -4,34 +4,35 @@
 @inject BlazorSignalRService SignalRService
 
 
-<EngineExpandablePanel Title="Tilføj Worker">
+<EngineExpandablePanel Title="Add Worker">
     <div class="bg-gray-700 p-4 mt-4 rounded-lg">
-        <h3 class="text-xl text-white font-semibold">Opret ny worker</h3>
-        <div class="mt-4">
+        <h3  class="text-xl text-white font-semibold">Opret ny worker</h3>
+        <div data-testid="create-worker-form" class="mt-4">
             <label class="block text-gray-400">Worker ID:</label>
-            <input type="text" @bind="_newWorkerId" @oninput="ValidateWorkerId" class="w-full p-2 mt-1 rounded-lg bg-gray-900 text-white"/>
+            <input type="text" @bind="_newWorkerId" @oninput="ValidateWorkerId" class="w-full p-2 mt-1 rounded-lg bg-gray-900 text-white" data-testid="worker-id-input" />
+
             @if (!string.IsNullOrEmpty(_workerIdError))
             {
                 <span class="text-red-500 text-sm">@_workerIdError</span>
             }
 
-            <label class="block text-gray-400 mt-4">Navn:</label>
-            <input type="text" @bind="_newWorkerName" class="w-full p-2 mt-1 rounded-lg bg-gray-900 text-white"/>
+            <label class="block text-gray-400 mt-4">Name:</label>
+            <input type="text" @bind="_newWorkerName" class="w-full p-2 mt-1 rounded-lg bg-gray-900 text-white" data-testid="worker-name-input" />
 
-            <label class="block text-gray-400 mt-4">Beskrivelse:</label>
-            <input type="text" @bind="_newWorkerDescription" class="w-full p-2 mt-1 rounded-lg bg-gray-900 text-white"/>
+            <label class="block text-gray-400 mt-4">Description:</label>
+            <input type="text" @bind="_newWorkerDescription" class="w-full p-2 mt-1 rounded-lg bg-gray-900 text-white" data-testid="worker-description-input" />
 
             <label class="block text-gray-400 mt-4">Command:</label>
-            <textarea @bind="_newWorkerCommand" class="w-full p-2 mt-1 rounded-lg bg-gray-900 text-white"></textarea>
+            <textarea @bind="_newWorkerCommand" class="w-full p-2 mt-1 rounded-lg bg-gray-900 text-white" data-testid="worker-command-input"></textarea>
 
-            <button @onclick="CreateNewWorker" class="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded">
-                Opret Worker
+            <button @onclick="CreateNewWorker" class="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded" data-testid="create-worker-button">
+                Add Worker
             </button>
         </div>
 
         @if (!string.IsNullOrEmpty(_commandResultMessage))
         {
-            <div class="mt-4 p-2 bg-gray-800 text-white rounded">
+            <div class="mt-4 p-2 bg-gray-800 text-white rounded" data-testid="command-result-message">
                 @_commandResultMessage
             </div>
         }

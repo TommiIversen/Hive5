@@ -8,9 +8,9 @@
         @foreach (var tabName in _tabs.Keys)
         {
             <button @onclick="() => ToggleTab(tabName)"
-                    class="px-4 @GetTabButtonStyle(_tabs[tabName]) py-1 rounded border border-gray-500 transition duration-200  ease-in-out hover:bg-slate-600 text-white font-bold w-full flex items-center justify-between">
+                    class="px-4 @GetTabButtonStyle(_tabs[tabName]) py-1 rounded border border-gray-500 transition duration-200  ease-in-out hover:bg-slate-600 text-white font-bold w-full flex items-center justify-between"
+                    data-testid="@($"toggle-tab-{tabName.ToLower()}-{Worker.WorkerId}")">
                 <span>@tabName</span>
-
                 <svg class="h-6 transition-transform duration-300 w-6 @GetTabIconRotation(_tabs[tabName])" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/>
                 </svg>
