@@ -13,6 +13,11 @@ public class WorkerViewModel
     public bool IsProcessing { get; set; }
     public string OperationResult { get; set; } = "";
     public DateTime EventProcessedTimestamp { get; set; }
+    
+    
+    // Reference til næste/previous worker i linked list
+    public WorkerViewModel? NextWorker { get; set; }
+    public WorkerViewModel? PreviousWorker { get; set; }
 
     public void AddLogMessage(WorkerLogEntry message)
     {

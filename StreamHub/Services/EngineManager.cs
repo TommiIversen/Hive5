@@ -29,24 +29,34 @@ public class EngineManager
         }
     }
 
+   
     public void AddOrUpdateWorker(BaseWorkerInfo baseWorkerInfo)
     {
         if (_engines.TryGetValue(baseWorkerInfo.EngineId, out var engine))
         {
-            if (engine.Workers.TryGetValue(baseWorkerInfo.WorkerId, out var workerViewModel))
+            if (engine.Workers.TryGetValue(baseWorkerInfo.WorkerId, out var existingWorker))
             {
-                if (IsOutdatedEvent(workerViewModel, baseWorkerInfo))
+                if (IsOutdatedEvent(existingWorker, baseWorkerInfo))
                 {
-                    Console.WriteLine(
-                        $"Skipping outdated event for worker {baseWorkerInfo.WorkerId} - {baseWorkerInfo.Name}");
+                    Console.WriteLine($"Skipping outdated event for worker {baseWorkerInfo.WorkerId} - {baseWorkerInfo.Name}");
                     return;
                 }
 
-                UpdateExistingWorker(workerViewModel, baseWorkerInfo);
+                existingWorker.BaseWorker = baseWorkerInfo;
+                existingWorker.EventProcessedTimestamp = baseWorkerInfo.Timestamp;
+                engine.UpdateWorker(existingWorker);
+                Console.WriteLine($"Worker {baseWorkerInfo.WorkerId} updated.");
             }
             else
             {
-                AddNewWorker(engine, baseWorkerInfo);
+                var newWorker = new WorkerViewModel
+                {
+                    WorkerId = baseWorkerInfo.WorkerId,
+                    BaseWorker = baseWorkerInfo,
+                    EventProcessedTimestamp = baseWorkerInfo.Timestamp
+                };
+                engine.AddWorker(newWorker);
+                Console.WriteLine($"Worker {baseWorkerInfo.WorkerId} added.");
             }
         }
         else
@@ -59,25 +69,6 @@ public class EngineManager
     {
         return workerViewModel.EventProcessedTimestamp >= baseWorkerInfo.Timestamp;
     }
-
-    private void UpdateExistingWorker(WorkerViewModel workerViewModel, BaseWorkerInfo baseWorkerInfo)
-    {
-        workerViewModel.BaseWorker = baseWorkerInfo;
-        workerViewModel.EventProcessedTimestamp = baseWorkerInfo.Timestamp; // Opdater tidsstemplet
-        Console.WriteLine($"Worker {baseWorkerInfo.WorkerId} updated.");
-    }
-
-    private void AddNewWorker(EngineViewModel engine, BaseWorkerInfo baseWorkerInfo)
-    {
-        engine.Workers[baseWorkerInfo.WorkerId] = new WorkerViewModel
-        {
-            WorkerId = baseWorkerInfo.WorkerId,
-            BaseWorker = baseWorkerInfo,
-            EventProcessedTimestamp = baseWorkerInfo.Timestamp
-        };
-        Console.WriteLine($"Worker {baseWorkerInfo.WorkerId} added.");
-    }
-
 
     public bool TryGetEngine(Guid engineId, out EngineViewModel? engineInfo)
     {
@@ -145,19 +136,13 @@ public class EngineManager
         Console.WriteLine("Workers synchronized successfully.");
     }
 
+   
     public void RemoveWorker(Guid engineId, string workerId)
     {
         if (_engines.TryGetValue(engineId, out var engine))
         {
-            if (engine.Workers.ContainsKey(workerId))
-            {
-                engine.Workers.Remove(workerId, out _);
-                Console.WriteLine($"Worker {workerId} successfully removed from engine {engineId}.");
-            }
-            else
-            {
-                Console.WriteLine($"Worker {workerId} not found in engine {engineId}. Cannot remove.");
-            }
+            engine.RemoveWorker(workerId);
+            Console.WriteLine($"Worker {workerId} successfully removed from engine {engineId}.");
         }
         else
         {
