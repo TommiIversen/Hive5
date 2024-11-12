@@ -10,7 +10,8 @@ public class EngineHub(
     CancellationService cancellationService,
     IHubContext<EngineHub> hubContext,
     FrontendHandlers frontendHandlers,
-    BackendHandlers backendHandlers)
+    BackendHandlers backendHandlers,
+    ILogger<EngineHub> logger)
     : Hub
 {
     // Frontend handlers
@@ -99,7 +100,7 @@ public class EngineHub(
 
     public Task ReceiveDeadLetter(string deadLetter)
     {
-        Console.WriteLine($"Dead letter received: {deadLetter}");
+        logger.LogWarning($"Dead letter received: {deadLetter}");
         return Task.CompletedTask;
     }
 
@@ -110,14 +111,14 @@ public class EngineHub(
         switch (clientType)
         {
             case "backend":
-                Console.WriteLine($"Backend client attempting to connect: {Context.ConnectionId}");
+                logger.LogInformation($"Backend client attempting to connect: {Context.ConnectionId}");
                 break;
             case "frontend":
                 await Groups.AddToGroupAsync(Context.ConnectionId, "frontendClients");
-                Console.WriteLine($"Frontend client connected: {Context.ConnectionId}");
+                logger.LogInformation($"Frontend client connected: {Context.ConnectionId}");
                 break;
             default:
-                Console.WriteLine($"Unknown client connected: {Context.ConnectionId}");
+                logger.LogWarning($"Unknown client connected: {Context.ConnectionId}");
                 break;
         }
 
@@ -130,11 +131,11 @@ public class EngineHub(
         if (wasEngine)
         {
             await hubContext.Clients.Group("frontendClients").SendAsync("EngineChange", cancellationService.Token);
-            Console.WriteLine($"Engine disconnected: {Context.ConnectionId}");
+            logger.LogInformation($"Engine disconnected: {Context.ConnectionId}");
         }
         else
         {
-            Console.WriteLine($"Client disconnected: {Context.ConnectionId}");
+            logger.LogInformation($"Client disconnected: {Context.ConnectionId}");
         }
 
         return base.OnDisconnectedAsync(exception);

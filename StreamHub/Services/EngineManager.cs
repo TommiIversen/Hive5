@@ -19,30 +19,24 @@ public interface IEngineManager
     void RemoveWorker(Guid engineId, string workerId);
 }
 
-public class EngineManager : IEngineManager
+public class EngineManager(ILogger<EngineManager> logger) : IEngineManager
 {
     private readonly ConcurrentDictionary<Guid, EngineViewModel> _engines = new();
-    private readonly ILogger<EngineManager> _logger;
 
 
     public EngineViewModel GetOrAddEngine(BaseEngineInfo info)
     {
         return _engines.GetOrAdd(info.EngineId, _ => new EngineViewModel { Info = info });
     }
-    
-    public EngineManager(ILogger<EngineManager> logger)
-    {
-        _logger = logger;
-    }
 
     public void UpdateBaseInfo(BaseEngineInfo info)
     {
-        _logger.LogInformation($"Updating base info for engine {info.EngineId}");
+        logger.LogInformation($"Updating base info for engine {info.EngineId}");
         if (_engines.TryGetValue(info.EngineId, out var engine))
         {
-            _logger.LogInformation($"Base info for engine {info.EngineId} updated.");
+            logger.LogInformation($"Base info for engine {info.EngineId} updated.");
             engine.Info = info;
-            engine.Info.HubUrls = new List<HubUrlInfo>(info.HubUrls); // Kopi af ny HubUrls-liste
+            engine.Info.HubUrls = new List<HubUrlInfo>(info.HubUrls);
         }
     }
 
@@ -54,7 +48,7 @@ public class EngineManager : IEngineManager
             {
                 if (IsOutdatedEvent(existingWorker, baseWorkerInfo))
                 {
-                    _logger.LogInformation(
+                    logger.LogInformation(
                         $"AddOrUpdateWorker: Skipping outdated event for worker {baseWorkerInfo.WorkerId} - {baseWorkerInfo.Name}");
                     return;
                 }
@@ -62,7 +56,7 @@ public class EngineManager : IEngineManager
                 existingWorker.BaseWorker = baseWorkerInfo;
                 existingWorker.EventProcessedTimestamp = baseWorkerInfo.Timestamp;
                 engine.UpdateWorker(existingWorker);
-                _logger.LogInformation($"AddOrUpdateWorker: Worker {baseWorkerInfo.WorkerId} updated.");
+                logger.LogInformation($"AddOrUpdateWorker: Worker {baseWorkerInfo.WorkerId} updated.");
             }
             else
             {
@@ -73,12 +67,12 @@ public class EngineManager : IEngineManager
                     EventProcessedTimestamp = baseWorkerInfo.Timestamp
                 };
                 engine.AddWorker(newWorker);
-                _logger.LogInformation($"AddOrUpdateWorker: Worker {baseWorkerInfo.WorkerId} added.");
+                logger.LogInformation($"AddOrUpdateWorker: Worker {baseWorkerInfo.WorkerId} added.");
             }
         }
         else
         {
-            _logger.LogWarning($"AddOrUpdateWorker: Engine {baseWorkerInfo.EngineId} not found. Cannot add or update worker.");
+            logger.LogWarning($"AddOrUpdateWorker: Engine {baseWorkerInfo.EngineId} not found. Cannot add or update worker.");
         }
     }
 
@@ -97,7 +91,7 @@ public class EngineManager : IEngineManager
     {
         var engine = _engines.Values.FirstOrDefault(e => e.ConnectionInfo.ConnectionId == connectionId);
         if (engine == null) return false;
-
+        logger.LogInformation($"EngineManager: Removing connection {connectionId} from engine {engine.Info.EngineId} {engine.Info.EngineName}");
         engine.ConnectionInfo.ConnectionId = "";
         return true;
     }
@@ -121,12 +115,12 @@ public class EngineManager : IEngineManager
 
     public void SynchronizeWorkers(List<WorkerChangeEvent> workers, Guid engineId)
     {
-        _logger.LogInformation($"SynchronizeWorkers workers: {workers.Count}");
+        logger.LogInformation($"SynchronizeWorkers workers: {workers.Count}");
 
         // Få engine fra EngineManager
         if (!_engines.TryGetValue(engineId, out var engine))
         {
-            _logger.LogWarning($"Engine {engineId} not found, cannot synchronize workers.");
+            logger.LogWarning($"Engine {engineId} not found, cannot synchronize workers.");
             return;
         }
 
@@ -137,7 +131,7 @@ public class EngineManager : IEngineManager
         foreach (var worker in workers)
         {
             AddOrUpdateWorker(worker);
-            _logger.LogInformation($"Added/Updated Worker: {worker.Name} {worker.IsEnabled}");
+            logger.LogInformation($"Added/Updated Worker: {worker.Name} {worker.IsEnabled}");
 
             // Fjern denne workerId fra listen over eksisterende workers
             existingWorkers.Remove(worker.WorkerId);
@@ -146,11 +140,11 @@ public class EngineManager : IEngineManager
         // Fjern workers, som er i hukommelsen, men ikke længere findes på den modtagne liste
         foreach (var workerId in existingWorkers)
         {
-            _logger.LogInformation($"Removing outdated Worker: {workerId}");
+            logger.LogInformation($"Removing outdated Worker: {workerId}");
             RemoveWorker(engineId, workerId);
         }
 
-        _logger.LogInformation("Workers synchronized successfully.");
+        logger.LogInformation("Workers synchronized successfully.");
     }
 
 
@@ -159,11 +153,11 @@ public class EngineManager : IEngineManager
         if (_engines.TryGetValue(engineId, out var engine))
         {
             engine.RemoveWorker(workerId);
-            _logger.LogInformation($"Worker {workerId} successfully removed from engine {engineId}.");
+            logger.LogInformation($"Worker {workerId} successfully removed from engine {engineId}.");
         }
         else
         {
-            _logger.LogWarning($"Engine {engineId} not found. Cannot remove worker {workerId}.");
+            logger.LogWarning($"Engine {engineId} not found. Cannot remove worker {workerId}.");
         }
     }
 }
