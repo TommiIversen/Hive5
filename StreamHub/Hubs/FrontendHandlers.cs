@@ -7,10 +7,10 @@ namespace StreamHub.Hubs;
 public class FrontendHandlers
 {
     private readonly CancellationService _cancellationService;
-    private readonly EngineManager _engineManager;
+    private readonly IEngineManager _engineManager;
     private readonly IHubContext<EngineHub> _hubContext;
 
-    public FrontendHandlers(EngineManager engineManager, IHubContext<EngineHub> hubContext,
+    public FrontendHandlers(IEngineManager engineManager, IHubContext<EngineHub> hubContext,
         CancellationService cancellationService)
     {
         _engineManager = engineManager;

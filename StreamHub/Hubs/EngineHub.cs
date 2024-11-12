@@ -6,7 +6,7 @@ using StreamHub.Services;
 namespace StreamHub.Hubs;
 
 public class EngineHub(
-    EngineManager engineManager,
+    IEngineManager engineManager,
     CancellationService cancellationService,
     IHubContext<EngineHub> hubContext,
     FrontendHandlers frontendHandlers,

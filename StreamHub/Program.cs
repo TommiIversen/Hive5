@@ -1,10 +1,19 @@
 using Microsoft.AspNetCore.Components.Server.Circuits;
 using Microsoft.AspNetCore.ResponseCompression;
+using StreamHub;
 using StreamHub.Components;
 using StreamHub.Hubs;
 using StreamHub.Services;
 
+var basePath = Environment.GetEnvironmentVariable("HIVE_BASE_PATH") ?? @"C:\temp\hive";
+Console.WriteLine($"Base path: {basePath}");
+if (!Directory.Exists(basePath)) Directory.CreateDirectory(basePath);
+var streamHubPath = Path.Combine(basePath, "StreamHub");
+if (!Directory.Exists(streamHubPath)) Directory.CreateDirectory(streamHubPath);
+
 var builder = WebApplication.CreateBuilder(args);
+builder.ConfigureSerilogLogging(streamHubPath);
+
 builder.Services.AddSingleton<TrackingCircuitHandler>(); // For direkte injection
 builder.Services.AddSingleton<CircuitHandler>(sp =>
     sp.GetRequiredService<TrackingCircuitHandler>()); // As CircuitHandler
@@ -20,7 +29,7 @@ builder.Services.AddSignalR(options =>
     options.MaximumParallelInvocationsPerClient = 10;
     options.EnableDetailedErrors = true;
 }).AddMessagePackProtocol();
-builder.Services.AddSingleton<EngineManager>(); // Singleton for shared state
+builder.Services.AddSingleton<IEngineManager, EngineManager>(); // Singleton for shared state
 builder.Services.AddSingleton<CancellationService>(); // Singleton for shared cancellation token
 builder.Services.AddSingleton<WorkerService>(); // Singleton for shared cancellation token
 

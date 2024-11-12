@@ -7,7 +7,8 @@ namespace StreamHub.Services;
 
 public class WorkerService(
     IHubContext<EngineHub> hubContext,
-    EngineManager engineManager,
+    IEngineManager engineManager,
+    ILogger<EngineManager> logger,
     CancellationService cancellationService)
 {
     private async Task<CommandResult<T>> HandleWorkerOperationWithDataAsync<T>(string operation,
@@ -20,14 +21,14 @@ public class WorkerService(
         if (!engineManager.TryGetEngine(data.EngineId, out var engine))
         {
             msg = $"{operation}: Engine {data.EngineId} not found";
-            Console.WriteLine(msg);
+            logger.LogWarning(msg);
             return new CommandResult<T>(false, msg);
         }
 
         if (engine?.ConnectionInfo.ConnectionId == null)
         {
             msg = $"{operation}: Engine {data.EngineId} not connected";
-            Console.WriteLine(msg);
+            logger.LogWarning(msg);
             return new CommandResult<T>(false, msg);
         }
 
@@ -35,7 +36,7 @@ public class WorkerService(
         if (worker == null && operation != "CreateWorker")
         {
             msg = $"{operation}: Worker {data.WorkerId} not found";
-            Console.WriteLine(msg);
+            logger.LogWarning(msg);
             return new CommandResult<T>(false, msg);
         }
 
@@ -47,7 +48,7 @@ public class WorkerService(
 
         try
         {
-            Console.WriteLine($"Forwarding {operation} request with data on engine {data.EngineId}");
+            logger.LogInformation($"Forwarding {operation} request with data on engine {data.EngineId}");
             result = await hubContext.Clients.Client(engine.ConnectionInfo.ConnectionId)
                 .InvokeAsync<CommandResult<T>>(operation, data, linkedCts.Token);
 
@@ -65,7 +66,7 @@ public class WorkerService(
         }
         finally
         {
-            Console.WriteLine(msg);
+            logger.LogInformation(msg);
             if (setProcessing)
             {
                 worker.OperationResult = msg;
@@ -134,7 +135,7 @@ public class WorkerService(
 
     public async Task<CommandResult> CreateWorkerAsync(WorkerCreateAndEdit workerCreateAndEdit)
     {
-        Console.WriteLine($"CreateWorkerAsync: {workerCreateAndEdit.WorkerId}");
+        logger.LogInformation($"CreateWorkerAsync: {workerCreateAndEdit.WorkerId}");
         return await HandleWorkerOperationWithDataAsync("CreateWorker", workerCreateAndEdit, setProcessing: false);
     }
 
@@ -186,7 +187,7 @@ public class WorkerService(
                 setProcessing: false);
 
         var workerChangeLogsDto = result.Data;
-        Console.WriteLine($"GetWorkerChangeLogsAsync: {workerChangeLogsDto?.WorkerId}");
+        logger.LogInformation($"GetWorkerChangeLogsAsync: {workerChangeLogsDto?.WorkerId}");
         return result;
     }
 }
