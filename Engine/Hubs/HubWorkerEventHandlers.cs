@@ -74,13 +74,12 @@ public class HubWorkerWorkerEventHandlers : IHubWorkerEventHandlers
         {
             try
             {
-                Console.WriteLine($"Try GetWorkerEventsWithLogs: {message.WorkerId}");
+                _logger.LogInformation($"GetWorkerEventsWithLogs: {message.WorkerId}");
                 var eventsWithLogs = await _workerManager.GetWorkerEventsWithLogsAsync(message.WorkerId);
                 return new CommandResult<WorkerEventLogCollection>(true, "OK.", eventsWithLogs);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error fetching events with logs for worker {message.WorkerId}: {ex.Message}");
                 _logger.LogError(ex, $"Error fetching events with logs for worker {message.WorkerId}: {ex.Message}");
                 return new CommandResult<WorkerEventLogCollection>(false, $"Error: {ex.Message}");
             }
@@ -92,16 +91,11 @@ public class HubWorkerWorkerEventHandlers : IHubWorkerEventHandlers
             {
                 Console.WriteLine($"Try GetWorkerChangeLogs: {message.WorkerId}");
                 var changeLogs = await _workerManager.GetWorkerChangeLogsAsync(message.WorkerId);
-
                 var result = new CommandResult<WorkerChangeLog>(true, "OK.", changeLogs);
-
-
                 return result;
             }
             catch (Exception ex)
             {
-                Console.WriteLine(
-                    $"GetWorkerChangeLogs -Error fetching change logs for worker {message.WorkerId}: {ex.Message}");
                 _logger.LogError(ex, $"Error fetching change logs for worker {message.WorkerId}: {ex.Message}");
                 return new CommandResult<WorkerChangeLog>(false, $"Error: {ex.Message}");
             }
