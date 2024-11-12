@@ -15,7 +15,7 @@ internal class Program
         // Få computerens navn og rootPath fra konfiguration
         var machineName = Environment.MachineName;
         Console.WriteLine($"Machine name: {machineName}");
-        var rootPath = @"C:\Users\ivers\RiderProjects\Hive5";
+        var rootPath = @"C:\Users\tomi\RiderProjects\Hive5";
 
         // Udelukkede mapper og filer
         var excludeDirs = new HashSet<string>

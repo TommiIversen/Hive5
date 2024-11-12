@@ -11,7 +11,7 @@ setx PATH "%PATH%;%USERPROFILE%\.dotnet\tools"
 
 dotnet tool install --global dotnet-ef
 
-dotnet ef migrations add workerChangeLog
+dotnet ef migrations add streamerType
 
 
 # Playwright

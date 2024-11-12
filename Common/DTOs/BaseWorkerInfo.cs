@@ -14,4 +14,6 @@ public class BaseWorkerInfo : BaseMessage
     public bool ImgWatchdogEnabled { get; init; } = true;
     public required TimeSpan ImgWatchdogGraceTime { get; init; }
     public required TimeSpan ImgWatchdogInterval { get; init; }
+    
+    public required string Streamer { get; init; } 
 }

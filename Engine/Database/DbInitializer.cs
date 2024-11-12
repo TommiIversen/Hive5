@@ -29,6 +29,22 @@ public static class DbInitializer
         else if (!engineEntity.HubUrls.Any())
         {
             engineEntity.HubUrls.Add(new HubUrlEntity { HubUrl = "http://127.0.0.1:9000/streamhub" });
+            engineEntity.HubUrls.Add(new HubUrlEntity { HubUrl = "http://127.0.0.1:8999/streamhub" });
+            context.SaveChanges();
+        }
+        
+        // Update WorkerEntities with missing StreamerType to "FakeStreamer"
+        var workersWithMissingStreamerType = context.Workers
+            .Where(w => string.IsNullOrEmpty(w.StreamerType))
+            .ToList();
+
+        foreach (var worker in workersWithMissingStreamerType)
+        {
+            worker.StreamerType = "FakeStreamer";
+        }
+
+        if (workersWithMissingStreamerType.Any())
+        {
             context.SaveChanges();
         }
     }

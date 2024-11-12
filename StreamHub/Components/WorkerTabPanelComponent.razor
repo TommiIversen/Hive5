@@ -1,4 +1,5 @@
-﻿@using Microsoft.AspNetCore.SignalR.Client
+﻿@using Common.DTOs
+@using Microsoft.AspNetCore.SignalR.Client
 @using StreamHub.Models
 @using StreamHub.Services
 @inject BlazorSignalRService SignalRService
@@ -25,21 +26,21 @@
     @if (_tabs["Edit"])
     {
         <div class="px-2 mb-2">
-            <WorkerEditComponent @key="@($"WorkerEditComponent-{EngineId}-{Worker.WorkerId}")" EngineId="@EngineId" Worker="@Worker"/>
+            <WorkerEditComponent @key="@($"WorkerEditComponent-{EnginInfo.EngineId}-{Worker.WorkerId}")" EnginInfo="@EnginInfo" Worker="@Worker"/>
         </div>
     }
 
     @if (_tabs["Log"])
     {
         <div class="px-2 mb-2">
-            <WorkerLog @key="@($"WorkerLoggerComponent-{EngineId}-{Worker.WorkerId}")" Worker="@Worker" EngineId="@EngineId"/>
+            <WorkerLog @key="@($"WorkerLoggerComponent-{EnginInfo.EngineId}-{Worker.WorkerId}")" Worker="@Worker" EngineId="@EnginInfo.EngineId"/>
         </div>
     }
 
     @if (_tabs["Control"])
     {
         <div class="px-2 mb-2">
-            <WorkerControlsComponent @key="@($"WorkerControlsComponent-{EngineId}-{Worker.WorkerId}")" WorkerId="@Worker.WorkerId" EngineId="@EngineId" Worker="Worker"></WorkerControlsComponent>
+            <WorkerControlsComponent @key="@($"WorkerControlsComponent-{EnginInfo.EngineId}-{Worker.WorkerId}")" WorkerId="@Worker.WorkerId" EngineId="@EnginInfo.EngineId" Worker="Worker"></WorkerControlsComponent>
         </div>
     }
 
@@ -53,7 +54,9 @@
 </div>
 
 @code {
-    [Parameter] public Guid EngineId { get; set; }
+    //[Parameter] public Guid EngineId { get; set; }
+    [Parameter] public required BaseEngineInfo EnginInfo { get; set; }
+
     [Parameter] public required WorkerViewModel Worker { get; init; }
 
 
@@ -90,7 +93,7 @@
 
     protected override Task OnInitializedAsync()
     {
-        SignalRService.HubConnection.On<object>($"WorkerLockEvent-{EngineId}-{Worker.WorkerId}", async _ => { await InvokeAsync(StateHasChanged); });
+        SignalRService.HubConnection.On<object>($"WorkerLockEvent-{EnginInfo.EngineId}-{Worker.WorkerId}", async _ => { await InvokeAsync(StateHasChanged); });
         return Task.CompletedTask;
     }
 

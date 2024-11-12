@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 
-namespace Common.DTOs.Events;
+namespace Common.DTOs;
 
 public class BaseLogEntry : BaseMessage
 {

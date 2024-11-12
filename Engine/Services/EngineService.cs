@@ -1,8 +1,12 @@
-﻿using Common.DTOs.Enums;
+﻿using System.Reflection;
+using Common.DTOs;
+using Common.DTOs.Enums;
 using Common.DTOs.Events;
+using Engine.Attributes;
 using Engine.DAL.Entities;
 using Engine.DAL.Repositories;
 using Engine.Database;
+using Engine.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 namespace Engine.Services;
@@ -17,12 +21,28 @@ public interface IEngineService
     Task<EngineChangeEvent> GetEngineBaseInfoAsEvent();
 }
 
+public static class StreamerServiceHelper
+{
+    private static readonly Lazy<List<string>> StreamerNames = new Lazy<List<string>>(GetStreamerNames);
+
+    public static List<string> GetStreamerNamesCached() => StreamerNames.Value;
+
+    private static List<string> GetStreamerNames()
+    {
+        return Assembly.GetExecutingAssembly()
+            .GetTypes()
+            .Where(t => typeof(IStreamerService).IsAssignableFrom(t) && !t.IsInterface && !t.IsAbstract)
+            .Select(t => t.GetCustomAttribute<FriendlyNameAttribute>()?.Name ?? t.Name) // Use friendly name if available
+            .ToList();
+    }
+}
+
 public class EngineService : IEngineService
 {
     private readonly IDbContextFactory<ApplicationDbContext> _contextFactory;
     private readonly IEngineRepository _engineRepository;
     private readonly DateTime _initDateTime = DateTime.UtcNow;
-
+    
     public EngineService(IDbContextFactory<ApplicationDbContext> contextFactory)
     {
         _contextFactory = contextFactory;
@@ -85,6 +105,15 @@ public class EngineService : IEngineService
             if (engine != null) await _engineRepository.SaveEngineAsync(engine);
         }
     }
+    
+    private static List<string> GetStreamerNames()
+    {
+        return Assembly.GetExecutingAssembly()
+            .GetTypes()
+            .Where(t => typeof(IStreamerService).IsAssignableFrom(t) && !t.IsInterface && !t.IsAbstract)
+            .Select(t => t.GetCustomAttribute<FriendlyNameAttribute>()?.Name ?? t.Name) // Use friendly name if available
+            .ToList();
+    }
 
     public async Task<EngineChangeEvent> GetEngineBaseInfoAsEvent()
     {
@@ -106,9 +135,9 @@ public class EngineService : IEngineService
                     ApiKey = h.ApiKey
                 })
                 .ToList(),
-            ChangeEventType = ChangeEventType.Updated // Mapper de nyeste URL'er fra database til DTO
+            ChangeEventType = ChangeEventType.Updated,
+            Streamers = StreamerServiceHelper.GetStreamerNamesCached()
         };
-
         return engineBaseInfo;
     }
 }

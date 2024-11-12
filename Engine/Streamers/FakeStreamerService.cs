@@ -1,11 +1,14 @@
 ﻿using System.Runtime.InteropServices;
 using Common.DTOs.Enums;
 using Common.DTOs.Events;
+using Engine.Attributes;
 using Engine.Interfaces;
 using Engine.Utils;
 
-namespace Engine.Services;
+namespace Engine.Streamers;
 
+
+[FriendlyName("FakeStreamer")]
 public class FakeStreamerService : IStreamerService
 {
     private readonly ImageGenerator _generator = new();
@@ -164,7 +167,7 @@ public class FakeStreamerService : IStreamerService
     {
         // Fake image data (placeholder)
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            return _generator.GenerateImageWithNumber(_imageCounter++, text);
+            return _generator.GenerateImageWithNumber(_imageCounter++, $"FAKE-{text}");
         return new byte[] { 0, 0, 0 };
     }
 

@@ -1,4 +1,4 @@
-﻿namespace Common.DTOs.Events;
+﻿namespace Common.DTOs;
 
 public class BaseEngineInfo : BaseMessage
 {
@@ -8,6 +8,7 @@ public class BaseEngineInfo : BaseMessage
     public required string Version { get; init; }
     public required DateTime InstallDate { get; init; }
     public List<HubUrlInfo> HubUrls { get; set; } = [];
+    public List<string> Streamers { get; set; } = [];
 }
 
 public class HubUrlInfo

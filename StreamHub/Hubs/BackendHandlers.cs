@@ -1,4 +1,5 @@
-﻿using Common.DTOs.Enums;
+﻿using Common.DTOs;
+using Common.DTOs.Enums;
 using Common.DTOs.Events;
 using Microsoft.AspNetCore.Http.Connections.Features;
 using Microsoft.AspNetCore.SignalR;

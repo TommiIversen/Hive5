@@ -1,4 +1,5 @@
-﻿using Common.DTOs.Events;
+﻿using Common.DTOs;
+using Common.DTOs.Events;
 using Microsoft.AspNetCore.SignalR;
 using StreamHub.Services;
 

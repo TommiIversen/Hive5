@@ -24,7 +24,8 @@ public static class WorkerOutExtensions
             WatchdogEventCount = workerEntity.WatchdogEventCount,
             ImgWatchdogEnabled = workerEntity.ImgWatchdogEnabled,
             ImgWatchdogGraceTime = workerEntity.ImgWatchdogGraceTime,
-            ImgWatchdogInterval = workerEntity.ImgWatchdogInterval
+            ImgWatchdogInterval = workerEntity.ImgWatchdogInterval,
+            Streamer = workerEntity.StreamerType
         };
     }
 
@@ -46,7 +47,8 @@ public static class WorkerOutExtensions
             WatchdogEventCount = workerEntity.WatchdogEventCount,
             ImgWatchdogEnabled = workerEntity.ImgWatchdogEnabled,
             ImgWatchdogGraceTime = workerEntity.ImgWatchdogGraceTime,
-            ImgWatchdogInterval = workerEntity.ImgWatchdogInterval
+            ImgWatchdogInterval = workerEntity.ImgWatchdogInterval,
+            Streamer = workerEntity.StreamerType
         };
     }
 }

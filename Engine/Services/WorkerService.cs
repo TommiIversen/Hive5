@@ -16,6 +16,7 @@ public interface IWorkerService
     WorkerState GetState();
     void SetGstCommand(string gstCommand);
     void UpdateWatchdogSettingsAsync(bool isEnabled, TimeSpan interval, TimeSpan graceTime);
+    void ReplaceStreamer(IStreamerService newStreamer);
 }
 
 public class WorkerService : IWorkerService
@@ -23,7 +24,7 @@ public class WorkerService : IWorkerService
     private readonly ILoggerService _loggerService;
     private readonly IMessageQueue _messageQueue;
     private readonly IRepositoryFactory _repositoryFactory;
-    private readonly IStreamerService _streamerService;
+    private IStreamerService _streamerService;
     private WorkerState _desiredState;
     private int _imageCounter;
     private DateTime _lastImageUpdate;
@@ -263,7 +264,26 @@ public class WorkerService : IWorkerService
             LogInfo($"OnWatchdogStateChanged: Worker with ID {WorkerId} not found.", LogLevel.Error);
         }
     }
+    
+    public void ReplaceStreamer(IStreamerService newStreamer)
+    {
+        // Unsubscribe from events of the old streamer
+        _streamerService.LogGenerated -= OnLogGenerated;
+        _streamerService.ImageGenerated -= OnImageGenerated;
+        _streamerService.StateChangedAsync = null;
 
+        // Replace the streamer
+        _streamerService = newStreamer;
+
+        // Initialize new streamer's properties and events
+        _streamerService.WorkerId = WorkerId;
+        _streamerService.GstCommand = _streamerService.GstCommand;
+        _streamerService.LogGenerated += OnLogGenerated;
+        _streamerService.ImageGenerated += OnImageGenerated;
+        _streamerService.StateChangedAsync = async newState => { await HandleStateChangeAsync(newState); };
+
+        LogInfo($"Streamer replaced for worker {WorkerId}");
+    }
 
     private void OnLogGenerated(object? sender, WorkerLogEntry workerLog)
     {

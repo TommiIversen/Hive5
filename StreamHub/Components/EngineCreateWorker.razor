@@ -1,4 +1,5 @@
-﻿@using Common.DTOs.Commands
+﻿@using Common.DTOs
+@using Common.DTOs.Commands
 @using StreamHub.Services
 @inject WorkerService WorkerService
 @inject BlazorSignalRService SignalRService
@@ -25,6 +26,19 @@
             <label class="block text-gray-400 mt-4">Command:</label>
             <textarea @bind="_newWorkerCommand" class="w-full p-2 mt-1 rounded-lg bg-gray-900 text-white" data-testid="worker-command-input"></textarea>
 
+            <label class="block text-gray-400 mt-4">Streamer Type:</label>
+            <select @bind="_selectedStreamerType" class="w-full p-2 mt-1 rounded-lg bg-gray-900 text-white" data-testid="streamer-type-select">
+                <option value="">Select Streamer</option>
+                @foreach (var streamer in EnginInfo.Streamers)
+                {
+                <option value="@streamer">@streamer</option>
+                }
+            </select>
+            @if (!string.IsNullOrEmpty(_streamerTypeError))
+            {
+            <span class="text-red-500 text-sm">@_streamerTypeError</span>
+            }
+            
             <button @onclick="CreateNewWorker" class="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded" data-testid="create-worker-button">
                 Add Worker
             </button>
@@ -40,7 +54,7 @@
 </EngineExpandablePanel>
 
 @code {
-    [Parameter] public Guid EngineId { get; set; }
+    [Parameter] public required BaseEngineInfo EnginInfo { get; set; }
 
     private string _newWorkerId = string.Empty;
     private string _newWorkerName = string.Empty;
@@ -48,7 +62,8 @@
     private string _newWorkerCommand = string.Empty;
     private string _commandResultMessage = string.Empty;
     private string _workerIdError = string.Empty;
-
+    private string _selectedStreamerType = string.Empty;
+    private string _streamerTypeError = string.Empty;
 
     private void ValidateWorkerId(ChangeEventArgs e)
     {
@@ -67,9 +82,15 @@
 
     private async Task CreateNewWorker()
     {
+        if (string.IsNullOrEmpty(_selectedStreamerType))
+        {
+            _streamerTypeError = "Please select a streamer type.";
+            return;
+        }
+        
         var workerCreate = new WorkerCreateAndEdit
         {
-            EngineId = EngineId,
+            EngineId = EnginInfo.EngineId,
             WorkerId = _newWorkerId,
             Name = _newWorkerName,
             IsEnabled = true,
@@ -77,7 +98,9 @@
             Command = _newWorkerCommand,
             ImgWatchdogEnabled = true,
             ImgWatchdogGraceTime = TimeSpan.FromSeconds(10),
-            ImgWatchdogInterval = TimeSpan.FromSeconds(2)
+            ImgWatchdogInterval = TimeSpan.FromSeconds(2),
+            StreamerType = _selectedStreamerType
+
         };
         var commandResult = await WorkerService.CreateWorkerAsync(workerCreate);
 
@@ -92,5 +115,4 @@
 
         _commandResultMessage = commandResult.Message;
     }
-
 }
