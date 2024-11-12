@@ -33,9 +33,9 @@ public interface IWorkerManager
 
 public class WorkerManager(
     IMessageQueue messageQueue,
-    RepositoryFactory repositoryFactory,
+    IRepositoryFactory repositoryFactory,
     ILoggerService loggerService,
-    StreamerWatchdogFactory watchdogFactory)
+    IWorkerServiceFactory workerServiceFactory)
     : IWorkerManager
 {
     private readonly Dictionary<string, IWorkerService> _workers = new();
@@ -67,13 +67,13 @@ public class WorkerManager(
 
             // Opret WorkerConfiguration fra WorkerEntity med FromEntity metoden
             var workerConfig = WorkerConfiguration.FromEntity(workerEntity);
-            var workerService = new WorkerService(
-                loggerService,
-                messageQueue,
+            
+            // Use factory to create WorkerService
+            var workerService = workerServiceFactory.CreateWorkerService(
+                workerEntity.WorkerId,
                 streamerService,
-                repositoryFactory,
-                watchdogFactory,
                 workerConfig);
+
             _workers[workerEntity.WorkerId] = workerService;
 
             // Start arbejderen if enabled
@@ -138,13 +138,12 @@ public class WorkerManager(
 
         // opret en ny service for workeren
         var workerConfig = WorkerConfiguration.FromEntity(workerEntity);
-        var workerService = new WorkerService(
-            loggerService,
-            messageQueue,
+        
+        var workerService = workerServiceFactory.CreateWorkerService(
+            workerEntity.WorkerId,
             streamerService,
-            repositoryFactory,
-            watchdogFactory,
             workerConfig);
+        
         _workers[workerId] = workerService;
 
         await SendWorkerEvent(workerId, ChangeEventType.Created);

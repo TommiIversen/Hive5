@@ -11,9 +11,10 @@ public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddApplicationServicesPreBuild(this IServiceCollection services)
     {
-        services.AddSingleton<RepositoryFactory>();
-        services.AddSingleton<IEngineIdProviderFactory, EngineIdProviderFactory>();
+        services.AddSingleton<IRepositoryFactory, RepositoryFactory>();
 
+        services.AddSingleton<IWorkerServiceFactory, WorkerServiceFactory>();
+        services.AddSingleton<IEngineIdProviderFactory, EngineIdProviderFactory>();
         services.AddScoped<IEngineIdProvider>(sp =>
         {
             var factory = sp.GetRequiredService<IEngineIdProviderFactory>();
@@ -22,13 +23,10 @@ public static class ServiceCollectionExtensions
 
         services.AddSingleton<IMessageEnricher, MessageEnricher>();
         services.AddSingleton<IHubWorkerEventHandlers, HubWorkerWorkerEventHandlers>();
-//                services.AddSingleton<IMessageQueue, MessageQueue>(provider => new MessageQueue(10));
-        services.AddSingleton<IMessageQueue>(provider =>
-            new MessageQueue(10)); // Sørg for at bruge konstruktøren korrekt
-
+        services.AddSingleton<IMessageQueue>(provider => new MessageQueue(10));
         services.AddScoped<IEngineRepository, EngineRepository>();
         services.AddSingleton<IEngineService, EngineService>();
-        services.AddSingleton<StreamerWatchdogFactory>();
+        services.AddSingleton<IStreamerWatchdogFactory, StreamerWatchdogFactory>();
         services.AddSingleton<INetworkInterfaceProvider, NetworkInterfaceProvider>();
         services.AddHostedService<MetricsService>();
         services.AddSingleton<ILoggerService, LoggerService>();
