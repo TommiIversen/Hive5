@@ -7,7 +7,6 @@ using Engine.Utils;
 
 namespace Engine.Streamers;
 
-
 [FriendlyName("FakeStreamer")]
 public class FakeStreamerService : IStreamerService
 {

@@ -30,32 +30,31 @@
     <div class="md:col-span-3">
         @if (Engine.Workers?.Any() == true)
         {
-        <div class="grid grid-cols-1">
-            @foreach (var worker in Engine.GetOrderedWorkers())
-            {
-                
-                <div draggable="true"
-                     @ondragstart="() => OnDragStart(worker.WorkerId)"
-                     @ondragover="(e) => HandleDragOver(worker.WorkerId)"
-                     @ondragover:preventDefault="true"
-                     @ondrop="() => OnDrop(worker.WorkerId)"
-                     class="cursor-move">
+            <div class="grid grid-cols-1">
+                @foreach (var worker in Engine.GetOrderedWorkers())
+                {
+                    <div draggable="true"
+                         @ondragstart="() => OnDragStart(worker.WorkerId)"
+                         @ondragover="e => HandleDragOver(worker.WorkerId)"
+                         @ondragover:preventDefault="true"
+                         @ondrop="() => OnDrop(worker.WorkerId)"
+                         class="cursor-move">
 
-                    @if (_dragTargetWorkerId == worker.WorkerId)
-                    {
-                    <div class="worker-card bg-slate-600 bg-[repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.1) 0, rgba(255, 255, 255, 0.1) 5px, transparent 5px, transparent 10px)] opacity-50 transition-transform duration-400 rounded-lg shadow-lg mb-3 h-24 flex items-center justify-center">
-                        <span class="text-white font-semibold text-xl opacity-80">Insert here</span>
+                        @if (_dragTargetWorkerId == worker.WorkerId)
+                        {
+                            <div class="worker-card bg-slate-600 bg-[repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.1) 0, rgba(255, 255, 255, 0.1) 5px, transparent 5px, transparent 10px)] opacity-50 transition-transform duration-400 rounded-lg shadow-lg mb-3 h-24 flex items-center justify-center">
+                                <span class="text-white font-semibold text-xl opacity-80">Insert here</span>
+                            </div>
+                        }
+
+                        <WorkerComponent @key="@($"WorkerComponent-{Engine.Info.EngineId}-{worker.WorkerId}")" EnginInfo="Engine.Info" Worker="worker"/>
                     </div>
-                    }
-                    
-                    <WorkerComponent @key="@($"WorkerComponent-{Engine.Info.EngineId}-{worker.WorkerId}")" EnginInfo="Engine.Info" Worker="worker"/>
-                </div>
-            }
-        </div>
+                }
+            </div>
         }
         else
         {
-        <p>Ingen workers forbundet.</p>
+            <p>Ingen workers forbundet.</p>
         }
     </div>
 </div>
@@ -95,7 +94,7 @@
             _dragTargetWorkerId = targetWorkerId;
         }
     }
-    
+
     private async Task OnDrop(string targetWorkerId)
     {
         Console.WriteLine($"OnDrop: {targetWorkerId}");
@@ -104,12 +103,12 @@
 
         Console.WriteLine($"Reordering workers: {_draggedWorkerId} -> {targetWorkerId}");
         Engine.ReorderWorkers(_draggedWorkerId, targetWorkerId);
-        
+
         // Nulstil markør og opdater visning
         _draggedWorkerId = null;
         _dragTargetWorkerId = null;
-        
+
         await InvokeAsync(StateHasChanged); // Opdater UI straks
     }
-    
+
 }

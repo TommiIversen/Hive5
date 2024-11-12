@@ -46,7 +46,7 @@ public class WorkerChangeDetector
                     $"Interval:\nFrom '{original.ImgWatchdogInterval}'\nTo '{updated.ImgWatchdogInterval}'\n\n" +
                     $"Grace Time:\nFrom '{original.ImgWatchdogGraceTime}'\nTo '{updated.ImgWatchdogGraceTime}'"
             });
-        
+
         // Detect changes in Streamer type
         if (original.StreamerType != updated.StreamerType)
             changes.Add(new WorkerChangeLog
@@ -57,6 +57,5 @@ public class WorkerChangeDetector
             });
 
         return changes;
-
     }
 }

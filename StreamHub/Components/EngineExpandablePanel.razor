@@ -1,5 +1,5 @@
 ﻿<div class="p1 mb-2" data-testid="@($"panel-{Title.Replace(" ", "").ToLower()}")">
-        <button @onclick="TogglePanel" class="flex items-center justify-between w-full p-2 border border-gray-500 rounded-lg bg-slate-800 transition duration-200  ease-in-out hover:bg-slate-600" data-testid="@($"toggle-{Title.Replace(" ", "").ToLower()}")">
+    <button @onclick="TogglePanel" class="flex items-center justify-between w-full p-2 border border-gray-500 rounded-lg bg-slate-800 transition duration-200  ease-in-out hover:bg-slate-600" data-testid="@($"toggle-{Title.Replace(" ", "").ToLower()}")">
         <div class="flex items-center">
             <svg class="mr-2 transform transition-transform duration-300 @(_isExpanded ? "rotate-90" : "")" style="width: 1rem; height: 1rem;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="9 6 15 12 9 18"></polyline>

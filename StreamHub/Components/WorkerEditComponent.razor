@@ -31,15 +31,15 @@
                     <option value="">Select Streamer</option>
                     @foreach (var streamer in EnginInfo.Streamers)
                     {
-                    <option value="@streamer">@streamer</option>
+                        <option value="@streamer">@streamer</option>
                     }
                 </select>
                 @if (!string.IsNullOrEmpty(_streamerTypeError))
                 {
-                <span class="text-red-500 text-sm">@_streamerTypeError</span>
+                    <span class="text-red-500 text-sm">@_streamerTypeError</span>
                 }
             </div>
-            
+
             <!-- Watchdog Section -->
             <div class="mt-4 text-gray-300 font-semibold">Watchdog</div>
 
@@ -90,7 +90,7 @@
 
 @code {
     //[Parameter] public Guid EngineId { get; set; }
-    
+
     [Parameter] public required BaseEngineInfo EnginInfo { get; set; }
     [Parameter] public required WorkerViewModel Worker { get; init; }
 
@@ -102,14 +102,14 @@
     // Fields for seconds conversion
     private int _imgWatchdogGraceTimeSeconds;
     private int _imgWatchdogIntervalSeconds;
-    
+
     private string _selectedStreamerType = string.Empty;
     private string _streamerTypeError = string.Empty;
 
     protected override void OnInitialized()
     {
         _selectedStreamerType = Worker.BaseWorker.Streamer;
-        
+
         // Initialiser lokale variabler med de eksisterende værdier fra Worker
         _workerName = Worker.BaseWorker.Name;
         _workerDescription = Worker.BaseWorker.Description;

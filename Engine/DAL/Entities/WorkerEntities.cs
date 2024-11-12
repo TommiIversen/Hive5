@@ -21,7 +21,7 @@ public class WorkerEntity
     public bool ImgWatchdogEnabled { get; set; }
     public required TimeSpan ImgWatchdogGraceTime { get; set; }
     public required TimeSpan ImgWatchdogInterval { get; set; }
-    
+
     [Required]
     [StringLength(100)] // Set max length for Name
     public string StreamerType { get; set; } = "FakeStreamer";

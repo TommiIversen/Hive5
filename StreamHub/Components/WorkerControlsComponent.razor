@@ -16,7 +16,7 @@
     <button @onclick="() => RemoveWorker(EngineId, Worker.WorkerId)"
             class="px-4 py-2 rounded @(Worker.IsProcessing ? "bg-gray-400 text-gray-700 cursor-not-allowed" : "bg-yellow-500 text-white hover:bg-yellow-700")"
             disabled="@Worker.IsProcessing"
-            data-testid="@($"remove-worker-{WorkerId}")" >
+            data-testid="@($"remove-worker-{WorkerId}")">
         Remove
     </button>
 

@@ -24,7 +24,7 @@ public class EngineViewModel
     public ConcurrentQueue<EngineLogEntry> EngineLogMessages { get; set; } = new();
     public ConnectionInfo ConnectionInfo { get; set; } = new();
     public ConcurrentQueue<MetricSimpleViewModel> MetricsQueue { get; set; } = new();
-    
+
     public WorkerViewModel? HeadWorker { get; private set; }
 
 
@@ -35,7 +35,7 @@ public class EngineViewModel
         worker.AddLogMessage(message);
         return true;
     }
-    
+
     public void AddWorker(WorkerViewModel newWorker)
     {
         // Hvis listen er tom, sæt den nye worker som Head
@@ -47,10 +47,7 @@ public class EngineViewModel
         {
             // Gå til slutningen af listen for at tilføje den nye worker
             var current = HeadWorker;
-            while (current.NextWorker != null)
-            {
-                current = current.NextWorker;
-            }
+            while (current.NextWorker != null) current = current.NextWorker;
 
             current.NextWorker = newWorker;
             newWorker.PreviousWorker = current;
@@ -58,7 +55,7 @@ public class EngineViewModel
 
         Workers[newWorker.WorkerId] = newWorker;
     }
-    
+
     public void ReorderWorkers(string draggedWorkerId, string targetWorkerId)
     {
         if (!Workers.TryGetValue(draggedWorkerId, out var draggedWorker) ||
@@ -69,38 +66,25 @@ public class EngineViewModel
         }
 
         // Fjern draggedWorker fra sin nuværende position
-        if (draggedWorker.PreviousWorker != null)
-        {
-            draggedWorker.PreviousWorker.NextWorker = draggedWorker.NextWorker;
-        }
-        if (draggedWorker.NextWorker != null)
-        {
-            draggedWorker.NextWorker.PreviousWorker = draggedWorker.PreviousWorker;
-        }
+        if (draggedWorker.PreviousWorker != null) draggedWorker.PreviousWorker.NextWorker = draggedWorker.NextWorker;
+        if (draggedWorker.NextWorker != null) draggedWorker.NextWorker.PreviousWorker = draggedWorker.PreviousWorker;
 
         // Hvis draggedWorker var HeadWorker, opdater Head
-        if (HeadWorker == draggedWorker)
-        {
-            HeadWorker = draggedWorker.NextWorker;
-        }
+        if (HeadWorker == draggedWorker) HeadWorker = draggedWorker.NextWorker;
 
         // Indsæt draggedWorker før targetWorker
         draggedWorker.NextWorker = targetWorker;
         draggedWorker.PreviousWorker = targetWorker.PreviousWorker;
 
         if (targetWorker.PreviousWorker != null)
-        {
             targetWorker.PreviousWorker.NextWorker = draggedWorker;
-        }
         else
-        {
             // Hvis targetWorker var HeadWorker, gør draggedWorker til ny Head
             HeadWorker = draggedWorker;
-        }
 
         targetWorker.PreviousWorker = draggedWorker;
     }
-    
+
     public IEnumerable<WorkerViewModel> GetOrderedWorkers()
     {
         var current = HeadWorker; // Antag at HeadWorker er starten af din linked list
@@ -113,10 +97,7 @@ public class EngineViewModel
 
     public void UpdateWorker(WorkerViewModel updatedWorker)
     {
-        if (Workers.ContainsKey(updatedWorker.WorkerId))
-        {
-            Workers[updatedWorker.WorkerId] = updatedWorker;
-        }
+        if (Workers.ContainsKey(updatedWorker.WorkerId)) Workers[updatedWorker.WorkerId] = updatedWorker;
     }
 
     public void RemoveWorker(string workerId)
@@ -125,18 +106,11 @@ public class EngineViewModel
         {
             // Opdater referencer for at fjerne worker fra linked list
             if (workerToRemove.PreviousWorker != null)
-            {
                 workerToRemove.PreviousWorker.NextWorker = workerToRemove.NextWorker;
-            }
             if (workerToRemove.NextWorker != null)
-            {
                 workerToRemove.NextWorker.PreviousWorker = workerToRemove.PreviousWorker;
-            }
             // Hvis det er den første worker (Head), opdater Head
-            if (workerToRemove == HeadWorker)
-            {
-                HeadWorker = workerToRemove.NextWorker;
-            }
+            if (workerToRemove == HeadWorker) HeadWorker = workerToRemove.NextWorker;
 
             Workers.Remove(workerId, out _);
         }

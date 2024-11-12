@@ -4,7 +4,6 @@ using Engine.Interfaces;
 
 namespace Engine.Services;
 
-
 public static class StreamerServiceFactory
 {
     private static readonly Dictionary<string, Type> _streamerTypes = new();
@@ -15,12 +14,13 @@ public static class StreamerServiceFactory
         var streamerTypes = Assembly.GetExecutingAssembly()
             .GetTypes()
             .Where(t => typeof(IStreamerService).IsAssignableFrom(t) && !t.IsInterface && !t.IsAbstract);
-        
+
         foreach (var type in streamerTypes)
         {
             // Check for the FriendlyName attribute
             var friendlyNameAttribute = type.GetCustomAttribute<FriendlyNameAttribute>();
-            var key = friendlyNameAttribute?.Name ?? type.Name; // Use friendly name if present, otherwise fall back to type name
+            var key = friendlyNameAttribute?.Name ??
+                      type.Name; // Use friendly name if present, otherwise fall back to type name
             _streamerTypes[key] = type;
         }
     }
@@ -34,6 +34,7 @@ public static class StreamerServiceFactory
             instance.GstCommand = gstCommand;
             return instance;
         }
+
         throw new ArgumentException($"Streamer service type '{typeName}' not found.");
     }
 }

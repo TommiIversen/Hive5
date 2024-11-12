@@ -29,7 +29,7 @@ public class EngineManager
         }
     }
 
-   
+
     public void AddOrUpdateWorker(BaseWorkerInfo baseWorkerInfo)
     {
         if (_engines.TryGetValue(baseWorkerInfo.EngineId, out var engine))
@@ -38,7 +38,8 @@ public class EngineManager
             {
                 if (IsOutdatedEvent(existingWorker, baseWorkerInfo))
                 {
-                    Console.WriteLine($"Skipping outdated event for worker {baseWorkerInfo.WorkerId} - {baseWorkerInfo.Name}");
+                    Console.WriteLine(
+                        $"Skipping outdated event for worker {baseWorkerInfo.WorkerId} - {baseWorkerInfo.Name}");
                     return;
                 }
 
@@ -136,7 +137,7 @@ public class EngineManager
         Console.WriteLine("Workers synchronized successfully.");
     }
 
-   
+
     public void RemoveWorker(Guid engineId, string workerId)
     {
         if (_engines.TryGetValue(engineId, out var engine))

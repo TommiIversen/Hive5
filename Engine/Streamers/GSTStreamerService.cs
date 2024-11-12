@@ -7,9 +7,7 @@ using Engine.Utils;
 
 namespace Engine.Streamers;
 
-
 [FriendlyName("GstStreamer")]
-
 public class GstStreamerService : IStreamerService
 {
     private readonly ImageGenerator _generator = new();

@@ -24,11 +24,11 @@ public class WorkerService : IWorkerService
     private readonly ILoggerService _loggerService;
     private readonly IMessageQueue _messageQueue;
     private readonly IRepositoryFactory _repositoryFactory;
-    private IStreamerService _streamerService;
+    private readonly IStreamerWatchdogService _watchdogService;
     private WorkerState _desiredState;
     private int _imageCounter;
     private DateTime _lastImageUpdate;
-    private readonly IStreamerWatchdogService _watchdogService;
+    private IStreamerService _streamerService;
 
     public WorkerService(
         ILoggerService loggerService,
@@ -182,6 +182,26 @@ public class WorkerService : IWorkerService
         return _streamerService.GetState();
     }
 
+    public void ReplaceStreamer(IStreamerService newStreamer)
+    {
+        // Unsubscribe from events of the old streamer
+        _streamerService.LogGenerated -= OnLogGenerated;
+        _streamerService.ImageGenerated -= OnImageGenerated;
+        _streamerService.StateChangedAsync = null;
+
+        // Replace the streamer
+        _streamerService = newStreamer;
+
+        // Initialize new streamer's properties and events
+        _streamerService.WorkerId = WorkerId;
+        _streamerService.GstCommand = _streamerService.GstCommand;
+        _streamerService.LogGenerated += OnLogGenerated;
+        _streamerService.ImageGenerated += OnImageGenerated;
+        _streamerService.StateChangedAsync = async newState => { await HandleStateChangeAsync(newState); };
+
+        LogInfo($"Streamer replaced for worker {WorkerId}");
+    }
+
     public async Task HandleStateChangeAsync(WorkerState newState)
     {
         await HandleStateChange(this, newState, ChangeEventType.Updated, "State changed in runner");
@@ -263,26 +283,6 @@ public class WorkerService : IWorkerService
         {
             LogInfo($"OnWatchdogStateChanged: Worker with ID {WorkerId} not found.", LogLevel.Error);
         }
-    }
-    
-    public void ReplaceStreamer(IStreamerService newStreamer)
-    {
-        // Unsubscribe from events of the old streamer
-        _streamerService.LogGenerated -= OnLogGenerated;
-        _streamerService.ImageGenerated -= OnImageGenerated;
-        _streamerService.StateChangedAsync = null;
-
-        // Replace the streamer
-        _streamerService = newStreamer;
-
-        // Initialize new streamer's properties and events
-        _streamerService.WorkerId = WorkerId;
-        _streamerService.GstCommand = _streamerService.GstCommand;
-        _streamerService.LogGenerated += OnLogGenerated;
-        _streamerService.ImageGenerated += OnImageGenerated;
-        _streamerService.StateChangedAsync = async newState => { await HandleStateChangeAsync(newState); };
-
-        LogInfo($"Streamer replaced for worker {WorkerId}");
     }
 
     private void OnLogGenerated(object? sender, WorkerLogEntry workerLog)

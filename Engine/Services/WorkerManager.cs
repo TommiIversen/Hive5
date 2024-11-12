@@ -7,7 +7,6 @@ using Engine.DAL.Entities;
 using Engine.DAL.Repositories;
 using Engine.Interfaces;
 using Engine.Models;
-using Engine.Streamers;
 using Engine.Utils;
 using Serilog;
 using WorkerChangeLog = Common.DTOs.Queries.WorkerChangeLog;
@@ -60,7 +59,7 @@ public class WorkerManager(
 
                 continue;
             }
-            
+
             var streamerService = StreamerServiceFactory.CreateStreamerService(
                 workerEntity.StreamerType,
                 workerEntity.WorkerId,
@@ -131,11 +130,11 @@ public class WorkerManager(
         // Tilføj worker til databasen asynkront
         await workerRepository.AddWorkerAsync(workerEntity);
 
-        IStreamerService streamerService = new FakeStreamerService
-        {
-            WorkerId = workerId,
-            GstCommand = workerCreateAndEdit.Command
-        };
+        // Opret en ny streamer service baseret på streamerType       
+        var streamerService = StreamerServiceFactory.CreateStreamerService(
+            workerEntity.StreamerType,
+            workerEntity.WorkerId,
+            workerEntity.Command);
 
         // opret en ny service for workeren
         var workerConfig = WorkerConfiguration.FromEntity(workerEntity);
@@ -273,8 +272,8 @@ public class WorkerManager(
         workerEntity.ImgWatchdogInterval = workerEdit.ImgWatchdogInterval;
         workerEntity.ImgWatchdogGraceTime = workerEdit.ImgWatchdogGraceTime;
         workerEntity.UpdatedAt = DateTime.UtcNow;
-        
-        bool streamerChanged = workerEntity.StreamerType != workerEdit.StreamerType;
+
+        var streamerChanged = workerEntity.StreamerType != workerEdit.StreamerType;
         workerEntity.StreamerType = workerEdit.StreamerType;
 
         await workerRepository.UpdateWorkerAsync(workerEntity);
@@ -310,7 +309,7 @@ public class WorkerManager(
                 }
             }
         }
-        
+
         // Handle streamer change
         if (streamerChanged)
         {
@@ -320,14 +319,17 @@ public class WorkerManager(
                 LogInfo($"Changing streamer type for worker {workerEdit.WorkerId}.", workerEdit.WorkerId);
 
                 await workerService.StopAsync();
-                var newStreamerService = StreamerServiceFactory.CreateStreamerService(workerEdit.StreamerType, workerEdit.WorkerId, workerEdit.Command ?? string.Empty);
+                var newStreamerService = StreamerServiceFactory.CreateStreamerService(workerEdit.StreamerType,
+                    workerEdit.WorkerId, workerEdit.Command ?? string.Empty);
                 workerService.ReplaceStreamer(newStreamerService);
                 var result = await workerService.StartAsync();
 
                 if (!result.Success)
                 {
-                    LogInfo($"Failed to restart worker {workerEdit.WorkerId} with new streamer: {result.Message}", workerEdit.WorkerId, LogLevel.Error);
-                    return new CommandResult(false, $"Worker updated but failed to restart with new streamer: {result.Message}");
+                    LogInfo($"Failed to restart worker {workerEdit.WorkerId} with new streamer: {result.Message}",
+                        workerEdit.WorkerId, LogLevel.Error);
+                    return new CommandResult(false,
+                        $"Worker updated but failed to restart with new streamer: {result.Message}");
                 }
             }
         }

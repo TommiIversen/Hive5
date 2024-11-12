@@ -1,7 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using System.Threading.Channels;
 using Common.DTOs;
-using Common.DTOs.Events;
 using Engine.Interfaces;
 using Microsoft.Extensions.Logging.Abstractions;
 
