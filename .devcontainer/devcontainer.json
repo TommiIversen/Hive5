@@ -1,0 +1,28 @@
+{
+  "name": "Python + .NET Dev Container",
+  "image": "2mmilab/ffmpeg6python312gstreamerdeck",
+
+  // Ports til dine applikationer – justér som nødvendigt
+  "forwardPorts": [9000, 9001],
+
+  // Kommando til at installere .NET SDK version 9 og andre nødvendige pakker efter containeren er oprettet
+  "postCreateCommand": "apt-get update && apt-get install -y git && python3 -m pip install -r requirements-engine.txt && wget https://dot.net/v1/dotnet-install.sh && chmod +x dotnet-install.sh && ./dotnet-install.sh --channel 9.0 && rm dotnet-install.sh && export PATH=$PATH:/root/.dotnet",
+
+  // Tilføj JetBrains Rider-indstillinger
+  "customizations": {
+    "jetbrains": {
+      "backend": "Rider",
+      "settings": {
+        // Indsæt evt. JetBrains-specifikke indstillinger her
+      }
+    }
+  },
+
+  // Features til containeren
+  "features": {
+    "ghcr.io/devcontainers/features/git:1": {}
+  },
+
+  // Fjern eller kommentér ud hvis du vil logge ind som root
+  // "remoteUser": "root"
+}
