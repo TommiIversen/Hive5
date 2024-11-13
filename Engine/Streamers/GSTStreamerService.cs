@@ -1,4 +1,5 @@
-﻿using System.Runtime.InteropServices;
+﻿using System.Diagnostics;
+using System.Runtime.InteropServices;
 using Common.DTOs.Enums;
 using Common.DTOs.Events;
 using Engine.Attributes;
@@ -6,6 +7,128 @@ using Engine.Interfaces;
 using Engine.Utils;
 
 namespace Engine.Streamers;
+
+using System;
+using System.Diagnostics;
+using System.Threading;
+using System.Threading.Tasks;
+
+using System.IO;
+
+
+public class GStreamerProcessHandler
+{
+    private Process GstreamerProcess { get; set; }
+
+    public GStreamerProcessHandler()
+    {
+        // Registrer hændelse for applikationens afslutning
+        AppDomain.CurrentDomain.ProcessExit += OnProcessExit;
+    }
+
+    private void OnProcessExit(object sender, EventArgs e)
+    {
+        // Forsøg at stoppe GStreamer-processen ved applikationens afslutning
+        StopGStreamerProcess();
+    }
+
+    private static string FindGStreamerExecutable(string executableName = "gst-launch-1.0.exe")
+    {
+        string? pathVariable = Environment.GetEnvironmentVariable("PATH");
+        if (pathVariable == null)
+        {
+            throw new InvalidOperationException("PATH-miljøvariablen er ikke sat.");
+        }
+
+        string[] paths = pathVariable.Split(Path.PathSeparator);
+
+        foreach (var path in paths)
+        {
+            string fullPath = Path.Combine(path, executableName);
+            if (File.Exists(fullPath))
+            {
+                return fullPath;
+            }
+        }
+
+        throw new FileNotFoundException($"GStreamer-eksekverbar '{executableName}' blev ikke fundet i PATH.");
+    }
+
+    public async Task StartGStreamerProcessAsync(string gstreamerArgs, CancellationToken cancellationToken)
+    {
+        string gstreamerPath = FindGStreamerExecutable();
+        Console.WriteLine($"Starter GStreamer fra sti: {gstreamerPath}");
+        Console.WriteLine($"Med argumenter: {gstreamerArgs}");
+
+        GstreamerProcess = new Process
+        {
+            StartInfo = new ProcessStartInfo
+            {
+                FileName = gstreamerPath,
+                Arguments = gstreamerArgs,
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                RedirectStandardInput = true,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true
+            },
+            EnableRaisingEvents = true
+        };
+        GstreamerProcess.StartInfo.EnvironmentVariables["MY_APP_TAG"] = "GStreamerProcess";
+        //_gstreamerProcess.StartInfo.Arguments = $"--mytag=GStreamerProcess {gstreamerArgs}";
+
+        GstreamerProcess.Start();
+
+        // Start asynkrone opgaver for at læse stdout og stderr
+        _ = Task.Run(() => ReadOutputAsync(GstreamerProcess.StandardOutput, cancellationToken));
+        _ = Task.Run(() => ReadErrorAsync(GstreamerProcess.StandardError, cancellationToken));
+    }
+
+    private async Task ReadOutputAsync(StreamReader output, CancellationToken cancellationToken)
+    {
+        while (!cancellationToken.IsCancellationRequested && !output.EndOfStream)
+        {
+            var line = await output.ReadLineAsync();
+            if (line != null)
+            {
+                HandleOutputData(line);
+            }
+        }
+    }
+
+    private async Task ReadErrorAsync(StreamReader error, CancellationToken cancellationToken)
+    {
+        while (!cancellationToken.IsCancellationRequested && !error.EndOfStream)
+        {
+            var line = await error.ReadLineAsync();
+            if (line != null)
+            {
+                HandleErrorData(line);
+            }
+        }
+    }
+
+    private void HandleOutputData(string data)
+    {
+        Console.WriteLine($"STDOUT: {data}");
+        // Eventuel yderligere behandling af stdout-data
+    }
+
+    private void HandleErrorData(string data)
+    {
+        //Console.WriteLine($"STDERR: {data}");
+        // Eventuel yderligere behandling af stderr-data
+    }
+
+    public void StopGStreamerProcess()
+    {
+        if (GstreamerProcess.HasExited) return;
+        GstreamerProcess.Kill();
+        GstreamerProcess.WaitForExit();
+        GstreamerProcess.Dispose();
+    }
+}
+
 
 [FriendlyName("GstStreamer")]
 public class GstStreamerService : IStreamerService
@@ -16,7 +139,7 @@ public class GstStreamerService : IStreamerService
     private int _imageCounter;
     private bool _isPauseActive;
     private WorkerState _state = WorkerState.Idle;
-
+    readonly GStreamerProcessHandler _handler = new();
 
     public GstStreamerService()
     {
@@ -56,6 +179,10 @@ public class GstStreamerService : IStreamerService
         msg = $"Starting streamer... with command: {GstCommand}";
         SendLog(msg);
 
+        Console.WriteLine("æææææææææææ trigger start");
+        await _handler.StartGStreamerProcessAsync(GstCommand, CancellationToken.None);
+        Console.WriteLine("ååååååååååå trigger start done");
+        
         await Task.Delay(1000); // Simuleret forsinkelse på 1 sekund
         _imageCounter = 0;
 
@@ -80,6 +207,8 @@ public class GstStreamerService : IStreamerService
                 return (_state, "Streamer is starting. Please wait.");
         }
 
+        _handler.StopGStreamerProcess();
+        
         _state = WorkerState.Stopping;
         await OnStateChangedAsync(_state); // Trigger state change
         CreateAndSendLog("Streamer stopping", LogLevel.Critical);

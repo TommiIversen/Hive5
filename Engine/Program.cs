@@ -2,6 +2,7 @@ using Engine.Components;
 using Engine.DependencyInjection;
 using Engine.Hubs;
 using Engine.Services;
+using Engine.Utils;
 
 // Få basePath fra miljøvariablen eller brug fallback
 var basePath = Environment.GetEnvironmentVariable("HIVE_BASE_PATH") ?? @"C:\temp\hive";

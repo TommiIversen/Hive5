@@ -2,6 +2,8 @@
 using Engine.Utils;
 using Xunit;
 
+namespace Engine.Tests.Utils;
+
 public class ImageGeneratorTests
 {
     [Fact]

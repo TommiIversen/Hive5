@@ -2,11 +2,11 @@
 
 public class WorkerConfiguration
 {
-    public string WorkerId { get; set; }
+    public required string WorkerId { get; set; }
     public TimeSpan ImgWatchdogGraceTime { get; set; }
     public TimeSpan ImgWatchdogInterval { get; set; }
     public bool ImgWatchdogEnabled { get; set; }
-    public string GstCommand { get; set; }
+    public required string GstCommand { get; set; }
     public bool IsEnabled { get; set; }
 
     // Statisk metode til at oprette WorkerConfiguration fra WorkerEntity

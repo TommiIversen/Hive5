@@ -16,10 +16,8 @@ public class ImageGenerator
     private readonly Color _baseEndColor;
     private readonly Color _baseStartColor;
     private readonly Brush _brush;
-    private readonly Color _endColor;
     private readonly Font _font;
     private readonly StringFormat _format;
-    private readonly Color _startColor;
 
     [SupportedOSPlatform("windows")]
     public ImageGenerator()
@@ -40,6 +38,7 @@ public class ImageGenerator
         _baseEndColor = Color.FromArgb(random.Next(256), random.Next(256), random.Next(256));
     }
 
+    [SupportedOSPlatform("windows")]
     public byte[] GenerateImageWithNumber(int number, string extraText = "")
     {
         // Hvis vi ikke er på Windows, returner en fake bytearray
