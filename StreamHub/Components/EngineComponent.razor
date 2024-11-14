@@ -87,16 +87,33 @@
         Console.WriteLine($"OnDragStart: {workerId}");
         _draggedWorkerId = workerId;
     }
-
+    
     private void HandleDragOver(string targetWorkerId)
     {
-        // Kun opdater hvis der er en gyldig draggedWorkerId
-        if (_draggedWorkerId != null)
+        if (_draggedWorkerId == null || _draggedWorkerId == targetWorkerId)
+        {
+            // Nulstil, hvis der ikke er en gyldig draggedWorkerId, eller målet er det samme som det, der trækkes
+            _dragTargetWorkerId = null;
+            return;
+        }
+
+        // Find rækkefølgen i listen
+        var workers = Engine.GetOrderedWorkers().ToList();
+        var draggedIndex = workers.FindIndex(w => w.WorkerId == _draggedWorkerId);
+        var targetIndex = workers.FindIndex(w => w.WorkerId == targetWorkerId);
+
+        // Tillad visning af "Insert here" ved enhver forskel i position
+        if (draggedIndex != targetIndex)
         {
             _dragTargetWorkerId = targetWorkerId;
         }
+        else
+        {
+            _dragTargetWorkerId = null;
+        }
     }
 
+    
     private async Task OnDrop(string targetWorkerId)
     {
         Console.WriteLine($"OnDrop: {targetWorkerId}");
