@@ -33,12 +33,10 @@
             <div class="grid grid-cols-1">
                 @foreach (var worker in Engine.GetOrderedWorkers())
                 {
-                    <div draggable="true"
-                         @ondragstart="() => OnDragStart(worker.WorkerId)"
-                         @ondragover="e => HandleDragOver(worker.WorkerId)"
+                    <div @ondragover="e => HandleDragOver(worker.WorkerId)"
                          @ondragover:preventDefault="true"
                          @ondrop="() => OnDrop(worker.WorkerId)"
-                         class="cursor-move">
+                         @ondragend="OnDragEnd">
 
                         @if (_dragTargetWorkerId == worker.WorkerId)
                         {
@@ -47,7 +45,11 @@
                             </div>
                         }
 
-                        <WorkerComponent @key="@($"WorkerComponent-{Engine.Info.EngineId}-{worker.WorkerId}")" EnginInfo="Engine.Info" Worker="worker"/>
+                        <WorkerComponent @key="@($"WorkerComponent-{Engine.Info.EngineId}-{worker.WorkerId}")"
+                                         EnginInfo="Engine.Info"
+                                         Worker="worker"
+                                         OnDragStartRequested="OnDragStart" />
+
                     </div>
                 }
             </div>
@@ -109,6 +111,14 @@
         _dragTargetWorkerId = null;
 
         await InvokeAsync(StateHasChanged); // Opdater UI straks
+    }
+    
+    private void OnDragEnd()
+    {
+        // Nulstil markører for at fjerne "Insert here" indikatoren
+        _draggedWorkerId = null;
+        _dragTargetWorkerId = null;
+        StateHasChanged();
     }
 
 }

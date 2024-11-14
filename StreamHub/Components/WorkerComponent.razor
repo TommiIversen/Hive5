@@ -14,7 +14,9 @@
         <!-- Worker Info -->
         <div class="flex-1 pr-4 space-y-2">
             <div class="font-bold text-lg flex items-center space-x-2">
-                <span>@Worker.BaseWorker.Name</span>
+                <span draggable="true" @ondragstart="() => OnDragStartRequested.InvokeAsync(Worker.WorkerId)" class="cursor-move">
+                    @Worker.BaseWorker.Name
+                </span>
                 <!-- Tooltip med ID og Last Update -->
                 <span class="relative group">
                     <!-- SVG ikon -->
@@ -82,6 +84,7 @@
     //[Parameter] public Guid EngineId { get; set; }
     [Parameter] public required WorkerViewModel Worker { get; init; }
     [Parameter] public required BaseEngineInfo EnginInfo { get; set; }
+    [Parameter] public EventCallback<string> OnDragStartRequested { get; set; }
 
     protected override Task OnInitializedAsync()
     {
