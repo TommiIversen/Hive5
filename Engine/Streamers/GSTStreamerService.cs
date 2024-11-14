@@ -1,5 +1,5 @@
-﻿using System.Diagnostics;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
+using System.Threading.Channels;
 using Common.DTOs.Enums;
 using Common.DTOs.Events;
 using Engine.Attributes;
@@ -19,11 +19,26 @@ using System.IO;
 public class GStreamerProcessHandler
 {
     private Process GstreamerProcess { get; set; }
+    
+    
+    private readonly Channel<byte[]> _jpegChannel = Channel.CreateUnbounded<byte[]>();
+    private readonly int _maxBufferSize = 1024 * 1024; // 1 MB
+    private readonly byte[] _startMarker = { 0xFF, 0xD8 };
+    private readonly byte[] _endMarker = { 0xFF, 0xD9 };
+    
+    private readonly Func<string, Task> _logCallback;
+    private readonly Func<byte[], Task> _imageCallback;
+    
+    private byte[] _buffer = Array.Empty<byte>();
+    private bool _inJpeg = false;
 
-    public GStreamerProcessHandler()
+    
+    public GStreamerProcessHandler(Func<string, Task> logCallback, Func<byte[], Task> imageCallback)
     {
-        // Registrer hændelse for applikationens afslutning
+        _logCallback = logCallback;
+        _imageCallback = imageCallback;
         AppDomain.CurrentDomain.ProcessExit += OnProcessExit;
+
     }
 
     private void OnProcessExit(object sender, EventArgs e)
@@ -81,7 +96,7 @@ public class GStreamerProcessHandler
 
         // Start asynkrone opgaver for at læse stdout og stderr
         _ = Task.Run(() => ReadOutputAsync(GstreamerProcess.StandardOutput, cancellationToken));
-        _ = Task.Run(() => ReadErrorAsync(GstreamerProcess.StandardError, cancellationToken));
+        _ = Task.Run(() => ReadStderrAsync(cancellationToken), cancellationToken);
     }
 
     private async Task ReadOutputAsync(StreamReader output, CancellationToken cancellationToken)
@@ -91,34 +106,137 @@ public class GStreamerProcessHandler
             var line = await output.ReadLineAsync();
             if (line != null)
             {
-                HandleOutputData(line);
+                await _logCallback(line);
+
             }
         }
     }
 
-    private async Task ReadErrorAsync(StreamReader error, CancellationToken cancellationToken)
+    private void AppendToBuffer(ReadOnlySpan<byte> data)
     {
-        while (!cancellationToken.IsCancellationRequested && !error.EndOfStream)
+        if (_buffer.Length + data.Length > _maxBufferSize)
         {
-            var line = await error.ReadLineAsync();
-            if (line != null)
+            _logCallback("Buffer size exceeded, trimming buffer.");
+            _buffer = _buffer[^_maxBufferSize..];
+        }
+        
+        byte[] newBuffer = new byte[_buffer.Length + data.Length];
+        _buffer.CopyTo(newBuffer, 0);
+        data.CopyTo(newBuffer.AsSpan(_buffer.Length));
+        _buffer = newBuffer;
+    }
+    
+    
+    private int IndexOfSequence(byte[] buffer, byte[] sequence, int start = 0)
+    {
+        for (int i = start; i <= buffer.Length - sequence.Length; i++)
+        {
+            bool match = true;
+            for (int j = 0; j < sequence.Length; j++)
             {
-                HandleErrorData(line);
+                if (buffer[i + j] != sequence[j])
+                {
+                    match = false;
+                    break;
+                }
+            }
+
+            if (match)
+            {
+                return i;
             }
         }
+        return -1;
+    }
+    
+    
+    private async Task ReadStderrAsync(CancellationToken cancellationToken)
+    {
+        await using var reader = GstreamerProcess.StandardError.BaseStream;
+        var buffer = new byte[8192 * 4]; // Chunk size
+
+        while (!cancellationToken.IsCancellationRequested)
+        {
+            int bytesRead = await reader.ReadAsync(buffer, 0, buffer.Length, cancellationToken);
+            if (bytesRead == 0) break;
+
+            AppendToBuffer(buffer.AsSpan(0, bytesRead));
+            await ProcessJpegFromBuffer();
+        }
+    }
+    
+private async Task ProcessJpegFromBuffer()
+{
+    int startMarkerIndex = _inJpeg ? 0 : IndexOfSequence(_buffer, _startMarker);
+
+    while (startMarkerIndex != -1 || _inJpeg)
+    {
+        int endMarkerIndex = IndexOfSequence(_buffer, _endMarker, startMarkerIndex);
+
+        if (_inJpeg)
+        {
+            // Vi er i en JPEG, så vi leder efter endemarkøren
+            if (endMarkerIndex == -1)
+            {
+                // Hvis slutmarkøren ikke findes, vent på mere data
+                return;
+            }
+
+            // Hvis slutmarkøren er fundet, afslut JPEG-billedet
+            byte[] jpegImage = _buffer[..(endMarkerIndex + _endMarker.Length)];
+            _inJpeg = false;
+            _buffer = _buffer[(endMarkerIndex + _endMarker.Length)..]; // Fjern behandlet billede fra buffer
+
+            // Kald callback med det komplette JPEG-billede
+            await _imageCallback(jpegImage);
+        }
+        else
+        {
+            // Leder efter en startmarkør, hvis vi ikke er i en JPEG
+            startMarkerIndex = IndexOfSequence(_buffer, _startMarker);
+            if (startMarkerIndex == -1)
+            {
+                // Hvis der ikke findes en startmarkør, vent på mere data
+                return;
+            }
+
+            // Leder efter slutmarkøren fra startmarkørens position
+            endMarkerIndex = IndexOfSequence(_buffer, _endMarker, startMarkerIndex);
+            if (endMarkerIndex == -1)
+            {
+                // Start af et JPEG-billede uden slutmarkør, venter på mere data
+                _inJpeg = true;
+                return;
+            }
+
+            // Hvis der er tekstdata før JPEG-billedet, processér det
+            if (startMarkerIndex > 0)
+            {
+                byte[] textData = _buffer[..startMarkerIndex];
+                await _logCallback($"Non-JPEG data received: {System.Text.Encoding.UTF8.GetString(textData)}");
+            }
+
+            // Udtræk det komplette JPEG-billede
+            byte[] jpegImage = _buffer[startMarkerIndex..(endMarkerIndex + _endMarker.Length)];
+            _buffer = _buffer[(endMarkerIndex + _endMarker.Length)..]; // Fjern behandlet billede fra buffer
+
+            // Kald callback med det komplette JPEG-billede
+            await _imageCallback(jpegImage);
+        }
+
+        // Opdater startmarkøren for at finde næste JPEG i buffer
+        startMarkerIndex = IndexOfSequence(_buffer, _startMarker);
     }
 
-    private void HandleOutputData(string data)
+    // Hvis buffer ikke indeholder en JPEG, logges det som tekstdata
+    if (!_inJpeg && _buffer.Length > 0)
     {
-        Console.WriteLine($"STDOUT: {data}");
-        // Eventuel yderligere behandling af stdout-data
+        await _logCallback($"Remaining non-JPEG data: {System.Text.Encoding.UTF8.GetString(_buffer)}");
+        _buffer = Array.Empty<byte>();
     }
+}
 
-    private void HandleErrorData(string data)
-    {
-        //Console.WriteLine($"STDERR: {data}");
-        // Eventuel yderligere behandling af stderr-data
-    }
+
 
     public void StopGStreamerProcess()
     {
@@ -133,18 +251,13 @@ public class GStreamerProcessHandler
 [FriendlyName("GstStreamer")]
 public class GstStreamerService : IStreamerService
 {
-    private readonly ImageGenerator _generator = new();
-    private readonly Timer _imageTimer;
-    private readonly Timer _logTimer;
-    private int _imageCounter;
     private bool _isPauseActive;
     private WorkerState _state = WorkerState.Idle;
-    readonly GStreamerProcessHandler _handler = new();
+    readonly GStreamerProcessHandler _handler;
 
     public GstStreamerService()
     {
-        _logTimer = new Timer(AutoLog, null, Timeout.Infinite, 300);
-        _imageTimer = new Timer(SendImage, null, Timeout.Infinite, 1000);
+        _handler = new GStreamerProcessHandler(LogCallbackAsync, ImageCallbackAsync);
     }
 
     public required string WorkerId { get; set; }
@@ -154,6 +267,24 @@ public class GstStreamerService : IStreamerService
     public event EventHandler<WorkerImageData>? ImageGenerated;
     public Func<WorkerState, Task>? StateChangedAsync { get; set; }
 
+    
+    private async Task LogCallbackAsync(string message)
+    {
+        Console.WriteLine($"----------Log: {message}");
+        CreateAndSendLog(message);
+    }
+
+    private async Task ImageCallbackAsync(byte[] imageData)
+    {
+        Console.WriteLine($"-----------Billede modtaget på {DateTime.Now}");
+        var gstImageData = new WorkerImageData
+        {
+            WorkerId = WorkerId,
+            Timestamp = DateTime.UtcNow,
+            ImageBytes = imageData
+        };
+        ImageGenerated?.Invoke(this, gstImageData);
+    }
 
     public async Task<(WorkerState, string)> StartAsync()
     {
@@ -162,7 +293,7 @@ public class GstStreamerService : IStreamerService
         if (_state == WorkerState.Running || _state == WorkerState.Starting)
         {
             msg = "Streamer is already running or starting.";
-            SendLog(msg);
+            CreateAndSendLog(msg);
             return (_state, msg);
         }
 
@@ -179,15 +310,7 @@ public class GstStreamerService : IStreamerService
         msg = $"Starting streamer... with command: {GstCommand}";
         SendLog(msg);
 
-        Console.WriteLine("æææææææææææ trigger start");
         await _handler.StartGStreamerProcessAsync(GstCommand, CancellationToken.None);
-        Console.WriteLine("ååååååååååå trigger start done");
-        
-        await Task.Delay(1000); // Simuleret forsinkelse på 1 sekund
-        _imageCounter = 0;
-
-        _logTimer.Change(0, 300);
-        _imageTimer.Change(0, 1000);
 
         _state = WorkerState.Running;
         await OnStateChangedAsync(_state);
@@ -207,19 +330,13 @@ public class GstStreamerService : IStreamerService
                 return (_state, "Streamer is starting. Please wait.");
         }
 
-        _handler.StopGStreamerProcess();
         
+        CreateAndSendLog("Streamer stopping", LogLevel.Critical);
         _state = WorkerState.Stopping;
         await OnStateChangedAsync(_state); // Trigger state change
-        CreateAndSendLog("Streamer stopping", LogLevel.Critical);
-
+        _handler.StopGStreamerProcess();
 
         Console.WriteLine("Stopping streamer...");
-
-        await Task.Delay(1000); // Simuleret forsinkelse på 1 sekund
-
-        _logTimer.Change(Timeout.Infinite, Timeout.Infinite);
-        _imageTimer.Change(Timeout.Infinite, Timeout.Infinite);
 
         _state = WorkerState.Idle;
         await OnStateChangedAsync(_state); // Trigger state change
@@ -239,12 +356,6 @@ public class GstStreamerService : IStreamerService
         CreateAndSendLog(logMsg);
     }
 
-    private void AutoLog(object? state)
-    {
-        if (_state != WorkerState.Running) return;
-
-        CreateAndSendLog("Fake log message");
-    }
 
     private void CreateAndSendLog(string message, LogLevel logLevel = LogLevel.Information)
     {
@@ -258,46 +369,6 @@ public class GstStreamerService : IStreamerService
         LogGenerated?.Invoke(this, log);
     }
 
-
-    private void SendImage(object? state)
-    {
-        if (_state != WorkerState.Running) return;
-
-        // Check for pause hver 30. billede
-        if (_imageCounter != 0 && _imageCounter % 30 == 0 && !_isPauseActive)
-        {
-            _isPauseActive = true;
-            var imageData = new WorkerImageData
-            {
-                WorkerId = WorkerId,
-                Timestamp = DateTime.UtcNow,
-                ImageBytes = GenerateFakeImage("Crashed")
-            };
-            ImageGenerated?.Invoke(this, imageData);
-            CreateAndSendLog("Streamer paused for 4 seconds", LogLevel.Warning);
-            Task.Delay(4000).ContinueWith(_ => { _isPauseActive = false; });
-            return; // Skip image generation under pause
-        }
-
-        if (!_isPauseActive)
-        {
-            var imageData = new WorkerImageData
-            {
-                WorkerId = WorkerId,
-                Timestamp = DateTime.UtcNow,
-                ImageBytes = GenerateFakeImage(WorkerId)
-            };
-            ImageGenerated?.Invoke(this, imageData);
-        }
-    }
-
-    private byte[] GenerateFakeImage(string text = "")
-    {
-        // Fake image data (placeholder)
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            return _generator.GenerateImageWithNumber(_imageCounter++, $"GST-{text}");
-        return new byte[] { 0, 0, 0 };
-    }
 
     private async Task OnStateChangedAsync(WorkerState newState)
     {
