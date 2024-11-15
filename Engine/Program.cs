@@ -1,6 +1,7 @@
 using Engine.Components;
 using Engine.DependencyInjection;
 using Engine.Hubs;
+using Engine.Models;
 using Engine.Services;
 using Engine.Utils;
 
@@ -14,6 +15,11 @@ if (!Directory.Exists(basePath)) Directory.CreateDirectory(basePath);
 
 var builder = WebApplication.CreateBuilder(args);
 builder.ConfigureSerilogLogging(basePath);
+
+// Forsøg at finde GStreamer-eksekverbaren
+// Find GStreamer-eksekverbar sti
+GStreamerConfig.Instance.ExecutablePath = GStreamerUtils.FindGStreamerExecutable();
+
 
 // Add services to the container.
 builder.Services.AddRazorComponents()

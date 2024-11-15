@@ -21,62 +21,48 @@ public interface IEngineService
     Task<EngineChangeEvent> GetEngineBaseInfoAsEvent();
 }
 
-public static class StreamerServiceHelper
-{
-    private static readonly Lazy<List<string>> StreamerNames = new(GetStreamerNames);
-
-    public static List<string> GetStreamerNamesCached()
-    {
-        return StreamerNames.Value;
-    }
-
-    private static List<string> GetStreamerNames()
-    {
-        return Assembly.GetExecutingAssembly()
-            .GetTypes()
-            .Where(t => typeof(IStreamerService).IsAssignableFrom(t) && !t.IsInterface && !t.IsAbstract)
-            .Select(t =>
-                t.GetCustomAttribute<FriendlyNameAttribute>()?.Name ?? t.Name) // Use friendly name if available
-            .ToList();
-    }
-}
-
 public class EngineService : IEngineService
 {
     private readonly IDbContextFactory<ApplicationDbContext> _contextFactory;
-    private readonly IEngineRepository _engineRepository;
+    //private readonly IEngineRepository _engineRepository;
+    private readonly IRepositoryFactory _repositoryFactory;
+
     private readonly DateTime _initDateTime = DateTime.UtcNow;
 
-    public EngineService(IDbContextFactory<ApplicationDbContext> contextFactory)
+    public EngineService(IRepositoryFactory repositoryFactory)
     {
-        _contextFactory = contextFactory;
-        _engineRepository = new EngineRepository(_contextFactory.CreateDbContext());
+        //_contextFactory = contextFactory;
+        //_engineRepository = new EngineRepository(_contextFactory.CreateDbContext());
+        
+        _repositoryFactory = repositoryFactory;
     }
 
     public async Task<EngineEntities?> GetEngineAsync()
     {
-        await using var dbContext = await _contextFactory.CreateDbContextAsync();
-        return await _engineRepository.GetEngineAsync();
+        var engineRepository = _repositoryFactory.CreateEngineRepository();
+        return await engineRepository.GetEngineAsync();
     }
 
     public async Task UpdateEngineAsync(string name, string description)
     {
-        var engine = await _engineRepository.GetEngineAsync();
+        var engineRepository = _repositoryFactory.CreateEngineRepository();
+        var engine = await engineRepository.GetEngineAsync();
         if (engine != null)
         {
             engine.Name = name;
             engine.Description = description;
-            await _engineRepository.SaveEngineAsync(engine);
+            await engineRepository.SaveEngineAsync(engine);
         }
     }
 
     public async Task AddHubUrlAsync(string hubUrl, string apiKey)
     {
-        var engine = await _engineRepository.GetEngineAsync();
+        var engineRepository = _repositoryFactory.CreateEngineRepository();
+        var engine = await engineRepository.GetEngineAsync();
         if (engine != null)
         {
             engine.HubUrls.Add(new HubUrlEntity { HubUrl = hubUrl, ApiKey = apiKey });
-            await _engineRepository.SaveEngineAsync(engine);
+            await engineRepository.SaveEngineAsync(engine);
         }
     }
 
@@ -100,13 +86,14 @@ public class EngineService : IEngineService
 
     public async Task EditHubUrlAsync(int hubUrlId, string newHubUrl, string newApiKey)
     {
-        var engine = await _engineRepository.GetEngineAsync();
+        var engineRepository = _repositoryFactory.CreateEngineRepository();
+        var engine = await engineRepository.GetEngineAsync();
         var hubUrl = engine?.HubUrls.FirstOrDefault(h => h.Id == hubUrlId);
         if (hubUrl != null)
         {
             hubUrl.HubUrl = newHubUrl;
             hubUrl.ApiKey = newApiKey;
-            if (engine != null) await _engineRepository.SaveEngineAsync(engine);
+            if (engine != null) await engineRepository.SaveEngineAsync(engine);
         }
     }
 

@@ -49,8 +49,8 @@ public class WorkerService : IWorkerService
 
         // Forbind runnerens events til WorkerService handlers
         _streamerService.GstCommand = config.GstCommand;
-        _streamerService.LogGenerated += OnLogGenerated;
-        _streamerService.ImageGenerated += OnImageGenerated;
+        _streamerService.LogCallback = async logEntry => await OnLogGenerated(logEntry);
+        _streamerService.ImageCallback = async imageData => await OnImageGenerated(imageData);
         _streamerService.StateChangedAsync = async newState => { await HandleStateChangeAsync(newState); };
 
         // Initialiser watchdog med callbacks
@@ -184,24 +184,23 @@ public class WorkerService : IWorkerService
 
     public void ReplaceStreamer(IStreamerService newStreamer)
     {
-        // Unsubscribe from events of the old streamer
-        _streamerService.LogGenerated -= OnLogGenerated;
-        _streamerService.ImageGenerated -= OnImageGenerated;
+        // Unbind callbacks from the old streamer
+        _streamerService.LogCallback = null;
+        _streamerService.ImageCallback = null;
         _streamerService.StateChangedAsync = null;
 
         // Replace the streamer
         _streamerService = newStreamer;
 
-        // Initialize new streamer's properties and events
+        // Initialize new streamer's properties and callbacks
         _streamerService.WorkerId = WorkerId;
         _streamerService.GstCommand = _streamerService.GstCommand;
-        _streamerService.LogGenerated += OnLogGenerated;
-        _streamerService.ImageGenerated += OnImageGenerated;
-        _streamerService.StateChangedAsync = async newState => { await HandleStateChangeAsync(newState); };
+        _streamerService.LogCallback = async logEntry => await OnLogGenerated(logEntry);
+        _streamerService.ImageCallback = async imageData => await OnImageGenerated(imageData);
+        _streamerService.StateChangedAsync = async newState => await HandleStateChangeAsync(newState);
 
         LogInfo($"Streamer replaced for worker {WorkerId}");
     }
-
     public async Task HandleStateChangeAsync(WorkerState newState)
     {
         await HandleStateChange(this, newState, ChangeEventType.Updated, "State changed in runner");
@@ -285,12 +284,12 @@ public class WorkerService : IWorkerService
         }
     }
 
-    private void OnLogGenerated(object? sender, WorkerLogEntry workerLog)
+    private async Task OnLogGenerated(WorkerLogEntry workerLog)
     {
         _loggerService.LogMessage(workerLog);
     }
 
-    private void OnImageGenerated(object? sender, WorkerImageData workerImage)
+    private async Task OnImageGenerated(WorkerImageData workerImage)
     {
         workerImage.ImageSequenceNumber = Interlocked.Increment(ref _imageCounter);
         _messageQueue.EnqueueMessage(workerImage);

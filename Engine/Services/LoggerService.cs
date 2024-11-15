@@ -43,33 +43,33 @@ public class LoggerService : ILoggerService
         else
             baseLogEntry.EngineId = _engineId;
 
-        //baseLogEntry.Timestamp = DateTime.UtcNow;
-        //baseLogEntry.LogTimestamp = DateTime.UtcNow;
-
-        if (baseLogEntry is WorkerLogEntry workerLogEntry)
+        switch (baseLogEntry)
         {
-            _workerLogCounters.TryAdd(workerLogEntry.WorkerId, 0);
-
-            int currentCount;
-            int newCount;
-            do
+            case WorkerLogEntry workerLogEntry:
             {
-                currentCount = _workerLogCounters[workerLogEntry.WorkerId];
-                newCount = currentCount + 1;
-            } while (!_workerLogCounters.TryUpdate(workerLogEntry.WorkerId, newCount, currentCount));
+                _workerLogCounters.TryAdd(workerLogEntry.WorkerId, 0);
 
-            workerLogEntry.LogSequenceNumber = newCount;
+                int currentCount;
+                int newCount;
+                do
+                {
+                    currentCount = _workerLogCounters[workerLogEntry.WorkerId];
+                    newCount = currentCount + 1;
+                } while (!_workerLogCounters.TryUpdate(workerLogEntry.WorkerId, newCount, currentCount));
 
-            // Tilføj loggen til worker-log-cachen
-            var logQueue = _workerLogs.GetOrAdd(workerLogEntry.WorkerId, new ConcurrentQueue<BaseLogEntry>());
-            logQueue.Enqueue(workerLogEntry);
+                workerLogEntry.LogSequenceNumber = newCount;
 
-            // Bevar kun de sidste 20 logs
-            while (logQueue.Count > 20) logQueue.TryDequeue(out _);
-        }
-        else if (baseLogEntry is EngineLogEntry)
-        {
-            baseLogEntry.SequenceNumber = Interlocked.Increment(ref _engineLogCounter);
+                // Tilføj loggen til worker-log-cachen
+                var logQueue = _workerLogs.GetOrAdd(workerLogEntry.WorkerId, new ConcurrentQueue<BaseLogEntry>());
+                logQueue.Enqueue(workerLogEntry);
+
+                // Bevar kun de sidste 20 logs
+                while (logQueue.Count > 20) logQueue.TryDequeue(out _);
+                break;
+            }
+            case EngineLogEntry:
+                baseLogEntry.LogSequenceNumber = Interlocked.Increment(ref _engineLogCounter);
+                break;
         }
 
         _messageQueue.EnqueueMessage(baseLogEntry);

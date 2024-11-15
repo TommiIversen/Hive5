@@ -11,26 +11,18 @@ namespace Engine.Streamers;
 public class FakeStreamerService : IStreamerService
 {
     private readonly ImageGenerator _generator = new();
-    private readonly Timer _imageTimer;
-    private readonly Timer _logTimer;
+    private CancellationTokenSource? _logTaskCts;
+    private CancellationTokenSource? _imageTaskCts;
     private int _imageCounter;
     private bool _isPauseActive;
     private WorkerState _state = WorkerState.Idle;
 
-
-    public FakeStreamerService()
-    {
-        _logTimer = new Timer(AutoLog, null, Timeout.Infinite, 300);
-        _imageTimer = new Timer(SendImage, null, Timeout.Infinite, 1000);
-    }
-
     public required string WorkerId { get; set; }
     public required string GstCommand { get; set; }
 
-    public event EventHandler<WorkerLogEntry>? LogGenerated;
-    public event EventHandler<WorkerImageData>? ImageGenerated;
+    public Func<WorkerLogEntry, Task> LogCallback { get; set; } = async _ => { };
+    public Func<WorkerImageData, Task> ImageCallback { get; set; } = async _ => { };
     public Func<WorkerState, Task>? StateChangedAsync { get; set; }
-
 
     public async Task<(WorkerState, string)> StartAsync()
     {
@@ -39,14 +31,14 @@ public class FakeStreamerService : IStreamerService
         if (_state == WorkerState.Running || _state == WorkerState.Starting)
         {
             msg = "Streamer is already running or starting.";
-            SendLog(msg);
+            await CreateAndSendLog(msg);
             return (_state, msg);
         }
 
         if (_state == WorkerState.Stopping)
         {
             msg = "Streamer is currently stopping. Please wait.";
-            SendLog(msg);
+            await CreateAndSendLog(msg);
             return (_state, msg);
         }
 
@@ -54,19 +46,23 @@ public class FakeStreamerService : IStreamerService
         await OnStateChangedAsync(_state); // Trigger state change
 
         msg = $"Starting streamer... with command: {GstCommand}";
-        SendLog(msg);
+        await CreateAndSendLog(msg);
 
         await Task.Delay(1000); // Simuleret forsinkelse på 1 sekund
         _imageCounter = 0;
 
-        _logTimer.Change(0, 300);
-        _imageTimer.Change(0, 1000);
+        // Start asynkrone loops
+        _logTaskCts = new CancellationTokenSource();
+        _imageTaskCts = new CancellationTokenSource();
+
+        _ = StartLogLoopAsync(_logTaskCts.Token);
+        _ = StartImageLoopAsync(_imageTaskCts.Token);
 
         _state = WorkerState.Running;
         await OnStateChangedAsync(_state);
 
         msg = "Streamer started successfully.";
-        SendLog(msg);
+        await CreateAndSendLog(msg);
         return (_state, msg);
     }
 
@@ -82,15 +78,17 @@ public class FakeStreamerService : IStreamerService
 
         _state = WorkerState.Stopping;
         await OnStateChangedAsync(_state); // Trigger state change
-        CreateAndSendLog("Streamer stopping", LogLevel.Critical);
-
+        await CreateAndSendLog("Streamer stopping", LogLevel.Critical);
 
         Console.WriteLine("Stopping streamer...");
 
         await Task.Delay(1000); // Simuleret forsinkelse på 1 sekund
 
-        _logTimer.Change(Timeout.Infinite, Timeout.Infinite);
-        _imageTimer.Change(Timeout.Infinite, Timeout.Infinite);
+        // Stop asynkrone loops
+        _logTaskCts?.Cancel();
+        _imageTaskCts?.Cancel();
+        _logTaskCts = null;
+        _imageTaskCts = null;
 
         _state = WorkerState.Idle;
         await OnStateChangedAsync(_state); // Trigger state change
@@ -104,33 +102,46 @@ public class FakeStreamerService : IStreamerService
         return _state;
     }
 
-
-    private void SendLog(string logMsg)
+    private async Task StartLogLoopAsync(CancellationToken token)
     {
-        CreateAndSendLog(logMsg);
+        try
+        {
+            while (!token.IsCancellationRequested)
+            {
+                await AutoLog();
+                await Task.Delay(300, token); // Log hvert 300 ms
+            }
+        }
+        catch (TaskCanceledException)
+        {
+            Console.WriteLine("Log loop canceled.");
+        }
     }
 
-    private void AutoLog(object? state)
+    private async Task StartImageLoopAsync(CancellationToken token)
+    {
+        try
+        {
+            while (!token.IsCancellationRequested)
+            {
+                await SendImage();
+                await Task.Delay(1000, token); // Billede hvert sekund
+            }
+        }
+        catch (TaskCanceledException)
+        {
+            Console.WriteLine("Image loop canceled.");
+        }
+    }
+
+    private async Task AutoLog()
     {
         if (_state != WorkerState.Running) return;
 
-        CreateAndSendLog("Fake log message");
+        await CreateAndSendLog("Fake log message");
     }
 
-    private void CreateAndSendLog(string message, LogLevel logLevel = LogLevel.Information)
-    {
-        var log = new WorkerLogEntry
-        {
-            WorkerId = WorkerId,
-            LogTimestamp = DateTime.UtcNow,
-            Message = message,
-            LogLevel = logLevel
-        };
-        LogGenerated?.Invoke(this, log);
-    }
-
-
-    private void SendImage(object? state)
+    private async Task SendImage()
     {
         if (_state != WorkerState.Running) return;
 
@@ -144,9 +155,10 @@ public class FakeStreamerService : IStreamerService
                 Timestamp = DateTime.UtcNow,
                 ImageBytes = GenerateFakeImage("Crashed")
             };
-            ImageGenerated?.Invoke(this, imageData);
-            CreateAndSendLog("Streamer paused for 4 seconds", LogLevel.Warning);
-            Task.Delay(4000).ContinueWith(_ => { _isPauseActive = false; });
+            await ImageCallback(imageData);
+            await CreateAndSendLog("Streamer paused for 4 seconds", LogLevel.Warning);
+            await Task.Delay(4000); // Pause i 4 sekunder
+            _isPauseActive = false;
             return; // Skip image generation under pause
         }
 
@@ -158,7 +170,7 @@ public class FakeStreamerService : IStreamerService
                 Timestamp = DateTime.UtcNow,
                 ImageBytes = GenerateFakeImage(WorkerId)
             };
-            ImageGenerated?.Invoke(this, imageData);
+            await ImageCallback(imageData);
         }
     }
 
@@ -168,6 +180,18 @@ public class FakeStreamerService : IStreamerService
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             return _generator.GenerateImageWithNumber(_imageCounter++, $"FAKE-{text}");
         return new byte[] { 0, 0, 0 };
+    }
+
+    private async Task CreateAndSendLog(string message, LogLevel logLevel = LogLevel.Information)
+    {
+        var log = new WorkerLogEntry
+        {
+            WorkerId = WorkerId,
+            LogTimestamp = DateTime.UtcNow,
+            Message = message,
+            LogLevel = logLevel
+        };
+        await LogCallback.Invoke(log);
     }
 
     private async Task OnStateChangedAsync(WorkerState newState)
