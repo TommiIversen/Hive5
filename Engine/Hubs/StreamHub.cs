@@ -131,12 +131,11 @@ public class StreamHub
             var hubConnection = new HubConnectionBuilder()
                 .WithUrl($"{hubUrl}?clientType=backend",
                     connectionOptions => { connectionOptions.Transports = HttpTransportType.WebSockets; })
-                .WithAutomaticReconnect(new[]
-                {
+                .WithAutomaticReconnect([
                     TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5),
                     TimeSpan.FromSeconds(5)
-                })
-                //.AddMessagePackProtocol()
+                ])
+                .AddMessagePackProtocol()
                 .Build();
 
 
