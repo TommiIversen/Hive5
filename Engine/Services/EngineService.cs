@@ -14,7 +14,7 @@ namespace Engine.Services;
 public interface IEngineService
 {
     Task<EngineEntities?> GetEngineAsync();
-    Task UpdateEngineAsync(string name, string description);
+    Task<bool> UpdateEngineAsync(string name, string description);
     Task AddHubUrlAsync(string hubUrl, string apiKey);
     Task RemoveHubUrlAsync(int hubUrlId);
     Task EditHubUrlAsync(int hubUrlId, string newHubUrl, string newApiKey);
@@ -43,16 +43,21 @@ public class EngineService : IEngineService
         return await engineRepository.GetEngineAsync();
     }
 
-    public async Task UpdateEngineAsync(string name, string description)
+    public async Task<bool> UpdateEngineAsync(string name, string description)
     {
         var engineRepository = _repositoryFactory.CreateEngineRepository();
         var engine = await engineRepository.GetEngineAsync();
+
         if (engine != null)
         {
             engine.Name = name;
             engine.Description = description;
+
             await engineRepository.SaveEngineAsync(engine);
+            return true; // Indikerer, at opdateringen gik godt
         }
+
+        return false; // Indikerer, at opdateringen mislykkedes
     }
 
     public async Task AddHubUrlAsync(string hubUrl, string apiKey)

@@ -1,0 +1,80 @@
+﻿@using Common.DTOs.Commands
+@using StreamHub.Services
+@inject WorkerService WorkerService
+
+<div>
+    @if (IsEditing)
+    {
+        <!-- Redigerings-tilstand -->
+        <div class="space-y-4">
+            <div>
+                <label class="block text-gray-400">Name</label>
+                <input type="text" class="bg-gray-800 border border-gray-700 rounded text-white px-2 py-1 w-full"
+                       value="@EditName" @oninput="e => EditName = e.Value.ToString()" />
+            </div>
+            <div>
+                <label class="block text-gray-400">Description</label>
+                <input type="text" class="bg-gray-800 border border-gray-700 rounded text-white px-2 py-1 w-full"
+                       value="@EditDescription" @oninput="e => EditDescription = e.Value.ToString()" />
+            </div>
+            <div class="flex justify-end space-x-2">
+                <button @onclick="SaveChanges" class="px-4 py-2 bg-blue-600 text-white rounded">Save</button>
+                <button @onclick="CancelEdit" class="px-4 py-2 bg-gray-600 text-white rounded">Cancel</button>
+            </div>
+        </div>
+    }
+    else
+    {
+        <!-- Visningstilstand -->
+        <div>
+            <div class="flex items-center">
+                <h2 class="text-xl font-semibold">@Name</h2>
+                <button @onclick="StartEdit" class="ml-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400 hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536M9 11l3 3m-6 6h18M13.5 6.5L4 16.999V21h4.5l9.5-9.5m-6-6L13.5 6.5z"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="text-gray-400">@Description</div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public required string Name { get; set; }
+    [Parameter] public required string Description { get; set; }
+    [Parameter] public required Guid EngineId { get; set; }
+
+
+    private bool IsEditing { get; set; }
+    private string EditName { get; set; } = "";
+    private string EditDescription { get; set; } = "";
+
+    private void StartEdit()
+    {
+        IsEditing = true;
+        EditName = Name;
+        EditDescription = Description;
+    }
+
+    private async Task SaveChanges()
+    {
+        IsEditing = false;
+        
+        var engineUpdate= new EngineEditNameDesc
+        {
+            EngineId = EngineId,
+            WorkerId = "",
+            EngineName = EditName,
+            EngineDescription = EditDescription
+        };
+        var commandResult = await WorkerService.EditEngineName(engineUpdate);
+        
+        Console.WriteLine($"Saving changes:{engineUpdate.EngineId} {EditName} - {EditDescription}");
+    }
+
+    private void CancelEdit()
+    {
+        IsEditing = false;
+    }
+}

@@ -16,16 +16,21 @@
         </div>
     }
 
-    <div class="bg-slate-950 p-4 border border-slate-700 shadow-sm rounded-lg md:col-span-1">
-        <h2 class="text-xl font-semibold">@Engine?.Info.EngineName</h2>
-        <div class="text-gray-400">@Engine?.Info.EngineDescription</div>
-        <EngineConnectionInfoComponent Engine="@Engine"/>
-        <EngineMetricExpandPanelComponent EngineId="@Engine.Info.EngineId"/>
-        <EngineLogPanel Engine="@Engine"></EngineLogPanel>
-        <EngineCreateWorker EnginInfo="@Engine.Info"/>
-        <EngineMetricLineChartComponent Engine="@Engine"/>
-        <EngineMetricCpuUsageBarChart EngineId="@Engine.Info.EngineId"/>
-    </div>
+    @if (Engine?.Info != null)
+    {
+        <div class="bg-slate-950 p-4 border border-slate-700 shadow-sm rounded-lg md:col-span-1">
+            <EngineInlineEditComponent Name="@Engine.Info.EngineName"
+                                       Description="@Engine.Info.EngineDescription"
+                                       EngineId="@Engine.Info.EngineId"/>
+
+            <EngineConnectionInfoComponent Engine="@Engine"/>
+            <EngineMetricExpandPanelComponent EngineId="@Engine.Info.EngineId"/>
+            <EngineLogPanel Engine="@Engine"></EngineLogPanel>
+            <EngineCreateWorker EnginInfo="@Engine.Info"/>
+            <EngineMetricLineChartComponent Engine="@Engine"/>
+            <EngineMetricCpuUsageBarChart EngineId="@Engine.Info.EngineId"/>
+        </div>
+    }
 
     <div class="md:col-span-3">
         @if (Engine.Workers?.Any() == true)

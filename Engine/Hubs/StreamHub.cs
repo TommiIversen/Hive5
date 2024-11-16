@@ -83,7 +83,6 @@ public class StreamHub
                 // Stop forbindelsen, hvis den er aktiv
                 await connectionInfo.HubConnection.StopAsync();
                 _hubConnections.TryRemove(hubUrlToRemove, out _);
-                //_logger.LogInformation("Stopped and removed active hub connection for {Url}", hubUrlToRemove);
                 LogInfo($"Stopped and removed active hub connection for {hubUrlToRemove}");
             }
             catch (Exception ex)
@@ -144,6 +143,15 @@ public class StreamHub
                 LogInfo($"Got request to remove HubUrl: {hubUrlToRemove}");
                 var commandResult = await RemoveHubUrlAsync(hubUrlToRemove);
                 return commandResult;
+            });
+            
+            // EngineEditName
+            hubConnection.On("EngineEditName", async (EngineEditNameDesc engineEditName) =>
+            {
+                var result = await _engineService.UpdateEngineAsync(engineEditName.EngineName, engineEditName.EngineDescription);
+                var engineUpdateEvent = await _engineService.GetEngineBaseInfoAsEvent();
+                _globalMessageQueue.EnqueueMessage(engineUpdateEvent);
+                return new CommandResult(result, result ? "Engine name and description updated." : "Failed to update engine name and description.");
             });
 
             _workerEventHandlers.AttachWorkerHandlers(hubConnection); // Vedhæft worker-specifikke handlers
