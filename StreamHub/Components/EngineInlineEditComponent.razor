@@ -10,12 +10,12 @@
             <div>
                 <label class="block text-gray-400">Name</label>
                 <input type="text" class="bg-gray-800 border border-gray-700 rounded text-white px-2 py-1 w-full"
-                       value="@EditName" @oninput="e => EditName = e.Value.ToString()" />
+                       value="@EditName" @oninput="e => EditName = e.Value.ToString()"/>
             </div>
             <div>
                 <label class="block text-gray-400">Description</label>
                 <input type="text" class="bg-gray-800 border border-gray-700 rounded text-white px-2 py-1 w-full"
-                       value="@EditDescription" @oninput="e => EditDescription = e.Value.ToString()" />
+                       value="@EditDescription" @oninput="e => EditDescription = e.Value.ToString()"/>
             </div>
             <div class="flex justify-end space-x-2">
                 <button @onclick="SaveChanges" class="px-4 py-2 bg-blue-600 text-white rounded">Save</button>
@@ -30,8 +30,10 @@
             <div class="flex items-center">
                 <h2 class="text-xl font-semibold">@Name</h2>
                 <button @onclick="StartEdit" class="ml-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400 hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536M9 11l3 3m-6 6h18M13.5 6.5L4 16.999V21h4.5l9.5-9.5m-6-6L13.5 6.5z"/>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400 hover:text-white" fill="none"
+                         viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M15.232 5.232l3.536 3.536M9 11l3 3m-6 6h18M13.5 6.5L4 16.999V21h4.5l9.5-9.5m-6-6L13.5 6.5z"/>
                     </svg>
                 </button>
             </div>
@@ -60,8 +62,8 @@
     private async Task SaveChanges()
     {
         IsEditing = false;
-        
-        var engineUpdate= new EngineEditNameDesc
+
+        var engineUpdate = new EngineEditNameDesc
         {
             EngineId = EngineId,
             WorkerId = "",
@@ -69,7 +71,7 @@
             EngineDescription = EditDescription
         };
         var commandResult = await WorkerService.EditEngineName(engineUpdate);
-        
+
         Console.WriteLine($"Saving changes:{engineUpdate.EngineId} {EditName} - {EditDescription}");
     }
 
@@ -77,4 +79,5 @@
     {
         IsEditing = false;
     }
+
 }

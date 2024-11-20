@@ -10,7 +10,8 @@
         <h3 class="text-xl text-white font-semibold">Opret ny worker</h3>
         <div data-testid="create-worker-form" class="mt-4">
             <label class="block text-gray-400">Worker ID:</label>
-            <input type="text" @bind="_newWorkerId" @oninput="ValidateWorkerId" class="w-full p-2 mt-1 rounded-lg bg-gray-900 text-white" data-testid="worker-id-input"/>
+            <input type="text" @bind="_newWorkerId" @oninput="ValidateWorkerId"
+                   class="w-full p-2 mt-1 rounded-lg bg-gray-900 text-white" data-testid="worker-id-input"/>
 
             @if (!string.IsNullOrEmpty(_workerIdError))
             {
@@ -18,16 +19,20 @@
             }
 
             <label class="block text-gray-400 mt-4">Name:</label>
-            <input type="text" @bind="_newWorkerName" class="w-full p-2 mt-1 rounded-lg bg-gray-900 text-white" data-testid="worker-name-input"/>
+            <input type="text" @bind="_newWorkerName" class="w-full p-2 mt-1 rounded-lg bg-gray-900 text-white"
+                   data-testid="worker-name-input"/>
 
             <label class="block text-gray-400 mt-4">Description:</label>
-            <input type="text" @bind="_newWorkerDescription" class="w-full p-2 mt-1 rounded-lg bg-gray-900 text-white" data-testid="worker-description-input"/>
+            <input type="text" @bind="_newWorkerDescription" class="w-full p-2 mt-1 rounded-lg bg-gray-900 text-white"
+                   data-testid="worker-description-input"/>
 
             <label class="block text-gray-400 mt-4">Command:</label>
-            <textarea @bind="_newWorkerCommand" class="w-full p-2 mt-1 rounded-lg bg-gray-900 text-white" data-testid="worker-command-input"></textarea>
+            <textarea @bind="_newWorkerCommand" class="w-full p-2 mt-1 rounded-lg bg-gray-900 text-white"
+                      data-testid="worker-command-input"></textarea>
 
             <label class="block text-gray-400 mt-4">Streamer Type:</label>
-            <select @bind="_selectedStreamerType" class="w-full p-2 mt-1 rounded-lg bg-gray-900 text-white" data-testid="streamer-type-select">
+            <select @bind="_selectedStreamerType" class="w-full p-2 mt-1 rounded-lg bg-gray-900 text-white"
+                    data-testid="streamer-type-select">
                 <option value="">Select Streamer</option>
                 @foreach (var streamer in EnginInfo.Streamers)
                 {
@@ -39,7 +44,8 @@
                 <span class="text-red-500 text-sm">@_streamerTypeError</span>
             }
 
-            <button @onclick="CreateNewWorker" class="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded" data-testid="create-worker-button">
+            <button @onclick="CreateNewWorker" class="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded"
+                    data-testid="create-worker-button">
                 Add Worker
             </button>
         </div>

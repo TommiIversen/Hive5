@@ -1,7 +1,6 @@
 ﻿using Common.DTOs.Commands;
 using Common.DTOs.Queries;
 using Engine.Services;
-using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.SignalR.Client;
 
 namespace Engine.Hubs;
@@ -13,11 +12,12 @@ public interface IHubWorkerEventHandlers
 
 public class HubWorkerWorkerEventHandlers : IHubWorkerEventHandlers
 {
+    private readonly IEngineService _engineService;
     private readonly ILogger<HubWorkerWorkerEventHandlers> _logger;
     private readonly IWorkerManager _workerManager;
-    private readonly IEngineService _engineService;
 
-    public HubWorkerWorkerEventHandlers(IWorkerManager workerManager, IEngineService engineService, ILogger<HubWorkerWorkerEventHandlers> logger)
+    public HubWorkerWorkerEventHandlers(IWorkerManager workerManager, IEngineService engineService,
+        ILogger<HubWorkerWorkerEventHandlers> logger)
     {
         _workerManager = workerManager;
         _engineService = engineService;
@@ -26,8 +26,6 @@ public class HubWorkerWorkerEventHandlers : IHubWorkerEventHandlers
 
     public void AttachWorkerHandlers(HubConnection hubConnection)
     {
-
-        
         hubConnection.On("StopWorker", async (WorkerOperationMessage message) =>
         {
             var commandResult = await _workerManager.StopWorkerAsync(message.WorkerId);

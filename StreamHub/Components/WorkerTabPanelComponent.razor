@@ -12,7 +12,8 @@
                     class="px-4 @GetTabButtonStyle(_tabs[tabName]) py-1 rounded border border-gray-500 transition duration-200  ease-in-out hover:bg-slate-600 text-white font-bold w-full flex items-center justify-between"
                     data-testid="@($"toggle-tab-{tabName.ToLower()}-{Worker.WorkerId}")">
                 <span>@tabName</span>
-                <svg class="h-6 transition-transform duration-300 w-6 @GetTabIconRotation(_tabs[tabName])" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg class="h-6 transition-transform duration-300 w-6 @GetTabIconRotation(_tabs[tabName])"
+                     xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/>
                 </svg>
             </button>
@@ -26,21 +27,25 @@
     @if (_tabs["Edit"])
     {
         <div class="px-2 mb-2">
-            <WorkerEditComponent @key="@($"WorkerEditComponent-{EnginInfo.EngineId}-{Worker.WorkerId}")" EnginInfo="@EnginInfo" Worker="@Worker"/>
+            <WorkerEditComponent @key="@($"WorkerEditComponent-{EnginInfo.EngineId}-{Worker.WorkerId}")"
+                                 EnginInfo="@EnginInfo" Worker="@Worker"/>
         </div>
     }
 
     @if (_tabs["Log"])
     {
         <div class="px-2 mb-2">
-            <WorkerLog @key="@($"WorkerLoggerComponent-{EnginInfo.EngineId}-{Worker.WorkerId}")" Worker="@Worker" EngineId="@EnginInfo.EngineId"/>
+            <WorkerLog @key="@($"WorkerLoggerComponent-{EnginInfo.EngineId}-{Worker.WorkerId}")" Worker="@Worker"
+                       EngineId="@EnginInfo.EngineId"/>
         </div>
     }
 
     @if (_tabs["Control"])
     {
         <div class="px-2 mb-2">
-            <WorkerControlsComponent @key="@($"WorkerControlsComponent-{EnginInfo.EngineId}-{Worker.WorkerId}")" WorkerId="@Worker.WorkerId" EngineId="@EnginInfo.EngineId" Worker="Worker"></WorkerControlsComponent>
+            <WorkerControlsComponent @key="@($"WorkerControlsComponent-{EnginInfo.EngineId}-{Worker.WorkerId}")"
+                                     WorkerId="@Worker.WorkerId" EngineId="@EnginInfo.EngineId"
+                                     Worker="Worker"></WorkerControlsComponent>
         </div>
     }
 

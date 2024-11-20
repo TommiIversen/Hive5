@@ -9,10 +9,14 @@
 <div class="bg-gray-800 border border-gray-700 p-4 rounded-lg mb-4 grid grid-cols-1 md:grid-cols-4 gap-4 relative">
     @if (string.IsNullOrEmpty(Engine?.ConnectionInfo.ConnectionId))
     {
-        <div class="absolute inset-0 bg-black bg-opacity-50 flex flex-col rounded-lg justify-center items-center text-white px-4 py-2" style="backdrop-filter: blur(5px); z-index: 10;">
+        <div
+            class="absolute inset-0 bg-black bg-opacity-50 flex flex-col rounded-lg justify-center items-center text-white px-4 py-2"
+            style="backdrop-filter: blur(5px); z-index: 10;">
             <span class="text-2xl font-bold">OFFLINE</span>
             <span>@Engine?.Info.EngineName</span>
-            <button @onclick="() => RemoveEngine(Engine.Info.EngineId)" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded">Remove Engine</button>
+            <button @onclick="() => RemoveEngine(Engine.Info.EngineId)"
+                    class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded">Remove Engine
+            </button>
         </div>
     }
 
@@ -45,7 +49,8 @@
 
                         @if (_dragTargetWorkerId == worker.WorkerId)
                         {
-                            <div class="worker-card bg-slate-600 bg-[repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.1) 0, rgba(255, 255, 255, 0.1) 5px, transparent 5px, transparent 10px)] opacity-50 transition-transform duration-400 rounded-lg shadow-lg mb-3 h-24 flex items-center justify-center">
+                            <div
+                                class="worker-card bg-slate-600 bg-[repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.1) 0, rgba(255, 255, 255, 0.1) 5px, transparent 5px, transparent 10px)] opacity-50 transition-transform duration-400 rounded-lg shadow-lg mb-3 h-24 flex items-center justify-center">
                                 <span class="text-white font-semibold text-xl opacity-80">Insert here</span>
                             </div>
                         }
@@ -53,7 +58,7 @@
                         <WorkerComponent @key="@($"WorkerComponent-{Engine.Info.EngineId}-{worker.WorkerId}")"
                                          EnginInfo="Engine.Info"
                                          Worker="worker"
-                                         OnDragStartRequested="OnDragStart" />
+                                         OnDragStartRequested="OnDragStart"/>
 
                     </div>
                 }
@@ -92,7 +97,7 @@
         Console.WriteLine($"OnDragStart: {workerId}");
         _draggedWorkerId = workerId;
     }
-    
+
     private void HandleDragOver(string targetWorkerId)
     {
         if (_draggedWorkerId == null || _draggedWorkerId == targetWorkerId)
@@ -118,7 +123,7 @@
         }
     }
 
-    
+
     private async Task OnDrop(string targetWorkerId)
     {
         Console.WriteLine($"OnDrop: {targetWorkerId}");
@@ -134,7 +139,7 @@
 
         await InvokeAsync(StateHasChanged); // Opdater UI straks
     }
-    
+
     private void OnDragEnd()
     {
         // Nulstil markører for at fjerne "Insert here" indikatoren

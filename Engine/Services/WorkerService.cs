@@ -201,6 +201,7 @@ public class WorkerService : IWorkerService
 
         LogInfo($"Streamer replaced for worker {WorkerId}");
     }
+
     public async Task HandleStateChangeAsync(WorkerState newState)
     {
         await HandleStateChange(this, newState, ChangeEventType.Updated, "State changed in runner");

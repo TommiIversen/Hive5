@@ -24,16 +24,17 @@ public interface IEngineService
 public class EngineService : IEngineService
 {
     private readonly IDbContextFactory<ApplicationDbContext> _contextFactory;
-    //private readonly IEngineRepository _engineRepository;
-    private readonly IRepositoryFactory _repositoryFactory;
 
     private readonly DateTime _initDateTime = DateTime.UtcNow;
+
+    //private readonly IEngineRepository _engineRepository;
+    private readonly IRepositoryFactory _repositoryFactory;
 
     public EngineService(IRepositoryFactory repositoryFactory)
     {
         //_contextFactory = contextFactory;
         //_engineRepository = new EngineRepository(_contextFactory.CreateDbContext());
-        
+
         _repositoryFactory = repositoryFactory;
     }
 

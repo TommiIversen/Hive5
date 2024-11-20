@@ -67,7 +67,7 @@ public class WorkerManager(
 
             // Opret WorkerConfiguration fra WorkerEntity med FromEntity metoden
             var workerConfig = WorkerConfiguration.FromEntity(workerEntity);
-            
+
             // Use factory to create WorkerService
             var workerService = workerServiceFactory.CreateWorkerService(
                 workerEntity.WorkerId,
@@ -138,12 +138,12 @@ public class WorkerManager(
 
         // opret en ny service for workeren
         var workerConfig = WorkerConfiguration.FromEntity(workerEntity);
-        
+
         var workerService = workerServiceFactory.CreateWorkerService(
             workerEntity.WorkerId,
             streamerService,
             workerConfig);
-        
+
         _workers[workerId] = workerService;
 
         await SendWorkerEvent(workerId, ChangeEventType.Created);

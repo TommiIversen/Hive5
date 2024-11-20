@@ -11,10 +11,10 @@ namespace Engine.Streamers;
 public class FakeStreamerService : IStreamerService
 {
     private readonly ImageGenerator _generator = new();
-    private CancellationTokenSource? _logTaskCts;
-    private CancellationTokenSource? _imageTaskCts;
     private int _imageCounter;
+    private CancellationTokenSource? _imageTaskCts;
     private bool _isPauseActive;
+    private CancellationTokenSource? _logTaskCts;
     private WorkerState _state = WorkerState.Idle;
 
     public required string WorkerId { get; set; }

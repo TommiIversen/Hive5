@@ -26,7 +26,8 @@ public class WorkerServiceFactory : IWorkerServiceFactory
         _watchdogFactory = watchdogFactory;
     }
 
-    public IWorkerService CreateWorkerService(string workerId, IStreamerService streamerService, WorkerConfiguration config)
+    public IWorkerService CreateWorkerService(string workerId, IStreamerService streamerService,
+        WorkerConfiguration config)
     {
         return new WorkerService(
             _loggerService,

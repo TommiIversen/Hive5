@@ -6,8 +6,10 @@ public static class GStreamerUtils
 {
     public static string? FindGStreamerExecutable()
     {
-        var executableName = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "gst-launch-1.0.exe" : "gst-launch-1.0";
-    
+        var executableName = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+            ? "gst-launch-1.0.exe"
+            : "gst-launch-1.0";
+
         var pathVariable = Environment.GetEnvironmentVariable("PATH");
         if (pathVariable == null)
         {
@@ -19,13 +21,11 @@ public static class GStreamerUtils
 
         foreach (var path in paths)
         {
-            string fullPath = Path.Combine(path, executableName);
-            if (File.Exists(fullPath))
-            {
-                return fullPath;
-            }
+            var fullPath = Path.Combine(path, executableName);
+            if (File.Exists(fullPath)) return fullPath;
         }
 
         Console.WriteLine($"Advarsel: GStreamer-eksekverbar '{executableName}' blev ikke fundet i PATH.");
         return null;
-    }}
+    }
+}

@@ -144,14 +144,16 @@ public class StreamHub
                 var commandResult = await RemoveHubUrlAsync(hubUrlToRemove);
                 return commandResult;
             });
-            
+
             // EngineEditName
             hubConnection.On("EngineEditName", async (EngineEditNameDesc engineEditName) =>
             {
-                var result = await _engineService.UpdateEngineAsync(engineEditName.EngineName, engineEditName.EngineDescription);
+                var result =
+                    await _engineService.UpdateEngineAsync(engineEditName.EngineName, engineEditName.EngineDescription);
                 var engineUpdateEvent = await _engineService.GetEngineBaseInfoAsEvent();
                 _globalMessageQueue.EnqueueMessage(engineUpdateEvent);
-                return new CommandResult(result, result ? "Engine name and description updated." : "Failed to update engine name and description.");
+                return new CommandResult(result,
+                    result ? "Engine name and description updated." : "Failed to update engine name and description.");
             });
 
             _workerEventHandlers.AttachWorkerHandlers(hubConnection); // Vedhæft worker-specifikke handlers

@@ -72,13 +72,9 @@ public class EngineManager(ILogger<EngineManager> logger) : IEngineManager
         }
         else
         {
-            logger.LogWarning($"AddOrUpdateWorker: Engine {baseWorkerInfo.EngineId} not found. Cannot add or update worker.");
+            logger.LogWarning(
+                $"AddOrUpdateWorker: Engine {baseWorkerInfo.EngineId} not found. Cannot add or update worker.");
         }
-    }
-
-    private bool IsOutdatedEvent(WorkerViewModel workerViewModel, BaseWorkerInfo baseWorkerInfo)
-    {
-        return workerViewModel.EventProcessedTimestamp >= baseWorkerInfo.Timestamp;
     }
 
     public bool TryGetEngine(Guid engineId, out EngineViewModel? engineInfo)
@@ -91,7 +87,8 @@ public class EngineManager(ILogger<EngineManager> logger) : IEngineManager
     {
         var engine = _engines.Values.FirstOrDefault(e => e.ConnectionInfo.ConnectionId == connectionId);
         if (engine == null) return false;
-        logger.LogInformation($"EngineManager: Removing connection {connectionId} from engine {engine.Info.EngineId} {engine.Info.EngineName}");
+        logger.LogInformation(
+            $"EngineManager: Removing connection {connectionId} from engine {engine.Info.EngineId} {engine.Info.EngineName}");
         engine.ConnectionInfo.ConnectionId = "";
         return true;
     }
@@ -159,5 +156,10 @@ public class EngineManager(ILogger<EngineManager> logger) : IEngineManager
         {
             logger.LogWarning($"Engine {engineId} not found. Cannot remove worker {workerId}.");
         }
+    }
+
+    private bool IsOutdatedEvent(WorkerViewModel workerViewModel, BaseWorkerInfo baseWorkerInfo)
+    {
+        return workerViewModel.EventProcessedTimestamp >= baseWorkerInfo.Timestamp;
     }
 }

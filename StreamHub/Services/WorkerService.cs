@@ -11,8 +11,6 @@ public class EngineRequestHandler(
     ILogger<EngineManager> logger,
     CancellationService cancellationService)
 {
-
-
     public async Task<CommandResult<T>> HandleWorkerOperationWithDataAsync<T>(string operation,
         WorkerOperationMessage data,
         int timeoutMilliseconds = 5000, bool setProcessing = true)
@@ -23,14 +21,14 @@ public class EngineRequestHandler(
         if (!engineManager.TryGetEngine(data.EngineId, out var engine))
         {
             msg = $"EngineRequestHandler: {operation}: Engine {data.EngineId} not found";
-            LoggerExtensions.LogWarning(logger, msg);
+            logger.LogWarning(msg);
             return new CommandResult<T>(false, msg);
         }
 
         if (engine?.ConnectionInfo.ConnectionId == null)
         {
             msg = $"EngineRequestHandler: {operation}: Engine {data.EngineId} not connected";
-            LoggerExtensions.LogWarning(logger, msg);
+            logger.LogWarning(msg);
             return new CommandResult<T>(false, msg);
         }
 
@@ -38,9 +36,8 @@ public class EngineRequestHandler(
         if (!string.IsNullOrEmpty(data.WorkerId) && worker == null && operation != "CreateWorker")
         {
             msg = $"{operation}: Worker {data.WorkerId} not found";
-            LoggerExtensions.LogWarning(logger, msg);
+            logger.LogWarning(msg);
             return new CommandResult<T>(false, msg);
-            
         }
 
         if (setProcessing && worker != null)
@@ -53,9 +50,9 @@ public class EngineRequestHandler(
 
         try
         {
-            LoggerExtensions.LogInformation(logger, $"Forwarding {operation} request with data on engine {data.EngineId}");
-            result = await ClientProxyExtensions
-                .InvokeAsync<CommandResult<T>>(hubContext.Clients.Client(engine.ConnectionInfo.ConnectionId), operation, data, linkedCts.Token);
+            logger.LogInformation($"Forwarding {operation} request with data on engine {data.EngineId}");
+            result = await hubContext.Clients.Client(engine.ConnectionInfo.ConnectionId)
+                .InvokeAsync<CommandResult<T>>(operation, data, linkedCts.Token);
 
             msg = $"{result.Message} Time: {DateTime.Now}";
         }
@@ -71,14 +68,15 @@ public class EngineRequestHandler(
         }
         finally
         {
-            LoggerExtensions.LogInformation(logger, msg);
+            logger.LogInformation(msg);
             if (setProcessing && worker != null)
             {
                 worker.OperationResult = msg;
                 worker.IsProcessing = false;
 
                 // Send SignalR-besked for at opdatere UI efter state er sat korrekt
-                await ClientProxyExtensions.SendAsync(hubContext.Clients.Group("frontendClients"), $"WorkerLockEvent-{data.EngineId}-{data.WorkerId}", new { worker.IsProcessing, msg });
+                await hubContext.Clients.Group("frontendClients")
+                    .SendAsync($"WorkerLockEvent-{data.EngineId}-{data.WorkerId}", new { worker.IsProcessing, msg });
             }
         }
 
@@ -98,8 +96,9 @@ public class WorkerService(
     ILogger<EngineManager> logger,
     CancellationService cancellationService)
 {
-    private readonly EngineRequestHandler _engineRequestHandler = new EngineRequestHandler(hubContext, engineManager, logger, cancellationService);
-    
+    private readonly EngineRequestHandler _engineRequestHandler =
+        new(hubContext, engineManager, logger, cancellationService);
+
     public async Task<CommandResult> StopWorkerAsync(Guid engineId, string workerId)
     {
         var message = new WorkerOperationMessage
@@ -148,13 +147,15 @@ public class WorkerService(
     public async Task<CommandResult> CreateWorkerAsync(WorkerCreateAndEdit workerCreateAndEdit)
     {
         logger.LogInformation($"CreateWorkerAsync: {workerCreateAndEdit.WorkerId}");
-        return await _engineRequestHandler.HandleWorkerOperationWithDataAsync("CreateWorker", workerCreateAndEdit, setProcessing: false);
+        return await _engineRequestHandler.HandleWorkerOperationWithDataAsync("CreateWorker", workerCreateAndEdit,
+            setProcessing: false);
     }
 
 
     public async Task<CommandResult> EditWorkerAsync(WorkerCreateAndEdit workerCreateAndEdit)
     {
-        return await _engineRequestHandler.HandleWorkerOperationWithDataAsync("EditWorker", workerCreateAndEdit, setProcessing: true);
+        return await _engineRequestHandler.HandleWorkerOperationWithDataAsync("EditWorker", workerCreateAndEdit,
+            setProcessing: true);
     }
 
 
@@ -180,7 +181,8 @@ public class WorkerService(
         };
 
         var result =
-            await _engineRequestHandler.HandleWorkerOperationWithDataAsync<WorkerEventLogCollection>("GetWorkerEventsWithLogs", message,
+            await _engineRequestHandler.HandleWorkerOperationWithDataAsync<WorkerEventLogCollection>(
+                "GetWorkerEventsWithLogs", message,
                 setProcessing: false);
 
         return result;
@@ -195,7 +197,8 @@ public class WorkerService(
         };
 
         var result =
-            await _engineRequestHandler.HandleWorkerOperationWithDataAsync<WorkerChangeLog>("GetWorkerChangeLogs", message,
+            await _engineRequestHandler.HandleWorkerOperationWithDataAsync<WorkerChangeLog>("GetWorkerChangeLogs",
+                message,
                 setProcessing: false);
 
         var workerChangeLogsDto = result.Data;

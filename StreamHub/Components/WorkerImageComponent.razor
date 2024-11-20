@@ -8,7 +8,8 @@
     @if (!string.IsNullOrEmpty(_imageData) && Worker.BaseWorker.State == WorkerState.Running)
     {
         <img src="@_imageData" alt="Worker Image" class="w-[300px] h-[168.75px] rounded"/>
-        <div class="latency-overlay" style="position: absolute; top: 3px; left: 3px; color: white; background-color: rgba(0, 0, 0, 0.5); padding: 2px 4px; border-radius: 3px; font-size: 12px;">
+        <div class="latency-overlay"
+             style="position: absolute; top: 3px; left: 3px; color: white; background-color: rgba(0, 0, 0, 0.5); padding: 2px 4px; border-radius: 3px; font-size: 12px;">
             Latency: @($"{_latencyMs:F1}") ms
             @if (_imageLost)
             {

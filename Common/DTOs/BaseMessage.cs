@@ -1,6 +1,4 @@
-﻿using MessagePack;
-
-namespace Common.DTOs;
+﻿namespace Common.DTOs;
 
 public class BaseMessage
 {

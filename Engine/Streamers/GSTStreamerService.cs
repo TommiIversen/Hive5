@@ -16,16 +16,10 @@ public class GstStreamerService : IStreamerService
         _handler = new GStreamerProcessHandler(LogCallbackAsync, ImageCallbackAsync);
     }
 
-
     public required string WorkerId { get; set; }
     public required string GstCommand { get; set; }
-
-    //public event EventHandler<WorkerLogEntry>? LogGenerated;
-    //public event EventHandler<WorkerImageData>? ImageGenerated;
-    // Erstat events med Func
     public Func<WorkerLogEntry, Task> LogCallback { get; set; }
     public Func<WorkerImageData, Task> ImageCallback { get; set; }
-    
     public Func<WorkerState, Task>? StateChangedAsync { get; set; }
 
     public async Task<(WorkerState, string)> StartAsync()
@@ -42,7 +36,7 @@ public class GstStreamerService : IStreamerService
         if (_state == WorkerState.Stopping)
         {
             msg = "Streamer is currently stopping. Please wait.";
-            SendLog(msg);
+            await SendLog(msg);
             return (_state, msg);
         }
 
@@ -50,7 +44,7 @@ public class GstStreamerService : IStreamerService
         await OnStateChangedAsync(_state); // Trigger state change
 
         msg = $"Starting streamer... with command: {GstCommand}";
-        SendLog(msg);
+        await SendLog(msg);
 
         await _handler.StartGStreamerProcessAsync(GstCommand, CancellationToken.None);
 
@@ -58,7 +52,7 @@ public class GstStreamerService : IStreamerService
         await OnStateChangedAsync(_state);
 
         msg = "Streamer started successfully.";
-        SendLog(msg);
+        await SendLog(msg);
         return (_state, msg);
     }
 
@@ -86,7 +80,6 @@ public class GstStreamerService : IStreamerService
         Console.WriteLine("Streamer stopped.");
         return (_state, "Streamer stopped successfully.");
     }
-
 
 
     public WorkerState GetState()
@@ -119,7 +112,7 @@ public class GstStreamerService : IStreamerService
     }
 
 
-    private async Task  CreateAndSendLog(string message, LogLevel logLevel = LogLevel.Information)
+    private async Task CreateAndSendLog(string message, LogLevel logLevel = LogLevel.Information)
     {
         var log = new WorkerLogEntry
         {

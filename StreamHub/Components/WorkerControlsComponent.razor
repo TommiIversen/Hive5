@@ -51,7 +51,8 @@
 
 @if (_isLogsModalVisible)
 {
-    <WorkerEventsLogsModal WorkerName="@Worker.BaseWorker.Name" WorkerEventsWithLogs="_workerEventsWithLogs" OnClose="CloseLogsModal"/>
+    <WorkerEventsLogsModal WorkerName="@Worker.BaseWorker.Name" WorkerEventsWithLogs="_workerEventsWithLogs"
+                           OnClose="CloseLogsModal"/>
 }
 
 @if (_isChangeLogsModalVisible)
