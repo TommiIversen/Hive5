@@ -1,7 +1,7 @@
 ADR 08: Design og Implementering af StreamHubClient
 ---------------------------------------------------
 
-**Placering:** /docs/adr/adr-07-streamhubclient-eip-design.md\
+**Placering:** /docs/adr/adr-08-streamhubclient-eip-design.md\
 **Status:** Besluttet\
 **Dato:** 25/09 2024\
 **Beslutningstager:** Tommi Iversen
