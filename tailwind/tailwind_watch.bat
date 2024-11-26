@@ -1,1 +1,0 @@
-tailwindcss-windows-x64 -i tailwind_input.css -o ../Streamhub/wwwroot/hive.css --JIT  --watch --minify
