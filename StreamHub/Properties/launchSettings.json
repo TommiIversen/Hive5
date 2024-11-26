@@ -8,7 +8,9 @@
       "hotReloadEnabled": true,
       "applicationUrl": "http://localhost:9000",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "HIVE_BASE_PATH": "StreamhubData9000"
+
       }
     },
     "streamhub_http_8999": {
@@ -18,29 +20,9 @@
       "hotReloadEnabled": true,
       "applicationUrl": "http://localhost:8999",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "HIVE_BASE_PATH": "StreamhubData8999"
       }
-    },
-    "https": {
-      "commandName": "Project",
-      "dotnetRunMessages": true,
-      "launchBrowser": true,
-      "applicationUrl": "https://localhost:7074;http://localhost:5087",
-      "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
-      }
-    },
-    "Watch 8999": {
-      "commandName": "Executable",
-      "workingDirectory": "$(ProjectDir)",
-      "executablePath": "dotnet",
-      "commandLineArgs": "watch --project StreamHub.csproj --exclude bin --exclude obj run debug --launch-profile streamhub_http_8999"
-    },
-    "Watch 9000": {
-      "commandName": "Executable",
-      "workingDirectory": "$(ProjectDir)",
-      "executablePath": "dotnet",
-      "commandLineArgs": "watch --project StreamHub.csproj --exclude bin --exclude obj run debug --launch-profile streamhub_http_9000"
     }
   }
 }

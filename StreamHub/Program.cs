@@ -5,7 +5,9 @@ using StreamHub.Components;
 using StreamHub.Hubs;
 using StreamHub.Services;
 
-var basePath = Environment.GetEnvironmentVariable("HIVE_BASE_PATH") ?? @"C:\temp\hive";
+var basePath = Environment.GetEnvironmentVariable("HIVE_BASE_PATH") 
+               ?? Path.Combine(AppContext.BaseDirectory, "StreamhubData");
+
 Console.WriteLine($"Base path: {basePath}");
 if (!Directory.Exists(basePath)) Directory.CreateDirectory(basePath);
 var streamHubPath = Path.Combine(basePath, "StreamHub");

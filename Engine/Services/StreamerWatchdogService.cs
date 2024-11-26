@@ -14,6 +14,8 @@ public interface IStreamerWatchdogService
 
 public class StreamerWatchdogService : IStreamerWatchdogService
 {
+    private const int MinimumIntervalSeconds = 1; // Minimumgrænse for tid
+
     public delegate Task AsyncEventHandler<TEventArgs>(object sender, TEventArgs e);
 
     private readonly Func<(bool, string)> _checkRestartCallback;
@@ -35,8 +37,9 @@ public class StreamerWatchdogService : IStreamerWatchdogService
         _workerId = workerId;
         _checkRestartCallback = checkRestartCallback;
         _restartCallback = restartCallback;
-        GraceTime = graceTime;
-        CheckInterval = checkInterval;
+        GraceTime = ValidateTime(graceTime, "GraceTime");
+        CheckInterval = ValidateTime(checkInterval, "CheckInterval");
+        
         _cancellationTokenSource = new CancellationTokenSource();
         _loggerService = loggerService;
     }
@@ -84,13 +87,13 @@ public class StreamerWatchdogService : IStreamerWatchdogService
 
     public void UpdateGraceTime(TimeSpan newGraceTime)
     {
-        GraceTime = newGraceTime;
+        GraceTime = ValidateTime(newGraceTime, "GraceTime");
         LogInfo($"Grace time updated to {GraceTime}");
     }
 
     public void UpdateCheckInterval(TimeSpan newCheckInterval)
     {
-        CheckInterval = newCheckInterval;
+        CheckInterval = ValidateTime(newCheckInterval, "CheckInterval");
         LogInfo($"Check interval updated to {CheckInterval}");
     }
 
@@ -167,6 +170,15 @@ public class StreamerWatchdogService : IStreamerWatchdogService
 
             await Task.WhenAll(tasks);
         }
+    }
+    
+    private TimeSpan ValidateTime(TimeSpan time, string propertyName)
+    {
+        if (time.TotalSeconds < MinimumIntervalSeconds)
+        {
+            return TimeSpan.FromSeconds(MinimumIntervalSeconds);
+        }
+        return time;
     }
 
     private void LogInfo(string message, LogLevel logLevel = LogLevel.Information)

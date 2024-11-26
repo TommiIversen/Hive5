@@ -41,5 +41,44 @@ public static class DbInitializer
         foreach (var worker in workersWithMissingStreamerType) worker.StreamerType = "FakeStreamer";
 
         if (workersWithMissingStreamerType.Any()) context.SaveChanges();
+        
+        
+        
+        // Sikrer, at der er to Workere
+        if (!context.Workers.Any())
+        {
+            var defaultWorkers = new List<WorkerEntity>
+            {
+                new WorkerEntity
+                {
+                    WorkerId = "Worker01",
+                    Name = "Fake Worker 1",
+                    Description = "First default worker",
+                    Command =
+                        "--gst-debug=3 videotestsrc is-live=true pattern=ball ! video/x-raw, framerate=25/1, width=300, height=168 ! timeoverlay ! videoconvert ! videorate ! video/x-raw, framerate=5/1 ! jpegenc ! fdsink fd=2",
+                    IsEnabled = true,
+                    StreamerType = "FakeStreamer",
+                    ImgWatchdogGraceTime = TimeSpan.FromSeconds(5),
+                    ImgWatchdogInterval = TimeSpan.FromSeconds(2),
+                    ImgWatchdogEnabled = true
+                },
+                new WorkerEntity
+                {
+                    WorkerId = "Worker02",
+                    Name = "Fake Worker 2",
+                    Description = "Second default worker",
+                    Command =
+                        "--gst-debug=3 videotestsrc is-live=true pattern=smpte ! video/x-raw, framerate=30/1, width=400, height=300 ! videoconvert ! jpegenc ! fdsink fd=2",
+                    IsEnabled = true,
+                    StreamerType = "FakeStreamer",
+                    ImgWatchdogGraceTime = TimeSpan.FromSeconds(5),
+                    ImgWatchdogInterval = TimeSpan.FromSeconds(2),
+                    ImgWatchdogEnabled = true
+                }
+            };
+
+            context.Workers.AddRange(defaultWorkers);
+            context.SaveChanges();
+        }
     }
 }

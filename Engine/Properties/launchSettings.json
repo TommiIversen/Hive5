@@ -8,7 +8,7 @@
       "applicationUrl": "http://localhost:9001",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "HIVE_BASE_PATH": "C:\\temp\\hive9001"
+        "HIVE_BASE_PATH": "hive9001"
       }
     },
     "Engine http 9002": {
@@ -18,16 +18,7 @@
       "applicationUrl": "http://localhost:9002",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "HIVE_BASE_PATH": "C:\\temp\\hive9002"
-      }
-    },
-    "https": {
-      "commandName": "Project",
-      "dotnetRunMessages": true,
-      "launchBrowser": true,
-      "applicationUrl": "https://localhost:7249;http://localhost:5136",
-      "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "HIVE_BASE_PATH": "hive9002"
       }
     }
   }

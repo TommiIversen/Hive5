@@ -6,7 +6,9 @@ using Engine.Services;
 using Engine.Utils;
 
 // Få basePath fra miljøvariablen eller brug fallback
-var basePath = Environment.GetEnvironmentVariable("HIVE_BASE_PATH") ?? @"yC:\temp\hive";
+var basePath = Environment.GetEnvironmentVariable("HIVE_BASE_PATH") 
+               ?? Path.Combine(AppContext.BaseDirectory, "EngineData");
+
 var tempFolderPath = Path.Combine(basePath, "temp_test");
 Console.WriteLine($"Base path: {basePath}");
 
