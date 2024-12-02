@@ -8,8 +8,13 @@ public class BlazorSignalRService : IAsyncDisposable
 {
     public BlazorSignalRService(NavigationManager navigationManager)
     {
+        var baseUrl = Environment.GetEnvironmentVariable("SIGNALR_SERVER_URL") ?? navigationManager.BaseUri;
+        var signalUri = new Uri($"{baseUrl}streamhub?clientType=frontend");
+
+        Console.WriteLine($"SignalR URI: {signalUri}");
+        
         HubConnection = new HubConnectionBuilder()
-            .WithUrl(navigationManager.ToAbsoluteUri("/streamhub?clientType=frontend"),
+            .WithUrl(signalUri,
                 options => { options.Transports = HttpTransportType.WebSockets; })
             .WithAutomaticReconnect()
             .Build();

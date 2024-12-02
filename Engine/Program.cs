@@ -5,6 +5,9 @@ using Engine.Models;
 using Engine.Services;
 using Engine.Utils;
 
+Console.WriteLine($"Hosting environment: {Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")}");
+Console.WriteLine($"ASPNETCORE_HTTP_PORTS: {Environment.GetEnvironmentVariable("ASPNETCORE_HTTP_PORTS")}");
+
 // Få basePath fra miljøvariablen eller brug fallback
 var basePath = Environment.GetEnvironmentVariable("HIVE_BASE_PATH") 
                ?? Path.Combine(AppContext.BaseDirectory, "EngineData");
@@ -29,7 +32,7 @@ try
 }
 catch (Exception ex)
 {
-    Console.Error.WriteLine($"Kan ikke få adgang til basePath eller skrive til mappen: {ex.Message}");
+    Console.Error.WriteLine($"Kan ikke få adgang til basePath seller skrive til mappen: {ex.Message}");
     Environment.Exit(1); // Afslut applikationen med en fejlstatus
 }
 
@@ -70,4 +73,5 @@ app.UseAntiforgery();
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
+app.UseStaticFiles();
 app.Run();

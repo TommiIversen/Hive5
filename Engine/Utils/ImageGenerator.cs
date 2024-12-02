@@ -63,7 +63,7 @@ public class ImageGenerator
             paint.Color = SKColors.Black;
             paint.IsAntialias = true;
             canvas.DrawText(number.ToString(), Width / 2.0f, Height / 3.0f, SKTextAlign.Center, font, paint);
-
+        
             // Hvis der er ekstra tekst, tegn den under tallet
             if (!string.IsNullOrEmpty(extraText))
             {
@@ -87,7 +87,9 @@ public class ImageGenerator
             var lengthUsed = (int)memoryStream.Position;
             var result = new byte[lengthUsed];
             Array.Copy(buffer, result, lengthUsed);
-
+            Console.WriteLine($"Generated image with number {number} and extra text '{extraText}'.");
+            // size
+            Console.WriteLine($"Size: {result.Length} bytes");
             return result;
         }
         finally

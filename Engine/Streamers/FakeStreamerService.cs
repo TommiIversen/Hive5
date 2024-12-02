@@ -175,7 +175,17 @@ public class FakeStreamerService : IStreamerService
 
     private byte[] GenerateFakeImage(string text = "")
     {
-        return _generator.GenerateImageWithNumber(_imageCounter++, $"FAKE-{text}");
+        Console.WriteLine($"Generating fake image with text: {text}");
+        try
+        {
+            return _generator.GenerateImageWithNumber(_imageCounter++, $"FAKE-{text}");
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            return [(byte) 0];
+        }
+
     }
 
     private async Task CreateAndSendLog(string message, LogLevel logLevel = LogLevel.Information)

@@ -1,0 +1,29 @@
+﻿services:
+  Engine:
+    image: engine
+    build:
+      context: .
+      dockerfile: Engine/Dockerfile
+    network_mode: host
+    ports:
+      - "9001:8080"
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "10"
+
+  StreamHub:
+    image: streamhub
+    build:
+      context: .
+      dockerfile: StreamHub/Dockerfile
+    ports:
+      - "9000:8080" 
+    environment:
+      #- SIGNALR_URL=http://localhost:9000
+      - DetailedErrors=true
+      - SIGNALR_SERVER_URL=http://10.65.77.121:9000/
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "10"
