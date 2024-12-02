@@ -27,7 +27,7 @@ try
     File.Delete(testFilePath);
 
     // Slet den midlertidige mappe efter testen
-    Directory.Delete(tempFolderPath);
+    //Directory.Delete(tempFolderPath);
     Console.WriteLine("Skrive- og sletteadgang til basePath er OK.");
 }
 catch (Exception ex)
