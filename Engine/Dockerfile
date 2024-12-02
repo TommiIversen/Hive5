@@ -3,12 +3,14 @@ FROM 2mmilab/ffmpeg6python312gstreamerdeck AS base
 
 # Installer nødvendige værktøjer og .NET runtime
 RUN apt-get update && \
-    apt-get install -y wget && \
+    apt-get install -y wget gstreamer1.0-x && \
     wget https://dot.net/v1/dotnet-install.sh && \
     chmod +x dotnet-install.sh && \
     ./dotnet-install.sh --channel 9.0 --install-dir /usr/share/dotnet && \
     ln -s /usr/share/dotnet/dotnet /usr/bin/dotnet && \
     rm dotnet-install.sh
+
+# libgstreamer-plugins-base1.0-dev
 
 # Bekræft installation
 RUN dotnet --version
