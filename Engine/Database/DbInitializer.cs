@@ -20,7 +20,7 @@ public static class DbInitializer
                 HubUrls = new List<HubUrlEntity>
                 {
                     new() { HubUrl = "http://127.0.0.1:9000/streamhub" },
-                    new() { HubUrl = "http://127.0.0.1:8999/streamhub" }
+                    new() { HubUrl = "http://StreamHub:8080/streamhub" }
                 }
             };
 

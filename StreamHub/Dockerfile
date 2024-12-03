@@ -3,9 +3,10 @@ USER $APP_UID
 WORKDIR /app
 EXPOSE 8080
 
-# ENV ASPNETCORE_ENVIRONMENT=Production
+ENV ASPNETCORE_ENVIRONMENT=Production
 # ENV ASPNETCORE_HTTP_PORTS=http://+:9001
-# ENV DetailedErrors=true
+ENV DetailedErrors=true
+ENV SIGNALR_SERVER_URL=http://localhost:8080/
 
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 ARG BUILD_CONFIGURATION=Release

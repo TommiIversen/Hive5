@@ -1,9 +1,13 @@
 using Microsoft.AspNetCore.Components.Server.Circuits;
+using Microsoft.AspNetCore.Hosting.StaticWebAssets;
 using Microsoft.AspNetCore.ResponseCompression;
 using StreamHub;
 using StreamHub.Components;
 using StreamHub.Hubs;
 using StreamHub.Services;
+
+Console.WriteLine($"Hosting environment: {Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")}");
+Console.WriteLine($"ASPNETCORE_HTTP_PORTS: {Environment.GetEnvironmentVariable("ASPNETCORE_HTTP_PORTS")}");
 
 var basePath = Environment.GetEnvironmentVariable("HIVE_BASE_PATH") 
                ?? Path.Combine(AppContext.BaseDirectory, "StreamhubData");
@@ -20,7 +24,10 @@ builder.Services.AddSingleton<TrackingCircuitHandler>(); // For direkte injectio
 builder.Services.AddSingleton<CircuitHandler>(sp =>
     sp.GetRequiredService<TrackingCircuitHandler>()); // As CircuitHandler
 builder.Services.AddScoped<BlazorSignalRService>();
-
+builder.Services.AddAntiforgery(options =>
+{
+    options.Cookie.SecurePolicy = CookieSecurePolicy.None; // Tillad Antiforgery på HTTP
+});
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
@@ -52,13 +59,18 @@ if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error", true);
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-    app.UseHsts();
+    //app.UseHsts();
 }
 
-app.UseHttpsRedirection();
-app.UseResponseCompression();
+//app.UseHttpsRedirection();
 app.UseAntiforgery();
+
+app.UseResponseCompression();
 app.MapStaticAssets();
+app.UseStaticFiles();
+StaticWebAssetsLoader.UseStaticWebAssets(app.Environment, app.Configuration);
+
+//app.MapFallbackToFile("index.html"); // For Blazor Server
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 app.MapHub<EngineHub>("/streamhub");

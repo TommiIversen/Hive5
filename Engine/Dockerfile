@@ -14,7 +14,10 @@ RUN apt-get update && \
 
 # Bekræft installation
 RUN dotnet --version
-
+EXPOSE 9001
+ENV ASPNETCORE_ENVIRONMENT=Production
+ENV ASPNETCORE_URLS=http://*:9001
+RUN echo
 # Build image
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 ARG BUILD_CONFIGURATION=Release
@@ -34,4 +37,5 @@ RUN dotnet publish "Engine.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:Us
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
+
 ENTRYPOINT ["dotnet", "Engine.dll"]

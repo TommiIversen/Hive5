@@ -4,9 +4,10 @@
     build:
       context: .
       dockerfile: Engine/Dockerfile
-    network_mode: host
     ports:
-      - "9001:8080"
+      - "9001:9001"
+    environment:
+      - ASPNETCORE_URLS=http://*:9001
     logging:
       options:
         max-size: "10m"
@@ -22,7 +23,7 @@
     environment:
       #- SIGNALR_URL=http://localhost:9000
       - DetailedErrors=true
-      - SIGNALR_SERVER_URL=http://10.65.77.121:9000/
+      #- ASPNETCORE_URLS=http://*:9000
     logging:
       options:
         max-size: "10m"
